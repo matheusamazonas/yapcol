@@ -26,3 +26,4 @@ is :: t -> Parser t t | == t
 choice :: [(Parser t a)] -> Parser t a
 any :: Parser t t
 lookAhead :: (Parser t a) -> Parser t a
+between :: (Parser t o) (Parser t c) (Parser t a) -> Parser t a

@@ -79,6 +79,9 @@ lookAhead (Parser p) = Parser \s -> case p s of
 	(Right x, _) = (Right x,s)
 	(Left m,_) = (Left m,s)
 
+between :: (Parser t o) (Parser t c) (Parser t a) -> Parser t a
+between pO pC p = pO >>| p >>= \a -> pC >>| pure a
+
 
 
 
