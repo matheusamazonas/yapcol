@@ -46,6 +46,9 @@ satisfy p = Parser \s -> case s of
 		| p t = (Right t, ts)
 		= (Left "Unable to parse.", [t:ts])
 
+(<?>) infix 1 :: (Parser t a) String -> Parser t a
+(<?>) p s = p <|> fail s 
+
 fail :: String -> Parser t a
 fail e = Parser \s -> (Left e,s)
 
