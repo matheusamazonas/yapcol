@@ -63,3 +63,20 @@ opt p = (p >>| pure ()) <|> pure ()
 
 optMaybe :: (Parser t a) -> Parser t (Maybe a)
 optMaybe p = pure <$> p
+
+is :: t -> Parser t t | == t
+is t = satisfy ((==) t)
+
+choice :: [(Parser t a)] -> Parser t a
+choice [] = fail "Unable to parse"
+choice [p:ps] = p <|> choice ps
+
+
+
+
+
+
+
+
+
+

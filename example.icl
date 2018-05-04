@@ -4,14 +4,19 @@ import Yapcol
 import StdMisc
 import StdOverloaded
 import StdString
+import Data.Maybe
 
 pFoo :: Parser String String
-pFoo = satisfy ((==) "foo")
+pFoo =  is "foo"
 
 pBar :: Parser String String
-pBar = satisfy ((==) "bar")
+pBar = is "bar"
 
 pFoos :: Parser String [String]
 pFoos = many1 pFoo
 
-Start = run (pFoos) ["foo","foo","foo","bar"]
+pTest :: (Maybe String) -> Parser String String
+pTest (Just s) = satisfy ((==) s)
+pTest Nothing = fail "FAIL"
+
+Start = run (choice [pFoo, pBar]) ["foo","foo","foo","bar"]
