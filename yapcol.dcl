@@ -29,3 +29,5 @@ lookAhead :: (Parser t a) -> Parser t a
 between :: (Parser t o) (Parser t c) (Parser t a) -> Parser t a
 skipMany0 :: (Parser t a) -> Parser t ()
 skipMany1 :: (Parser t a) -> Parser t ()
+sepBy0 :: (Parser t a) (Parser t s) -> Parser t [a]
+sepBy1 :: (Parser t a) (Parser t s) -> Parser t [a]

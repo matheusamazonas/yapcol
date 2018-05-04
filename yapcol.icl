@@ -88,6 +88,12 @@ skipMany0 p = skipMany1 p <|> pure ()
 skipMany1 :: (Parser t a) -> Parser t ()
 skipMany1 p = many1 p >>| pure ()
 
+sepBy0 :: (Parser t a) (Parser t s) -> Parser t [a]
+sepBy0 p s = sepBy1 p s <|> pure []
+
+sepBy1 :: (Parser t a) (Parser t s) -> Parser t [a]
+sepBy1 p s = (\x xs -> [x : xs]) <$> p <*> many0 (s >>| p)
+
 
 
 
