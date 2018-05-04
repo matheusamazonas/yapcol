@@ -1,6 +1,6 @@
-module example
+module Example
 
-import yapcol
+import Yapcol
 import StdMisc
 import StdOverloaded
 import StdString

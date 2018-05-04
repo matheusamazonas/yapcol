@@ -1,6 +1,6 @@
-implementation module yapcol
+implementation module Yapcol
 
-import yapcol
+import Yapcol
 import StdMisc
 import StdOverloaded
 import StdFunc

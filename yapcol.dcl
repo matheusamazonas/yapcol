@@ -1,4 +1,4 @@
-definition module yapcol
+definition module Yapcol
 
 import Data.Either
 import Data.Functor
