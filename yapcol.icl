@@ -13,7 +13,7 @@ unP (Parser p) = p
 // ---------- Instances ----------
 
 instance Functor (Parser t) where
-	fmap f p = f <$> p
+	fmap f p = pure f <*> p
 
 instance Applicative (Parser t) where
 	pure a = Parser \s -> (Right a, s)
