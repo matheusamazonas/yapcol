@@ -82,7 +82,11 @@ lookAhead (Parser p) = Parser \s -> case p s of
 between :: (Parser t o) (Parser t c) (Parser t a) -> Parser t a
 between pO pC p = pO >>| p >>= \a -> pC >>| pure a
 
+skipMany0 :: (Parser t a) -> Parser t ()
+skipMany0 p = skipMany1 p <|> pure ()
 
+skipMany1 :: (Parser t a) -> Parser t ()
+skipMany1 p = many1 p >>| pure ()
 
 
 
