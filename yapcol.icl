@@ -74,6 +74,12 @@ choice [p:ps] = p <|> choice ps
 any :: Parser t t
 any = satisfy (const True)
 
+lookAhead :: (Parser t a) -> Parser t a
+lookAhead (Parser p) = Parser \s -> case p s of
+	(Right x, _) = (Right x,s)
+	(Left m,_) = (Left m,s)
+
+
 
 
 
