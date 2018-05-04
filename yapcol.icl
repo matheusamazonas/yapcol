@@ -44,7 +44,7 @@ satisfy p = Parser \s -> case s of
 	[] = (Left "Empty input",[])
 	[t:ts]
 		| p t = (Right t, ts)
-		= (Left "Unable to parse.", ts)
+		= (Left "Unable to parse.", [t:ts])
 
 fail :: String -> Parser t a
 fail e = Parser \s -> (Left e,s)
