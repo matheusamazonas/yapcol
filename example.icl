@@ -1,6 +1,7 @@
 module example
 
 import yapcol
+import StdMisc
 import StdOverloaded
 import StdString
 
@@ -10,4 +11,7 @@ pFoo = satisfy ((==) "foo")
 pBar :: Parser String String
 pBar = satisfy ((==) "bar")
 
-Start = run (pFoo <|> pBar) ["bar"]
+pFoos :: Parser String [String]
+pFoos = many1 pFoo
+
+Start = run (pFoos) ["foo","foo","foo","bar"]

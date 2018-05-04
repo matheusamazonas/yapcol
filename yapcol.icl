@@ -5,10 +5,8 @@ import StdMisc
 import StdOverloaded
 import StdFunc
 import StdTuple
+import StdList
 from Data.Func import $
-
-unP :: (Parser t a) -> [t] -> (Either String a, [t])
-unP (Parser p) = p
 
 // ---------- Instances ----------
 
@@ -27,7 +25,7 @@ instance Alternative (Parser t) where
 
 instance Monad (Parser t) where
 	bind (Parser ma) f = Parser \s -> case ma s of
-		(Right a, s) = unP (f a) s
+		(Right a,s) = run (f a) s
 		(Left m,s) = (Left m,s)
 
 // ---------- Top Functions ----------
@@ -36,9 +34,7 @@ parse :: (Parser t a) [t] -> Either String a
 parse p i = fst $ run p i
 
 run :: (Parser t a) [t] -> (Either String a, [t])
-run (Parser p) i = case p i of
-	(Right x,s) = (Right x,s)
-	(Left m,s) = (Left m,s)
+run (Parser p) i = p i
 
 // ---------- Combinators ----------
 
@@ -47,8 +43,15 @@ satisfy p = Parser \s -> case s of
 	[] = (Left "Empty input",[])
 	[t:ts]
 		| p t = (Right t, ts)
-		= (Left "Unable to parse.", s)
+		= (Left "Unable to parse.", ts)
 
 fail :: String -> Parser t a
 fail e = Parser \s -> (Left e,s)
+
+many0 :: (Parser t a) -> Parser t [a]
+many0 p = many1 p <|> pure []
+
+many1 :: (Parser t a) -> Parser t [a]
+many1 p = (\x xs -> [x : xs]) <$> p <*> many0 p
+
 

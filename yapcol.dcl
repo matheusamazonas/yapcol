@@ -16,3 +16,5 @@ parse :: (Parser t a) [t] -> Either String a
 run :: (Parser t a) [t] -> (Either String a, [t])
 
 satisfy :: (t -> Bool) -> Parser t t
+many0 :: (Parser t a) -> Parser t [a]
+many1 :: (Parser t a) -> Parser t [a]
