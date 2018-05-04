@@ -52,5 +52,3 @@ satisfy p = Parser \s -> case s of
 fail :: String -> Parser t a
 fail e = Parser \s -> (Left e,s)
 
-Start = 1
-
