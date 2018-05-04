@@ -16,5 +16,8 @@ parse :: (Parser t a) [t] -> Either String a
 run :: (Parser t a) [t] -> (Either String a, [t])
 
 satisfy :: (t -> Bool) -> Parser t t
+fail :: String -> Parser t a
 many0 :: (Parser t a) -> Parser t [a]
 many1 :: (Parser t a) -> Parser t [a]
+opt :: (Parser t a) -> Parser t ()
+optMaybe :: (Parser t a) -> Parser t (Maybe a)
