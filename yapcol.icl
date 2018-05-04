@@ -71,6 +71,9 @@ choice :: [(Parser t a)] -> Parser t a
 choice [] = fail "Unable to parse"
 choice [p:ps] = p <|> choice ps
 
+any :: Parser t t
+any = satisfy (const True)
+
 
 
 

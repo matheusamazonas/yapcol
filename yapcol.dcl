@@ -24,3 +24,4 @@ opt :: (Parser t a) -> Parser t ()
 optMaybe :: (Parser t a) -> Parser t (Maybe a)
 is :: t -> Parser t t | == t
 choice :: [(Parser t a)] -> Parser t a
+any :: Parser t t
