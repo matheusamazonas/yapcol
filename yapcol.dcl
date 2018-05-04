@@ -31,3 +31,5 @@ skipMany0 :: (Parser t a) -> Parser t ()
 skipMany1 :: (Parser t a) -> Parser t ()
 sepBy0 :: (Parser t a) (Parser t s) -> Parser t [a]
 sepBy1 :: (Parser t a) (Parser t s) -> Parser t [a]
+endBy0 :: (Parser t a) (Parser t s) -> Parser t [a]
+endBy1 :: (Parser t a) (Parser t s) -> Parser t [a]

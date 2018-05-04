@@ -94,7 +94,11 @@ sepBy0 p s = sepBy1 p s <|> pure []
 sepBy1 :: (Parser t a) (Parser t s) -> Parser t [a]
 sepBy1 p s = (\x xs -> [x : xs]) <$> p <*> many0 (s >>| p)
 
+endBy0 :: (Parser t a) (Parser t s) -> Parser t [a]
+endBy0 p s = endBy1 p s <|> pure []
 
+endBy1 :: (Parser t a) (Parser t s) -> Parser t [a]
+endBy1 p s = sepBy1 p s >>= \xs -> s >>| pure xs
 
 
 
