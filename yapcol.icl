@@ -1,6 +1,7 @@
 implementation module yapcol
 
 import yapcol
+import StdMisc
 import StdOverloaded
 import StdFunc
 import StdTuple
@@ -12,17 +13,11 @@ unP (Parser p) = p
 // ---------- Instances ----------
 
 instance Functor (Parser t) where
-	fmap f (Parser p) = Parser \s -> case p s of
-		(Right a, s) = (Right (f a), s)
-		(Left m,s) = (Left m,s)
+	fmap f p = f <$> p
 
 instance Applicative (Parser t) where
 	pure a = Parser \s -> (Right a, s)
-	(<*>) (Parser mf) (Parser ma) = Parser \s -> case mf s of
-		(Right f,s) = case ma s of
-			(Right a,s) = (Right (f a),s)
-			(Left m,s) = (Left m,s)
-		(Left m,s) = (Left m,s)
+	(<*>) mf ma = mf >>= \f -> ma >>= \a -> pure $ f a
 
 instance Monad (Parser t) where
 	bind (Parser ma) f = Parser \s -> case ma s of
