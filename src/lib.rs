@@ -4,13 +4,13 @@ mod error;
 
 struct Parser<'a, I, O>
 where
-	I: PartialEq + Copy
+	I: PartialEq + Clone
 {
 	f: Box<dyn 'a + Fn(&mut Vec<I>) -> Result<O, Error>>,
 }
 
 impl <'a, I, O> Parser<'a, I, O> 
-where I : PartialEq  + Copy
+where I : PartialEq  + Clone
 {
 	pub fn new<F>(f: F) -> Self
 	where
@@ -26,7 +26,7 @@ where I : PartialEq  + Copy
 
 fn satisfy<'a , I, P>(predicate: P) -> Parser<'a, I, I>
 where
-	I: PartialEq  + Copy,
+	I: PartialEq  + Clone,
 	P: 'a + Fn(&I) -> bool
 {
 	let f = move |input: &mut Vec<I>| match input.pop() {
@@ -41,7 +41,7 @@ where
 
 fn is<I>(i: &I) -> Parser<'_, I, I>
 where
-	I : PartialEq  + Copy
+	I : PartialEq  + Clone
 {
 	let copy = i.clone();
 	let f = move |x: &I| (*x) == copy;
@@ -69,5 +69,20 @@ mod tests {
 	fn parse_number_empty() {
 		let parser = is(&(1));
 		assert_eq!(parser.parse(vec![]), Err(Error::EndOfInput));
+	}
+
+	#[test]
+	fn parse_string_right() {
+		let hello = String::from("hello");
+		let parser = is(&hello);
+		assert_eq!(parser.parse(vec![hello.clone()]), Ok(hello.clone()));
+	}
+
+	#[test]
+	fn parse_string_wrong() {
+		let hello = String::from("hello");
+		let hallo = String::from("hallo");
+		let parser = is(&hello);
+		assert_eq!(parser.parse(vec![hallo]), Err(Error::UnexpectedToken));
 	}
 }
