@@ -1,8 +1,12 @@
+use crate::error::Error;
+
+mod error;
+
 struct Parser<'a, I, O>
 where
 	I: PartialEq + Copy
 {
-	f: Box<dyn 'a + Fn(&mut Vec<I>) -> Result<O, String>>,
+	f: Box<dyn 'a + Fn(&mut Vec<I>) -> Result<O, Error>>,
 }
 
 impl <'a, I, O> Parser<'a, I, O> 
@@ -10,12 +14,12 @@ where I : PartialEq  + Copy
 {
 	pub fn new<F>(f: F) -> Self
 	where
-		F: 'a + Fn(&mut Vec<I>) -> Result<O, String>
+		F: 'a + Fn(&mut Vec<I>) -> Result<O, Error>
 	{
 		Parser { f: Box::new(f) }
 	}
 	
-	pub fn parse(&self, mut input: Vec<I>) -> Result<O, String> {
+	pub fn parse(&self, mut input: Vec<I>) -> Result<O, Error> {
 		(self.f)(&mut input)
 	}
 }
@@ -26,10 +30,10 @@ where
 	P: 'a + Fn(&I) -> bool
 {
 	let f = move |input: &mut Vec<I>| match input.pop() {
-		None => Err(String::from("End of input")),
+		None => Err(Error::EndOfInput),
 		Some(token) => match predicate(&token) {
 			true => Ok(token),
-			false => Err(String::from("Invalid token")),
+			false => Err(Error::UnexpectedToken),
 		},
 	};
 	Parser { f: Box::new(f) }
@@ -52,18 +56,18 @@ mod tests {
 	fn parse_number_right() {
 		let parser = is(&(1));
 		assert_eq!(parser.parse(vec![1]), Ok(1));
-		assert_eq!(parser.parse(vec![2]), Err(String::from("Invalid token")));
+		assert_eq!(parser.parse(vec![2]), Err(Error::UnexpectedToken));
 	}
 
 	#[test]
 	fn parse_number_wrong() {
 		let parser = is(&(1));
-		assert_eq!(parser.parse(vec![2]), Err(String::from("Invalid token")));
+		assert_eq!(parser.parse(vec![2]), Err(Error::UnexpectedToken));
 	}
 
 	#[test]
 	fn parse_number_empty() {
 		let parser = is(&(1));
-		assert_eq!(parser.parse(vec![]), Err(String::from("End of input")));
+		assert_eq!(parser.parse(vec![]), Err(Error::EndOfInput));
 	}
 }
