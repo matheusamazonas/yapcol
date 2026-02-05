@@ -31,7 +31,7 @@ where I : PartialEq  + Clone
 			Ok(t) => Ok(t),
 			Err(_) => other.parse(input),
 		};
-		Parser { f: Box::new(f) }
+		Parser::new(f)
 	}
 }
 
@@ -52,7 +52,7 @@ where
 			}
 		},
 	};
-	Parser { f: Box::new(f) }
+	Parser::new(f)
 }
 
 fn is<I>(i: &I) -> Parser<'_, I, I>
