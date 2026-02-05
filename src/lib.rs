@@ -21,10 +21,7 @@ where I : PartialEq  + Clone
 	
 	pub fn parse(&self, input: &mut Vec<I>) -> Result<O, Error> {
 		match (self.f)(input) {
-			Ok(o) => {
-				input.pop(); // Consume the input if success.
-				Ok(o)
-			},
+			Ok(o) => Ok(o),
 			Err(e) => Err(e)
 		}
 	}
@@ -43,11 +40,16 @@ where
 	I: PartialEq  + Clone,
 	P: 'a + Fn(&I) -> bool
 {
-	let f = move |input: &mut Vec<I>| match input.get(0) {
+	let f = move |input: &mut Vec<I>| match input.get(0).cloned() {
 		None => Err(Error::EndOfInput),
-		Some(token) => match predicate(token) {
-			true => Ok(token.clone()),
-			false => Err(Error::UnexpectedToken),
+		Some(token) => {
+			match predicate(&token) {
+				true => {
+					input.pop(); // Consume the input on success.
+					Ok(token.clone())
+				},
+				false => Err(Error::UnexpectedToken),
+			}
 		},
 	};
 	Parser { f: Box::new(f) }
@@ -71,6 +73,7 @@ mod tests {
 		let parser = is(&(1));
 		let mut tokens = vec![1];
 		assert_eq!(parser.parse(&mut tokens), Ok(1));
+		assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
 	}
 
 	#[test]
@@ -78,6 +81,7 @@ mod tests {
 		let parser = is(&(1));
 		let mut tokens = vec![2];
 		assert_eq!(parser.parse(&mut tokens), Err(Error::UnexpectedToken));
+		assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
 	}
 
 	#[test]
@@ -93,6 +97,7 @@ mod tests {
 		let parser = is(&hello);
 		let mut tokens = vec![hello.clone()];
 		assert_eq!(parser.parse(&mut tokens), Ok(hello.clone()));
+		assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
 	}
 
 	#[test]
@@ -102,6 +107,7 @@ mod tests {
 		let parser = is(&hello);
 		let mut tokens = vec![hallo.clone()];
 		assert_eq!(parser.parse(&mut tokens), Err(Error::UnexpectedToken));
+		assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
 	}
 	
 	#[test]
@@ -111,6 +117,7 @@ mod tests {
 		let mut tokens = vec![1];
 		let parser_or = parser1.or(&parser2);
 		assert_eq!(parser_or.parse(&mut tokens), Ok(1));
+		assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
 	}
 
 	#[test]
@@ -120,6 +127,7 @@ mod tests {
 		let mut tokens = vec![2];
 		let parser_or = parser1.or(&parser2);
 		assert_eq!(parser_or.parse(&mut tokens), Ok(2));
+		assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
 	}
 
 	#[test]
@@ -129,5 +137,6 @@ mod tests {
 		let mut tokens = vec![3];
 		let parser_or = parser1.or(&parser2);
 		assert_eq!(parser_or.parse(&mut tokens), Err(Error::UnexpectedToken));
+		assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
 	}
 }
