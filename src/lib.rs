@@ -33,6 +33,14 @@ where I : PartialEq  + Clone
 		};
 		Parser::new(f)
 	}
+	
+	pub fn maybe(&'a self) -> Parser<'a, I, Option<O>> {
+		let f = move |input: &mut Vec<I>| match self.parse(input) {
+			Ok(o) => Ok(Some(o)),
+			Err(_) => Ok(None),
+		};
+		Parser::new(f)
+	}
 }
 
 fn satisfy<'a , I, P>(predicate: P) -> Parser<'a, I, I>
@@ -137,6 +145,24 @@ mod tests {
 		let mut tokens = vec![3];
 		let parser_or = parser1.or(&parser2);
 		assert_eq!(parser_or.parse(&mut tokens), Err(Error::UnexpectedToken));
+		assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
+	}
+
+	#[test]
+	fn parse_number_maybe_success() {
+		let parser = is(&(1));
+		let mut tokens = vec![1];
+		let parser_maybe = parser.maybe();
+		assert_eq!(parser_maybe.parse(&mut tokens), Ok(Some(1)));
+		assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
+	}
+
+	#[test]
+	fn parse_number_maybe_fail() {
+		let parser = is(&(1));
+		let mut tokens = vec![2];
+		let parser_maybe = parser.maybe();
+		assert_eq!(parser_maybe.parse(&mut tokens), Ok(None));
 		assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
 	}
 }
