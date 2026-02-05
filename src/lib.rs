@@ -19,8 +19,22 @@ where I : PartialEq  + Clone
 		Parser { f: Box::new(f) }
 	}
 	
-	pub fn parse(&self, mut input: Vec<I>) -> Result<O, Error> {
-		(self.f)(&mut input)
+	pub fn parse(&self, input: &mut Vec<I>) -> Result<O, Error> {
+		match (self.f)(input) {
+			Ok(o) => {
+				input.pop(); // Consume the input if success.
+				Ok(o)
+			},
+			Err(e) => Err(e)
+		}
+	}
+	
+	pub fn or(&'a self, other: &'a Parser<'a, I, O>) -> Parser<'a, I, O> {
+		let f = move |input: &mut Vec<I>| match self.parse(input) {
+			Ok(t) => Ok(t),
+			Err(_) => other.parse(input),
+		};
+		Parser { f: Box::new(f) }
 	}
 }
 
@@ -29,10 +43,10 @@ where
 	I: PartialEq  + Clone,
 	P: 'a + Fn(&I) -> bool
 {
-	let f = move |input: &mut Vec<I>| match input.pop() {
+	let f = move |input: &mut Vec<I>| match input.get(0) {
 		None => Err(Error::EndOfInput),
-		Some(token) => match predicate(&token) {
-			true => Ok(token),
+		Some(token) => match predicate(token) {
+			true => Ok(token.clone()),
 			false => Err(Error::UnexpectedToken),
 		},
 	};
@@ -55,27 +69,30 @@ mod tests {
 	#[test]
 	fn parse_number_right() {
 		let parser = is(&(1));
-		assert_eq!(parser.parse(vec![1]), Ok(1));
-		assert_eq!(parser.parse(vec![2]), Err(Error::UnexpectedToken));
+		let mut tokens = vec![1];
+		assert_eq!(parser.parse(&mut tokens), Ok(1));
 	}
 
 	#[test]
 	fn parse_number_wrong() {
 		let parser = is(&(1));
-		assert_eq!(parser.parse(vec![2]), Err(Error::UnexpectedToken));
+		let mut tokens = vec![2];
+		assert_eq!(parser.parse(&mut tokens), Err(Error::UnexpectedToken));
 	}
 
 	#[test]
 	fn parse_number_empty() {
 		let parser = is(&(1));
-		assert_eq!(parser.parse(vec![]), Err(Error::EndOfInput));
+		let mut tokens = vec![];
+		assert_eq!(parser.parse(&mut tokens), Err(Error::EndOfInput));
 	}
 
 	#[test]
 	fn parse_string_right() {
 		let hello = String::from("hello");
 		let parser = is(&hello);
-		assert_eq!(parser.parse(vec![hello.clone()]), Ok(hello.clone()));
+		let mut tokens = vec![hello.clone()];
+		assert_eq!(parser.parse(&mut tokens), Ok(hello.clone()));
 	}
 
 	#[test]
@@ -83,6 +100,34 @@ mod tests {
 		let hello = String::from("hello");
 		let hallo = String::from("hallo");
 		let parser = is(&hello);
-		assert_eq!(parser.parse(vec![hallo]), Err(Error::UnexpectedToken));
+		let mut tokens = vec![hallo.clone()];
+		assert_eq!(parser.parse(&mut tokens), Err(Error::UnexpectedToken));
+	}
+	
+	#[test]
+	fn parse_number_or_first() {
+		let parser1 = is(&(1));
+		let parser2 = is(&(2));
+		let mut tokens = vec![1];
+		let parser_or = parser1.or(&parser2);
+		assert_eq!(parser_or.parse(&mut tokens), Ok(1));
+	}
+
+	#[test]
+	fn parse_number_or_second() {
+		let parser1 = is(&(1));
+		let parser2 = is(&(2));
+		let mut tokens = vec![2];
+		let parser_or = parser1.or(&parser2);
+		assert_eq!(parser_or.parse(&mut tokens), Ok(2));
+	}
+
+	#[test]
+	fn parse_number_or_none() {
+		let parser1 = is(&(1));
+		let parser2 = is(&(2));
+		let mut tokens = vec![3];
+		let parser_or = parser1.or(&parser2);
+		assert_eq!(parser_or.parse(&mut tokens), Err(Error::UnexpectedToken));
 	}
 }
