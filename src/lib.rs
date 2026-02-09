@@ -5,14 +5,11 @@ mod tests;
 mod error;
 
 struct Parser<'a, I, O>
-where
-	I: PartialEq + Clone
 {
 	f: Box<dyn 'a + Fn(&mut Vec<I>) -> Result<O, Error>>,
 }
 
-impl <'a, I, O> Parser<'a, I, O> 
-where I : PartialEq  + Clone
+impl <'a, I, O> Parser<'a, I, O>
 {
 	pub fn new<F>(f: F) -> Self
 	where
@@ -47,10 +44,9 @@ where I : PartialEq  + Clone
 
 fn satisfy<'a , I, P>(predicate: P) -> Parser<'a, I, I>
 where
-	I: PartialEq  + Clone,
 	P: 'a + Fn(&I) -> bool
 {
-	let f = move |input: &mut Vec<I>| match input.get(0).cloned() {
+	let f = move |input: &mut Vec<I>| match input.get(0) {
 		None => Err(Error::EndOfInput),
 		Some(token) => {
 			match predicate(&token) {
