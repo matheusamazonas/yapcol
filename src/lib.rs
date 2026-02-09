@@ -55,7 +55,7 @@ where
 		Some(token) => {
 			match predicate(&token) {
 				true => {
-					input.pop(); // Consume the input on success.
+					input.remove(0); // Consume the input on success.
 					Ok(token.clone())
 				},
 				false => Err(Error::UnexpectedToken),
