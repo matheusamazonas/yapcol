@@ -40,21 +40,46 @@ impl <'a, I, O> Parser<'a, I, O>
 		};
 		Parser::new(f)
 	}
+	
+	pub fn then<O2>(&'a self, other: &'a Parser<'a, I, O2>) -> Parser<'a, I, (O,O2)>
+	{
+		let f = move |input: &mut Vec<I>| match self.parse(input) {
+			Ok(o1) => match other.parse(input) {
+				Ok(o2) => Ok((o1, o2)),
+				Err(_) => Err(Error::UnexpectedToken)
+			},
+			Err(_) => Err(Error::UnexpectedToken),
+		};
+		Parser::new(f)
+	}
+	
+	pub fn map<F, O2>(&'a self, f: F) -> Parser<'a, I, O2>
+	where
+		F: 'a + Fn(O) -> O2
+	{
+		let f = move |input: &mut Vec<I>| {
+			match self.parse(input) {
+				Ok(o) => Ok(f(o)),
+				Err(_) => Err(Error::UnexpectedToken),
+			}
+		};
+		Parser::new(f)
+	}
 }
 
-fn satisfy<'a , I, P>(predicate: P) -> Parser<'a, I, I>
+fn satisfy<'a , I, O, P>(predicate: P) -> Parser<'a, I, O>
 where
-	P: 'a + Fn(&I) -> bool
+	P: 'a + Fn(&I) -> Result<O, Error>
 {
 	let f = move |input: &mut Vec<I>| match input.get(0) {
 		None => Err(Error::EndOfInput),
 		Some(token) => {
-			match predicate(&token) {
-				true => {
+			match predicate(token) {
+				Ok(token) => {
 					input.remove(0); // Consume the input on success.
-					Ok(token.clone())
+					Ok(token)
 				},
-				false => Err(Error::UnexpectedToken),
+				e => e,
 			}
 		},
 	};
@@ -66,6 +91,6 @@ where
 	I : PartialEq  + Clone
 {
 	let copy = i.clone();
-	let f = move |x: &I| (*x) == copy;
+	let f = move |x: &I| if (*x) == copy { Ok(x.clone()) } else { Err(Error::UnexpectedToken) };
 	satisfy(f)
 }
