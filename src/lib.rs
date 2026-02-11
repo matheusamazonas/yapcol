@@ -33,6 +33,13 @@ where
 	}
 }
 
+pub fn end_of_input<I>() -> impl Fn(&mut Vec<I>) -> Result<(), Error> {
+	|input| match input.len() {
+		0 => Ok(()),
+		_ => Err(Error::UnexpectedToken)
+	}
+}
+
 pub fn option<P, I, O>(p1: &P, p2: &P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,

@@ -6,7 +6,7 @@ fn parse_string_right() {
 	let parse = is(&hello);
 	let mut tokens = vec![hello.clone()];
 	assert_eq!(parse(&mut tokens), Ok(hello.clone()));
-	assert_eq!(tokens.len(), 0); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
@@ -16,5 +16,5 @@ fn parse_string_wrong() {
 	let parser = is(&hello);
 	let mut tokens = vec![hallo.clone()];
 	assert_eq!(parser(&mut tokens), Err(Error::UnexpectedToken));
-	assert_eq!(tokens.len(), 1); // Ensure that the input was NOT consumed.
+	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
 }

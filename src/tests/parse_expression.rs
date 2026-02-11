@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::{satisfy};
+use crate::{end_of_input, satisfy};
 
 #[derive(Debug, PartialEq)]
 enum Operator { 
@@ -67,12 +67,13 @@ fn test_parse_addition() {
 	let input1 = number1.to_string();
 	let input2 = number2.to_string();
 	let operation = String::from("+");
-	let mut input = vec![input1, operation, input2];
+	let mut tokens = vec![input1, operation, input2];
 	let parser = parse_operation();
-	let output = parser(&mut input);
+	let output = parser(&mut tokens);
 	assert!(output.is_ok());
 	let e = output.unwrap();
 	assert_operation(e, number1, Operator::Plus, number2);
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
@@ -82,10 +83,11 @@ fn test_parse_subtraction() {
 	let input1 = number1.to_string();
 	let input2 = number2.to_string();
 	let operation = String::from("-");
-	let mut input = vec![input1, operation, input2];
+	let mut tokens = vec![input1, operation, input2];
 	let parser = parse_operation();
-	let output = parser(&mut input);
+	let output = parser(&mut tokens);
 	assert!(output.is_ok());
 	let e = output.unwrap();
 	assert_operation(e, number1, Operator::Minus, number2);
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
