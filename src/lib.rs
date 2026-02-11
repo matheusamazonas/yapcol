@@ -33,7 +33,7 @@ where
 	}
 }
 
-pub fn option<P, I, O>(p1: P, p2: P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
+pub fn option<P, I, O>(p1: &P, p2: &P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
@@ -43,7 +43,7 @@ where
 	}
 }
 
-pub fn maybe<P, I, O>(p1: P) -> impl Fn(&mut Vec<I>) -> Result<Option<O>, Error>
+pub fn maybe<P, I, O>(p1: &P) -> impl Fn(&mut Vec<I>) -> Result<Option<O>, Error>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
