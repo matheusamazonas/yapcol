@@ -15,13 +15,14 @@ where
 	satisfy(f)
 }
 
-pub fn satisfy<I, O>(p: impl Fn(&I) -> Result<O, Error>) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
+pub fn satisfy<P,I, O>(parser: P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
 where
+	P: Fn(&I) -> Result<O, Error>,
 	I: Clone,
 {
 	move |input| match input.get(0) {
 		Some(token) => {
-			match p(&token) {
+			match parser(&token) {
 				Ok(result) => {
 					input.remove(0); // Consume if successful.
 					Ok(result)
@@ -40,22 +41,22 @@ pub fn end_of_input<I>() -> impl Fn(&mut Vec<I>) -> Result<(), Error> {
 	}
 }
 
-pub fn option<P, I, O>(p1: &P, p2: &P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
+pub fn option<P, I, O>(parser1: &P, parser2: &P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
-	move |input| match p1(input) {
-		Ok(output) => Ok(output),
-		Err(_) => p2(input),
+	move |input| match parser1(input) {
+		Ok(token) => Ok(token),
+		Err(_) => parser2(input),
 	}
 }
 
-pub fn maybe<P, I, O>(p1: &P) -> impl Fn(&mut Vec<I>) -> Result<Option<O>, Error>
+pub fn maybe<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Option<O>, Error>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
-	move |input| match p1(input) {
-		Ok(output) => Ok(Some(output)),
+	move |input| match parser(input) {
+		Ok(token) => Ok(Some(token)),
 		Err(_) => Ok(None),
 	}
 }
