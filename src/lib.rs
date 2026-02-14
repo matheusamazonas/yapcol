@@ -4,6 +4,12 @@ use crate::error::Error;
 mod tests;
 mod error;
 
+pub trait Parser<I,O>: Fn(&mut Vec<I>) -> Result<O, Error> { }
+
+impl<I,O, T> Parser<I, O> for T 
+where 
+	T: Fn(&mut Vec<I>) -> Result<O, Error> {}
+
 pub fn is<I>(i: &I) -> impl Fn(&mut Vec<I>) -> Result<I, Error>
 where
 	I: PartialEq + Clone,
@@ -15,7 +21,7 @@ where
 	satisfy(f)
 }
 
-pub fn satisfy<P,I, O>(parser: P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
+pub fn satisfy<P,I, O>(parser: P) -> impl Parser<I,O>
 where
 	P: Fn(&I) -> Result<O, Error>,
 	I: Clone,
@@ -34,16 +40,16 @@ where
 	}
 }
 
-pub fn end_of_input<I>() -> impl Fn(&mut Vec<I>) -> Result<(), Error> {
+pub fn end_of_input<I>() -> impl Parser<I, ()> {
 	|input| match input.len() {
 		0 => Ok(()),
 		_ => Err(Error::UnexpectedToken)
 	}
 }
 
-pub fn option<P, I, O>(parser1: &P, parser2: &P) -> impl Fn(&mut Vec<I>) -> Result<O, Error>
+pub fn option<P, I, O>(parser1: &P, parser2: &P) -> impl Parser<I,O>
 where
-	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+	P: Parser<I, O>,
 {
 	move |input| match parser1(input) {
 		Ok(token) => Ok(token),
@@ -51,7 +57,7 @@ where
 	}
 }
 
-pub fn maybe<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Option<O>, Error>
+pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
@@ -63,7 +69,7 @@ where
 
 fn many<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>, Vec<O>) -> Result<Vec<O>, Error>
 where
-	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+	P: Parser<I, O>,
 {
 	move |input, mut output| match parser(input) {
 		Ok(token) => {
@@ -74,9 +80,9 @@ where
 	}
 }
 
-pub fn many0<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Vec<O>, Error>
+pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
-	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+	P: Parser<I, O>
 {
 	move |input| {
 		let output: Vec<O> = Vec::new();
@@ -84,9 +90,9 @@ where
 	}
 }
 
-pub fn many1<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Vec<O>, Error>
+pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
-	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+	P: Parser<I, O>,
 {
 	move |input| {
 		let mut output: Vec<O> = Vec::new();
