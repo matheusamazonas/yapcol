@@ -60,3 +60,42 @@ where
 		Err(_) => Ok(None),
 	}
 }
+
+fn many<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>, Vec<O>) -> Result<Vec<O>, Error>
+where
+	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+{
+	move |input, mut output| match parser(input) {
+		Ok(token) => {
+			output.push(token);
+			many(parser)(input, output)
+		},
+		Err(_) => Ok(output),
+	}
+}
+
+pub fn many0<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Vec<O>, Error>
+where
+	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+{
+	move |input| {
+		let output: Vec<O> = Vec::new();
+		many(parser)(input, output)
+	}
+}
+
+pub fn many1<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>) -> Result<Vec<O>, Error>
+where
+	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+{
+	move |input| {
+		let mut output: Vec<O> = Vec::new();
+		match parser(input) {
+			Ok(token) => {
+				output.push(token);
+				many(parser)(input, output)
+			},
+			Err(e) => Err(e),
+		}
+	}
+}

@@ -91,3 +91,18 @@ fn test_parse_subtraction() {
 	assert_operation(e, number1, Operator::Minus, number2);
 	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
+
+#[test]
+fn test_parse_invalid_operation() {
+	let number1 = 123;
+	let number2 = 456;
+	let input1 = number1.to_string();
+	let input2 = number2.to_string();
+	let operation = String::from("%");
+	let mut tokens = vec![input1, operation, input2];
+	let parser = parse_operation();
+	let output = parser(&mut tokens);
+	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+}
+
