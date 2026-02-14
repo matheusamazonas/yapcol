@@ -93,7 +93,9 @@ fn parse_many0_no_match_not_empty() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(String::from("hallo")).take(token_count).collect::<Vec<_>>();
+	let mut tokens = std::iter::repeat(String::from("hallo"))
+		.take(token_count)
+		.collect::<Vec<_>>();
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut tokens).unwrap();
 	assert_eq!(output.len(), 0);
@@ -106,7 +108,9 @@ fn parse_many0_match() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(hello.clone()).take(token_count).collect::<Vec<_>>();
+	let mut tokens = std::iter::repeat(hello.clone())
+		.take(token_count)
+		.collect::<Vec<_>>();
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut tokens).unwrap();
 	assert_eq!(output.len(), token_count);
@@ -127,7 +131,11 @@ fn parse_many1_empty() {
 fn parse_many1_no_match() {
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = vec![String::from("hallo"), String::from("hillo"), String::from("hollo")];
+	let mut tokens = vec![
+		String::from("hallo"),
+		String::from("hillo"),
+		String::from("hollo"),
+	];
 	let parser_many1 = many1(&parser);
 	assert_eq!(parser_many1(&mut tokens), Err(Error::UnexpectedToken));
 	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
@@ -137,7 +145,11 @@ fn parse_many1_no_match() {
 fn parse_many1_one_match() {
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = vec![String::from("hello"), String::from("hillo"), String::from("hollo")];
+	let mut tokens = vec![
+		String::from("hello"),
+		String::from("hillo"),
+		String::from("hollo"),
+	];
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut tokens).unwrap();
 	assert_eq!(output.len(), 1);
@@ -151,7 +163,9 @@ fn parse_many1_multiple_matches() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(String::from("hello")).take(token_count).collect::<Vec<_>>();
+	let mut tokens = std::iter::repeat(String::from("hello"))
+		.take(token_count)
+		.collect::<Vec<_>>();
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut tokens).unwrap();
 	assert_eq!(output.len(), token_count);

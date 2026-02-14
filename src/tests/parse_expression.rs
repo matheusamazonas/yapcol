@@ -2,7 +2,7 @@ use crate::error::Error;
 use crate::{end_of_input, satisfy};
 
 #[derive(Debug, PartialEq)]
-enum Operator { 
+enum Operator {
 	Plus,
 	Minus,
 }
@@ -105,4 +105,3 @@ fn test_parse_invalid_operation() {
 	assert_eq!(output, Err(Error::UnexpectedToken));
 	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
 }
-

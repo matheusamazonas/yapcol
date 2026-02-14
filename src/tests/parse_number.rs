@@ -144,4 +144,3 @@ fn parse_many1_multiple_matches() {
 	assert!(output.iter().all(|&x| x == 42));
 	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
-
