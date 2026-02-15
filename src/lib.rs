@@ -19,14 +19,13 @@ where
 	satisfy(f)
 }
 
-pub fn satisfy<P, I, O>(parser: P) -> impl Parser<I, O>
+pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
 where
-	P: Fn(&I) -> Result<O, Error>,
-	I: Clone,
+	F: Fn(&I) -> Result<O, Error>,
 {
 	move |input| match input.get(0) {
 		Some(token) => {
-			match parser(&token) {
+			match f(&token) {
 				Ok(result) => {
 					input.remove(0); // Consume if successful.
 					Ok(result)
