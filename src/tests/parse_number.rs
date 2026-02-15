@@ -144,3 +144,32 @@ fn parse_many1_multiple_matches() {
 	assert!(output.iter().all(|&x| x == 42));
 	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
 }
+
+#[test]
+fn parse_choice() {
+	let parser1 = is(&(1));
+	let parser2 = is(&(2));
+	let parser3 = is(&(3));
+	let parsers: Vec<Box<dyn Parser<_, _>>> =
+		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+	let parser_choice = choice(&parsers);
+	// 1, success.
+	let mut tokens = vec![1];
+	let output = parser_choice(&mut tokens).unwrap();
+	assert_eq!(output, 1);
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	// 2, success.
+	let mut tokens = vec![2];
+	let output = parser_choice(&mut tokens).unwrap();
+	assert_eq!(output, 2);
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	// 3, success.
+	let mut tokens = vec![3];
+	let output = parser_choice(&mut tokens).unwrap();
+	assert_eq!(output, 3);
+	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	// 4, fail.
+	let mut tokens = vec![4];
+	assert_eq!(parser_choice(&mut tokens), Err(Error::UnexpectedToken));
+	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+}

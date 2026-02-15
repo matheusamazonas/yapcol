@@ -8,7 +8,7 @@ pub trait Parser<I, O>: Fn(&mut Vec<I>) -> Result<O, Error> {}
 
 impl<I, O, T> Parser<I, O> for T where T: Fn(&mut Vec<I>) -> Result<O, Error> {}
 
-pub fn is<I>(i: &I) -> impl Fn(&mut Vec<I>) -> Result<I, Error>
+pub fn is<I>(i: &I) -> impl Parser<I, I>
 where
 	I: PartialEq + Clone,
 {
@@ -101,5 +101,18 @@ where
 			}
 			Err(e) => Err(e),
 		}
+	}
+}
+
+pub fn choice<'a, P: 'a, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	&'a PI: IntoIterator<Item = &'a P>,
+{
+	|input| {
+		parsers
+			.into_iter()
+			.find_map(|p| p(input).ok())
+			.ok_or(Error::UnexpectedToken)
 	}
 }
