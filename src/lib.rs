@@ -44,9 +44,10 @@ pub fn end_of_input<I>() -> impl Parser<I, ()> {
 	}
 }
 
-pub fn option<P, I, O>(parser1: &P, parser2: &P) -> impl Parser<I, O>
+pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
 where
-	P: Parser<I, O>,
+	P1: Parser<I, O>,
+	P2: Parser<I, O>,
 {
 	|input| match parser1(input) {
 		Ok(token) => Ok(token),
