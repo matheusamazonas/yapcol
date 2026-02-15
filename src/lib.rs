@@ -12,7 +12,7 @@ pub fn is<I>(i: &I) -> impl Fn(&mut Vec<I>) -> Result<I, Error>
 where
 	I: PartialEq + Clone,
 {
-	let f = move |x: &I| match *x == *i {
+	let f = |x: &I| match *x == *i {
 		true => Ok(x.clone()),
 		false => Err(Error::UnexpectedToken),
 	};
@@ -49,7 +49,7 @@ pub fn option<P, I, O>(parser1: &P, parser2: &P) -> impl Parser<I, O>
 where
 	P: Parser<I, O>,
 {
-	move |input| match parser1(input) {
+	|input| match parser1(input) {
 		Ok(token) => Ok(token),
 		Err(_) => parser2(input),
 	}
@@ -59,7 +59,7 @@ pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
 	P: Fn(&mut Vec<I>) -> Result<O, Error>,
 {
-	move |input| match parser(input) {
+	|input| match parser(input) {
 		Ok(token) => Ok(Some(token)),
 		Err(_) => Ok(None),
 	}
@@ -69,7 +69,7 @@ fn many<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>, Vec<O>) -> Result<Vec<O>, E
 where
 	P: Parser<I, O>,
 {
-	move |input, mut output| match parser(input) {
+	|input, mut output| match parser(input) {
 		Ok(token) => {
 			output.push(token);
 			many(parser)(input, output)
@@ -82,7 +82,7 @@ pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
 {
-	move |input| {
+	|input| {
 		let output: Vec<O> = Vec::new();
 		many(parser)(input, output)
 	}
@@ -92,7 +92,7 @@ pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
 {
-	move |input| {
+	|input| {
 		let mut output: Vec<O> = Vec::new();
 		match parser(input) {
 			Ok(token) => {
