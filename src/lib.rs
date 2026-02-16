@@ -116,3 +116,27 @@ where
 			.ok_or(Error::UnexpectedToken)
 	}
 }
+
+pub fn count<P, I, O>(parser: &P, count: u32) -> impl Parser<I, Vec<O>>
+where
+	P: Parser<I, O>,
+{
+	move |input| {
+		let mut output: Vec<O> = Vec::new();
+		for _ in 0..count {
+			match parser(input) {
+				Ok(token) => output.push(token),
+				Err(_) => break,
+			}
+		}
+		Ok(output)
+	}
+}
+
+// TO DO list:
+// - between
+// - separated by (0, 1)
+// - chain left (0, 1)
+// - chain right (0, 1)
+// - look ahead
+// - any
