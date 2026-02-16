@@ -93,8 +93,7 @@ fn parse_many0_no_match_not_empty() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(String::from("hallo"))
-		.take(token_count)
+	let mut tokens = std::iter::repeat_n(String::from("hallo"), token_count)
 		.collect::<Vec<_>>();
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut tokens).unwrap();
@@ -108,9 +107,7 @@ fn parse_many0_match() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(hello.clone())
-		.take(token_count)
-		.collect::<Vec<_>>();
+	let mut tokens = std::iter::repeat_n(hello.clone(), token_count).collect::<Vec<_>>();
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut tokens).unwrap();
 	assert_eq!(output.len(), token_count);
@@ -163,9 +160,7 @@ fn parse_many1_multiple_matches() {
 	let token_count = 100;
 	let hello = String::from("hello");
 	let parser = is(&hello);
-	let mut tokens = std::iter::repeat(String::from("hello"))
-		.take(token_count)
-		.collect::<Vec<_>>();
+	let mut tokens = std::iter::repeat_n(String::from("hello"), token_count).collect::<Vec<_>>();
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut tokens).unwrap();
 	assert_eq!(output.len(), token_count);
@@ -174,7 +169,7 @@ fn parse_many1_multiple_matches() {
 }
 
 #[test]
-fn parse_choice() {
+fn parse_choice_success() {
 	let input1 = String::from("hello");
 	let input2 = String::from("hallo");
 	let input3 = String::from("hillo");
@@ -202,5 +197,23 @@ fn parse_choice() {
 	// 4, fail.
 	let mut tokens = vec![String::from("hullo")];
 	assert_eq!(parser_choice(&mut tokens), Err(Error::UnexpectedToken));
+	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+}
+
+#[test]
+fn parse_choice_fail() {
+	let input1 = String::from("hello");
+	let input2 = String::from("hallo");
+	let input3 = String::from("hillo");
+	let parser1 = is(&input1);
+	let parser2 = is(&input2);
+	let parser3 = is(&input3);
+	let parsers: Vec<Box<dyn Parser<_, _>>> =
+		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+	let parser_choice = choice(&parsers);
+	// 1, success.
+	let mut tokens = vec![String::from("hullo")];
+	let output = parser_choice(&mut tokens);
+	assert_eq!(output, Err(Error::UnexpectedToken));
 	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
 }

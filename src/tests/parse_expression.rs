@@ -56,7 +56,7 @@ fn assert_operation(root: Expression, x1: i32, operator: Operator, x2: i32) {
 			assert_eq!(*e1, Expression::Number(x1));
 			assert_eq!(*o2, Expression::Number(x2));
 		}
-		_ => assert!(false),
+		_ => panic!("Expression operation failed."),
 	}
 }
 

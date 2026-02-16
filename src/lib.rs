@@ -23,9 +23,9 @@ pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
 where
 	F: Fn(&I) -> Result<O, Error>,
 {
-	move |input| match input.get(0) {
+	move |input| match input.first() {
 		Some(token) => {
-			match f(&token) {
+			match f(token) {
 				Ok(result) => {
 					input.remove(0); // Consume if successful.
 					Ok(result)
@@ -104,9 +104,9 @@ where
 	}
 }
 
-pub fn choice<'a, P: 'a, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
+pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
 where
-	P: Parser<I, O>,
+	P: Parser<I, O> + 'a,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
