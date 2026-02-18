@@ -1,33 +1,43 @@
 use crate::error::Error;
+use crate::input::InputStream;
 
 mod error;
 #[cfg(test)]
 mod tests;
+mod input;
 
-pub trait Parser<I, O>: Fn(&mut Vec<I>) -> Result<O, Error> {}
-
-impl<I, O, T> Parser<I, O> for T where T: Fn(&mut Vec<I>) -> Result<O, Error> {}
-
-pub fn is<I>(i: &I) -> impl Parser<I, I>
+pub trait Parser<I, O>: Fn(&mut I) -> Result<O, Error> 
 where
-	I: PartialEq + Clone,
+I: InputStream,
+{}
+
+impl<I, O, T> Parser<I, O> for T 
+where 
+	I: InputStream,
+	T: Fn(&mut I) -> Result<O, Error> { }
+
+pub fn is<I, T>(i: &T) -> impl Parser<I, T>
+where
+	I: InputStream<Token = T>,
+	T: PartialEq + Clone,
 {
-	let f = |x: &I| match *x == *i {
+	let f = |x: &T| match *x == *i {
 		true => Ok(x.clone()),
 		false => Err(Error::UnexpectedToken),
 	};
 	satisfy(f)
 }
 
-pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
+pub fn satisfy<F, I, O, T>(f: F) -> impl Parser<I, O>
 where
-	F: Fn(&I) -> Result<O, Error>,
+	I: InputStream<Token = T>,
+	F: Fn(&T) -> Result<O, Error>,
 {
-	move |input| match input.first() {
+	move |input| match input.next() {
 		Some(token) => {
 			match f(token) {
 				Ok(result) => {
-					input.remove(0); // Consume if successful.
+					input.remove_next(); // Consume if successful.
 					Ok(result)
 				}
 				Err(e) => Err(e),
@@ -37,7 +47,10 @@ where
 	}
 }
 
-pub fn end_of_input<I>() -> impl Parser<I, ()> {
+pub fn end_of_input<I>() -> impl Parser<I, ()> 
+where
+	I: InputStream,
+{
 	|input| match input.len() {
 		0 => Ok(()),
 		_ => Err(Error::UnexpectedToken),
@@ -46,6 +59,7 @@ pub fn end_of_input<I>() -> impl Parser<I, ()> {
 
 pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
 where
+	I: InputStream,
 	P1: Parser<I, O>,
 	P2: Parser<I, O>,
 {
@@ -57,7 +71,8 @@ where
 
 pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
-	P: Fn(&mut Vec<I>) -> Result<O, Error>,
+	I: InputStream,
+	P: Parser<I, O>,
 {
 	|input| match parser(input) {
 		Ok(token) => Ok(Some(token)),
@@ -65,8 +80,9 @@ where
 	}
 }
 
-fn many<P, I, O>(parser: &P) -> impl Fn(&mut Vec<I>, Vec<O>) -> Result<Vec<O>, Error>
+fn many<P, I, O>(parser: &P) -> impl Fn(&mut I, Vec<O>) -> Result<Vec<O>, Error>
 where
+	I: InputStream,
 	P: Parser<I, O>,
 {
 	|input, mut output| match parser(input) {
@@ -80,6 +96,7 @@ where
 
 pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
+	I: InputStream,
 	P: Parser<I, O>,
 {
 	|input| {
@@ -90,6 +107,7 @@ where
 
 pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
+	I: InputStream,
 	P: Parser<I, O>,
 {
 	|input| {
@@ -106,6 +124,7 @@ where
 
 pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
 where
+	I: InputStream,
 	P: Parser<I, O> + 'a,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
@@ -119,18 +138,18 @@ where
 
 pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
 where
+	I: InputStream,
 	P: Parser<I, O>,
-	I : Clone
 {
 	move |input| {
-		let tokens = input[0..count].to_vec(); // Keep a copy of the tokens if we need to rewind.
+		let tokens = input.copy_range(0, count); // Keep a copy of the tokens if we need to rewind.
 		let mut output = Vec::with_capacity(count);
 		for i in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
 				Err(_) => {
 					// Abort, rewinding. Add past success tokens back to input.
-					input.splice(0..0, tokens[0..i].to_vec());
+					input.prepend_many(tokens.copy_range(0, i));
 					return Err(Error::UnexpectedToken)
 				},
 			}
