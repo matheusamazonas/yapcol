@@ -117,16 +117,22 @@ where
 	}
 }
 
-pub fn count<P, I, O>(parser: &P, count: u32) -> impl Parser<I, Vec<O>>
+pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
+	I : Clone
 {
 	move |input| {
-		let mut output: Vec<O> = Vec::new();
-		for _ in 0..count {
+		let tokens = input[0..count].to_vec(); // Keep a copy of the tokens if we need to rewind.
+		let mut output = Vec::with_capacity(count);
+		for i in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
-				Err(_) => break,
+				Err(_) => {
+					// Abort, rewinding. Add past success tokens back to input.
+					input.splice(0..0, tokens[0..i].to_vec());
+					return Err(Error::UnexpectedToken)
+				},
 			}
 		}
 		Ok(output)
