@@ -30,8 +30,8 @@ where
 
 pub fn satisfy<F, I, O, T>(f: F) -> impl Parser<I, O>
 where
-	I: InputStream<Token = T>,
 	F: Fn(&T) -> Result<O, Error>,
+	I: InputStream<Token = T>,
 {
 	move |input| match input.next() {
 		Some(token) => {
@@ -59,9 +59,9 @@ where
 
 pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
 where
-	I: InputStream,
 	P1: Parser<I, O>,
 	P2: Parser<I, O>,
+	I: InputStream,
 {
 	|input| match parser1(input) {
 		Ok(token) => Ok(token),
@@ -71,8 +71,8 @@ where
 
 pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
-	I: InputStream,
 	P: Parser<I, O>,
+	I: InputStream,
 {
 	|input| match parser(input) {
 		Ok(token) => Ok(Some(token)),
@@ -82,8 +82,8 @@ where
 
 fn many<P, I, O>(parser: &P) -> impl Fn(&mut I, Vec<O>) -> Result<Vec<O>, Error>
 where
-	I: InputStream,
 	P: Parser<I, O>,
+	I: InputStream,
 {
 	|input, mut output| match parser(input) {
 		Ok(token) => {
@@ -96,8 +96,8 @@ where
 
 pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
-	I: InputStream,
 	P: Parser<I, O>,
+	I: InputStream,
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
@@ -107,8 +107,8 @@ where
 
 pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
-	I: InputStream,
 	P: Parser<I, O>,
+	I: InputStream,
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
@@ -124,8 +124,8 @@ where
 
 pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
 where
-	I: InputStream,
 	P: Parser<I, O> + 'a,
+	I: InputStream,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
