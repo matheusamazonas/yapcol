@@ -10,6 +10,7 @@ pub trait InputStream : Index<usize, Output = Self::Token> {
 	fn prepend(&mut self, item: Self::Token);
 	fn prepend_many(&mut self, items: Self);
 	fn copy_range(&self, from: usize, to: usize) -> Self;
+	fn peek(&self) -> Self;
 }
 
 impl<I> InputStream for Vec<I>
@@ -44,5 +45,12 @@ where
 
 	fn copy_range(&self, from: usize, to: usize) -> Self {
 		self[from..to].to_vec()
+	}
+
+	fn peek(&self) -> Self {
+		match self.next() {
+			Some(item) => vec![item.clone()],
+			None => Vec::new()
+		}
 	}
 }

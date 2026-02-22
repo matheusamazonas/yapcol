@@ -158,10 +158,20 @@ where
 	}
 }
 
+
+pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	I: InputStream,
+{
+	|input| {
+		let mut next = input.peek();
+		parser(&mut next)
+	}
+}
 // TO DO list:
 // - between
 // - separated by (0, 1)
 // - chain left (0, 1)
 // - chain right (0, 1)
-// - look ahead
 // - any
