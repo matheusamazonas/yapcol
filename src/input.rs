@@ -4,7 +4,8 @@ pub trait InputStream : Index<usize, Output = Self::Token> {
 	type Token : Clone;
 	
 	fn len(&self) -> usize;
-	fn next(&self) -> Option<&Self::Token>;
+	fn next(&mut self) -> Option<Self::Token>;
+	fn next_as_ref(&mut self) -> Option<&Self::Token>;
 	fn remove_next(&mut self);
 	fn append(&mut self, item: Self::Token);
 	fn prepend(&mut self, item: Self::Token);
@@ -23,7 +24,15 @@ where
 		self.len()
 	}
 	
-	fn next(&self) -> Option<&I> {
+	fn next(&mut self) -> Option<I> {
+		if self.is_empty() {
+			None
+		} else {
+			Some(self.remove(0))
+		}
+	}
+
+	fn next_as_ref(&mut self) -> Option<&Self::Token> {
 		self.first()
 	}
 
@@ -48,7 +57,7 @@ where
 	}
 
 	fn peek(&self) -> Self {
-		match self.next() {
+		match self.first() {
 			Some(item) => vec![item.clone()],
 			None => Vec::new()
 		}

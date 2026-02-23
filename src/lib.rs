@@ -33,7 +33,7 @@ where
 	F: Fn(&T) -> Result<O, Error>,
 	I: InputStream<Token = T>,
 {
-	move |input| match input.next() {
+	move |input| match input.next_as_ref() {
 		Some(token) => {
 			match f(token) {
 				Ok(result) => {
@@ -63,9 +63,13 @@ where
 	P2: Parser<I, O>,
 	I: InputStream,
 {
-	|input| match parser1(input) {
+	|input| {
+		let initial_length = input.len();
+		match parser1(input) {
 		Ok(token) => Ok(token),
-		Err(_) => parser2(input),
+			Err(_) if input.len() == initial_length => parser2(input),
+			Err(e) => Err(e),
+		}
 	}
 }
 
@@ -157,7 +161,6 @@ where
 		Ok(output)
 	}
 }
-
 
 pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
 where
