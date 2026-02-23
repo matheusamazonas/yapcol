@@ -150,16 +150,11 @@ where
 	P: Parser<I, O>,
 {
 	move |input| {
-		let tokens = input.copy_range(0, count); // Keep a copy of the tokens if we need to rewind.
 		let mut output = Vec::with_capacity(count);
-		for i in 0..count {
+		for _ in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
-				Err(_) => {
-					// Abort, rewinding. Add past success tokens back to input.
-					input.prepend_many(tokens.copy_range(0, i));
-					return Err(Error::UnexpectedToken)
-				},
+				Err(_) => return Err(Error::UnexpectedToken)
 			}
 		}
 		Ok(output)

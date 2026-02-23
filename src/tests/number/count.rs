@@ -52,6 +52,4 @@ fn parse_count_not_enough() {
 	let parser = count(&parser, 5);
 	let output = parser(&mut tokens);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert_eq!(tokens, vec![1, 1, 1, 2, 1]);
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
 }

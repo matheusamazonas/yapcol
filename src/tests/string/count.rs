@@ -58,10 +58,7 @@ fn parse_count_not_enough() {
 	let mut tokens: Vec<_> = std::iter::repeat_n(input.clone(), 3).collect();
 	tokens.push(other.clone());
 	tokens.push(input.clone());
-	let backup_tokens = tokens.clone();
 	let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
 	let output = parser(&mut tokens);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert_eq!(tokens, backup_tokens);
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
 }
