@@ -78,9 +78,13 @@ where
 	P: Parser<I, O>,
 	I: InputStream,
 {
-	|input| match parser(input) {
+	|input| {
+		let initial_length = input.len();
+		match parser(input) {
 		Ok(token) => Ok(Some(token)),
-		Err(_) => Ok(None),
+			Err(_) if input.len() == initial_length => Ok(None),
+			Err(e) => Err(e),
+		}
 	}
 }
 
