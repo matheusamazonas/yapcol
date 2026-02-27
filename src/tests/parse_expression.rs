@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::{end_of_input, satisfy};
+use crate::input::Input;
 
 #[derive(Debug, PartialEq)]
 enum Operator {
@@ -13,7 +14,10 @@ enum Expression {
 	Operation(Box<Expression>, Operator, Box<Expression>),
 }
 
-fn parse_number() -> impl Fn(&mut Vec<String>) -> Result<Expression, Error> {
+fn parse_number<I>() -> impl Fn(&mut Input<I>) -> Result<Expression, Error>
+where
+	I: Iterator<Item = String>,
+{
 	let f = |i: &String| match i.parse::<i32>() {
 		Ok(number) => Ok(Expression::Number(number)),
 		Err(_) => Err(Error::UnexpectedToken),
@@ -21,7 +25,10 @@ fn parse_number() -> impl Fn(&mut Vec<String>) -> Result<Expression, Error> {
 	satisfy(f)
 }
 
-fn parse_operator() -> impl Fn(&mut Vec<String>) -> Result<Operator, Error> {
+fn parse_operator<I>() -> impl Fn(&mut Input<I>) -> Result<Operator, Error>
+where
+	I: Iterator<Item = String>,
+{
 	let f = |i: &String| match i.as_str() {
 		"+" => Ok(Operator::Plus),
 		"-" => Ok(Operator::Minus),
@@ -30,8 +37,11 @@ fn parse_operator() -> impl Fn(&mut Vec<String>) -> Result<Operator, Error> {
 	satisfy(f)
 }
 
-fn parse_operation() -> impl Fn(&mut Vec<String>) -> Result<Expression, Error> {
-	|input: &mut Vec<String>| {
+fn parse_operation<I>() -> impl Fn(&mut Input<I>) -> Result<Expression, Error>
+where
+	I: Iterator<Item = String>,
+{
+	|input: &mut Input<_>| {
 		let e1 = parse_number()(input)?;
 		let op = parse_operator()(input)?;
 		let e2 = parse_number()(input)?;
@@ -44,7 +54,8 @@ fn parse_operation() -> impl Fn(&mut Vec<String>) -> Result<Expression, Error> {
 #[test]
 fn test_parse_number() {
 	let number = "123";
-	let mut input = vec![String::from(number)];
+	let tokens = vec![String::from(number)];
+	let mut input = Input::new(tokens);
 	let parser = parse_number();
 	assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 }
@@ -67,13 +78,14 @@ fn test_parse_addition() {
 	let input1 = number1.to_string();
 	let input2 = number2.to_string();
 	let operation = String::from("+");
-	let mut tokens = vec![input1, operation, input2];
+	let tokens = vec![input1, operation, input2];
+	let mut input = Input::new(tokens);
 	let parser = parse_operation();
-	let output = parser(&mut tokens);
+	let output = parser(&mut input);
 	assert!(output.is_ok());
 	let e = output.unwrap();
 	assert_operation(e, number1, Operator::Plus, number2);
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
@@ -83,13 +95,14 @@ fn test_parse_subtraction() {
 	let input1 = number1.to_string();
 	let input2 = number2.to_string();
 	let operation = String::from("-");
-	let mut tokens = vec![input1, operation, input2];
+	let tokens = vec![input1, operation, input2];
+	let mut input = Input::new(tokens);
 	let parser = parse_operation();
-	let output = parser(&mut tokens);
+	let output = parser(&mut input);
 	assert!(output.is_ok());
 	let e = output.unwrap();
 	assert_operation(e, number1, Operator::Minus, number2);
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
@@ -99,9 +112,10 @@ fn test_parse_invalid_operation() {
 	let input1 = number1.to_string();
 	let input2 = number2.to_string();
 	let operation = String::from("%");
-	let mut tokens = vec![input1, operation, input2];
+	let tokens = vec![input1, operation, input2];
+	let mut input = Input::new(tokens);
 	let parser = parse_operation();
-	let output = parser(&mut tokens);
+	let output = parser(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }

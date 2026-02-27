@@ -9,24 +9,28 @@ fn parse_choice_success() {
 		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 	let parser_choice = choice(&parsers);
 	// 1, success.
-	let mut tokens = vec![1];
-	let output = parser_choice(&mut tokens).unwrap();
+	let tokens = vec![1];
+	let mut input = Input::new(tokens);
+	let output = parser_choice(&mut input).unwrap();
 	assert_eq!(output, 1);
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 2, success.
-	let mut tokens = vec![2];
-	let output = parser_choice(&mut tokens).unwrap();
+	let tokens = vec![2];
+	let mut input = Input::new(tokens);
+	let output = parser_choice(&mut input).unwrap();
 	assert_eq!(output, 2);
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 3, success.
-	let mut tokens = vec![3];
-	let output = parser_choice(&mut tokens).unwrap();
+	let tokens = vec![3];
+	let mut input = Input::new(tokens);
+	let output = parser_choice(&mut input).unwrap();
 	assert_eq!(output, 3);
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 4, fail.
-	let mut tokens = vec![4];
-	assert_eq!(parser_choice(&mut tokens), Err(Error::UnexpectedToken));
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+	let tokens = vec![4];
+	let mut input = Input::new(tokens);
+	assert_eq!(parser_choice(&mut input), Err(Error::UnexpectedToken));
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }
 
 #[test]
@@ -38,17 +42,20 @@ fn parse_choice_with_negative_and_zero() {
 		vec![Box::new(p_neg1), Box::new(p_zero), Box::new(p_pos1)];
 	let parser_choice = choice(&parsers);
 	// -1
-	let mut tokens = vec![-1];
-	assert_eq!(parser_choice(&mut tokens), Ok(-1));
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	let tokens = vec![-1];
+	let mut input = Input::new(tokens);
+	assert_eq!(parser_choice(&mut input), Ok(-1));
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 0
-	let mut tokens = vec![0];
-	assert_eq!(parser_choice(&mut tokens), Ok(0));
-	assert!(end_of_input()(&mut tokens).is_ok()); // Ensure that the input was consumed.
+	let tokens = vec![0];
+	let mut input = Input::new(tokens);
+	assert_eq!(parser_choice(&mut input), Ok(0));
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 2 fails
-	let mut tokens = vec![2];
-	assert_eq!(parser_choice(&mut tokens), Err(Error::UnexpectedToken));
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+	let tokens = vec![2];
+	let mut input = Input::new(tokens);
+	assert_eq!(parser_choice(&mut input), Err(Error::UnexpectedToken));
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }
 
 #[test]
@@ -59,8 +66,9 @@ fn parse_choice_fail() {
 	let parsers: Vec<Box<dyn Parser<_, _>>> =
 		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 	let parser_choice = choice(&parsers);
-	let mut tokens = vec![4];
-	let output = parser_choice(&mut tokens);
+	let tokens = vec![4];
+	let mut input = Input::new(tokens);
+	let output = parser_choice(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert!(end_of_input()(&mut tokens).is_err()); // Ensure that the input was NOT consumed.
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }

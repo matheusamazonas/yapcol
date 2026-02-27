@@ -1,45 +1,44 @@
-use std::ops::Index;
+use std::iter::Peekable;
 
-pub trait InputStream : Index<usize, Output = Self::Token> {
-	type Token : Clone;
-	
-	fn len(&self) -> usize;
-	fn next(&mut self) -> Option<Self::Token>;
-	fn next_as_ref(&mut self) -> Option<&Self::Token>;
-	fn remove_next(&mut self);
-	fn peek(&self) -> Self;
+pub struct Input<I> 
+where
+	I: Iterator,
+	I::Item: PartialEq,
+{
+	stream: Peekable<I>,
+	consumed_count: u32
 }
 
-impl<I> InputStream for Vec<I>
+impl <I> Input<I>
 where
-	I : Clone
+	I: Iterator,
+	I::Item: PartialEq,
 {
-	type Token = I;
-	
-	fn len(&self) -> usize {
-		self.len()
-	}
-	
-	fn next(&mut self) -> Option<I> {
-		if self.is_empty() {
-			None
-		} else {
-			Some(self.remove(0))
+	pub fn new<T>(i: impl IntoIterator<Item = T, IntoIter =I>) -> Input<I> 
+	where
+		I: Iterator<Item = T>,
+	{
+		Self { 
+			stream: i.into_iter().peekable(), 
+			consumed_count: 0 
 		}
 	}
 
-	fn next_as_ref(&mut self) -> Option<&Self::Token> {
-		self.first()
-	}
-
-	fn remove_next(&mut self) {
-		self.remove(0);
-	}
-
-	fn peek(&self) -> Self {
-		match self.first() {
-			Some(item) => vec![item.clone()],
-			None => Vec::new()
+	pub fn next_token(&mut self) -> Option<I::Item> {
+		match self.stream.next() {
+			Some(item) => {
+				self.consumed_count += 1;
+				Some(item)
+			},
+			None => None
 		}
+	}
+	
+	pub fn peek(&mut self) -> Option<&I::Item> {
+		self.stream.peek()
+	}
+	
+	pub fn consumed_count(&self) -> u32 {
+		self.consumed_count
 	}
 }
