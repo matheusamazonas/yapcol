@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::input::Input;
+use crate::input::{Input, Token};
 
 pub mod error;
 #[cfg(test)]
@@ -88,7 +88,7 @@ pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
 where
 	F: Fn(&I::Item) -> Result<O, Error>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	move |input| match input.peek() {
 		Some(token) => {
@@ -128,7 +128,7 @@ where
 pub fn end_of_input<I>() -> impl Parser<I, ()> 
 where
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| match input.peek() {
 		None => Ok(()),
@@ -178,7 +178,7 @@ where
 	P1: Parser<I, O>,
 	P2: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -221,7 +221,7 @@ pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
 	P: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -237,7 +237,7 @@ fn many<P, I, O>(parser: &P) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>,
 where
 	P: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input, mut output| match parser(input) {
 		Ok(token) => {
@@ -277,7 +277,7 @@ pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
@@ -314,7 +314,7 @@ pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
@@ -359,7 +359,7 @@ pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
 where
 	P: Parser<I, O> + 'a,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
@@ -412,7 +412,7 @@ where
 pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
 where
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 	P: Parser<I, O>,
 {
 	move |input| {
@@ -471,7 +471,7 @@ pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
 where
 	P: Parser<I, O>,
 	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I::Item: Token,
 {
 	|input| {
 		// let mut next = input.peek();

@@ -1,9 +1,13 @@
 use std::iter::Peekable;
 
+pub trait Token : PartialEq + Clone { }
+
+impl <T> Token for T where T: PartialEq + Clone { }
+
 pub struct Input<I> 
 where
 	I: Iterator,
-	I::Item: PartialEq,
+	I::Item: Token,
 {
 	stream: Peekable<I>,
 	consumed_count: u32
@@ -12,7 +16,7 @@ where
 impl <I> Input<I>
 where
 	I: Iterator,
-	I::Item: PartialEq,
+	I::Item: Token,
 {
 	pub fn new<T>(i: impl IntoIterator<Item = T, IntoIter =I>) -> Input<I> 
 	where
