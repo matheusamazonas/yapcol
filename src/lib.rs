@@ -427,11 +427,10 @@ where
 	}
 }
 
-/// Creates a parser that applies the given parser to the next token without consuming any input.
+/// Creates a parser that applies the given parser without consuming any input.
 ///
-/// The parser is applied only to the next token (and not beyond). If the parser succeeds, the
-/// matched value is returned, but the input is left unchanged. If the parser fails, the input is
-/// also left unchanged.
+/// If the given parser succeeds, the matched value is returned, but the input is left unchanged. 
+/// If the given parser fails consuming input, so does `look_ahead`. 
 ///
 /// # Arguments
 ///
@@ -446,26 +445,24 @@ where
 /// // Succeeds and returns the matched value without consuming input
 /// let tokens = vec![1, 2, 3];
 /// let mut input = Input::new(tokens);
-/// let parser = is(&1);
-/// assert_eq!(look_ahead(&parser)(&mut input), Ok(1));
+/// let parser1 = is(&1);
+/// assert_eq!(look_ahead(&parser1)(&mut input), Ok(1));
 /// assert_eq!(input.next_token(), Some(1)); // Input was not consumed.
 /// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
 /// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
 ///
-/// // Can be applied multiple times since input is never consumed
-/// assert_eq!(look_ahead(&parser)(&mut input), Ok(1));
 ///
 /// // Fails without consuming input when the token does not match
 /// let tokens = vec![2, 3];
 /// let mut input = Input::new(tokens);
-/// assert!(look_ahead(&parser)(&mut input).is_err());
+/// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
 /// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
-///
+/// 
 /// // Fails on empty input
 /// let tokens: Vec<i32> = vec![];
 /// let mut input = Input::new(tokens);
-/// assert!(look_ahead(&parser)(&mut input).is_err());
+/// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// ```
 pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
 where
@@ -474,9 +471,19 @@ where
 	I::Item: Token,
 {
 	|input| {
-		// let mut next = input.peek();
-		// parser(&mut next)
-		todo!()
+		let consume_count = input.consumed_count();
+		input.start_peeking();
+		match parser(input) {
+			Ok(token) => {
+				input.stop_peeking(true);
+				Ok(token)
+			},
+			Err(e) => {
+				let should_backtrack = consume_count == input.consumed_count();
+				input.stop_peeking(should_backtrack);
+				Err(e)
+			}
+		}
 	}
 }
 
