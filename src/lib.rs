@@ -90,7 +90,7 @@ where
 	I: Iterator,
 	I::Item: Token,
 {
-	move |input| match input.peek() {
+	move |input| match input.peek_next() {
 		Some(token) => {
 			match f(token) {
 				Ok(result) => {
@@ -130,7 +130,7 @@ where
 	I: Iterator,
 	I::Item: Token,
 {
-	|input| match input.peek() {
+	|input| match input.peek_next() {
 		None => Ok(()),
 		_ => Err(Error::UnexpectedToken),
 	}

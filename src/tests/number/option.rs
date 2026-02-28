@@ -59,7 +59,7 @@ fn parse_option_not_consuming_succeeds() {
 	let tokens = vec![1, 3];
 	let mut input = Input::new(tokens);
 	let non_consuming_parser = |input: &mut Input<_>| {
-		let next = input.peek().unwrap(); // `next_as_ref` does not consumes input.
+		let next = input.peek_next().unwrap(); // `next_as_ref` does not consumes input.
 		if next % 2 == 0 {
 			input.next_token(); // Consume only if success.
 			is_1(input)

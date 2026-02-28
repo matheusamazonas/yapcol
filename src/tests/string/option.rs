@@ -51,7 +51,7 @@ fn parse_option_consuming_fails() {
 	let mut input = Input::new(tokens);
 	let consuming_parser = |input: &mut Input<_>| {
 		// Consume regardless of success.
-		let next: &String = input.peek().unwrap(); // `next` consumes input.
+		let next: &String = input.peek_next().unwrap(); // `next` consumes input.
 		if next.len().is_multiple_of(2) {
 			parser2(input)
 		} else {
@@ -72,7 +72,7 @@ fn parse_option_not_consuming_succeeds() {
 	let tokens = vec![hello.clone(), hallo.clone()];
 	let mut input = Input::new(tokens);
 	let non_consuming_parser = |input: &mut Input<_>| {
-		let next: &String = input.peek().unwrap();
+		let next: &String = input.peek_next().unwrap();
 		if next.len().is_multiple_of(2) {
 			input.next_token(); // Consume only if success.
 			is_hallo(input)
