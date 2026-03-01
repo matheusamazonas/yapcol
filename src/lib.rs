@@ -8,13 +8,13 @@ mod tests;
 
 pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error>
 where
-	I: Iterator,
+	I: Iterator<Item : Token>,
 {
 }
 
 impl<I, O, T> Parser<I, O> for T
 where
-	I: Iterator,
+	I: Iterator<Item : Token>,
 	T: Fn(&mut Input<I>) -> Result<O, Error>,
 {
 }
@@ -46,8 +46,7 @@ where
 /// ```
 pub fn is<I>(i: &I::Item) -> impl Parser<I, I::Item>
 where
-	I: Iterator,
-	I::Item: PartialEq + Clone,
+	I: Iterator<Item : Token>,
 {
 	let f = |x: &I::Item| match *x == *i {
 		true => Ok((*x).clone()),
@@ -89,8 +88,7 @@ where
 pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
 where
 	F: Fn(&I::Item) -> Result<O, Error>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	move |input| match input.next_token_ref() {
 		Some(token) => {
@@ -128,8 +126,7 @@ where
 /// ```
 pub fn end_of_input<I>() -> impl Parser<I, ()>
 where
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| match input.next_token_ref() {
 		None => Ok(()),
@@ -177,8 +174,7 @@ pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
 where
 	P1: Parser<I, O>,
 	P2: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -220,8 +216,7 @@ where
 pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
 	P: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -236,8 +231,7 @@ where
 fn many<P, I, O>(parser: &P) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
 where
 	P: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input, mut output| match parser(input) {
 		Ok(token) => {
@@ -276,8 +270,7 @@ where
 pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
@@ -313,8 +306,7 @@ where
 pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
@@ -358,8 +350,7 @@ where
 pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
 where
 	P: Parser<I, O> + 'a,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
@@ -411,9 +402,8 @@ where
 /// ```
 pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
 where
-	I: Iterator,
-	I::Item: Token,
 	P: Parser<I, O>,
+	I: Iterator<Item : Token>,
 {
 	move |input| {
 		let mut output = Vec::with_capacity(count);
@@ -479,8 +469,7 @@ where
 pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
 where
 	P: Parser<I, O>,
-	I: Iterator,
-	I::Item: Token,
+	I: Iterator<Item : Token>,
 {
 	|input| {
 		input.start_peeking();
