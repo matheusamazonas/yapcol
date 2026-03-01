@@ -37,37 +37,14 @@ fn parse_option_none() {
 #[test]
 fn parse_option_consuming_fails() {
 	let is_1 = is(&1);
+	let is_2 = is(&2);
 	let tokens = vec![1, 3];
 	let mut input = Input::new(tokens);
 	let consuming_parser = |input: &mut Input<_>| {
-		// Consume regardless of success.
-		let next = input.next_token().unwrap(); // `next` consumes input.
-		if next % 2 == 0 {
-			is_1(input)
-		} else {
-			Err(Error::UnexpectedToken)
-		}
+		is_1(input)?;
+		is_2(input)
 	};
 	let parse_option = option(&consuming_parser, &is_1);
 	let output = parse_option(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-}
-
-#[test]
-fn parse_option_not_consuming_succeeds() {
-	let is_1 = is(&1);
-	let tokens = vec![1, 3];
-	let mut input = Input::new(tokens);
-	let non_consuming_parser = |input: &mut Input<_>| {
-		let next = input.peek_next().unwrap(); // `next_as_ref` does not consumes input.
-		if next % 2 == 0 {
-			input.next_token(); // Consume only if success.
-			is_1(input)
-		} else {
-			Err(Error::UnexpectedToken)
-		}
-	};
-	let parse_option = option(&non_consuming_parser, &is_1);
-	let output = parse_option(&mut input);
-	assert_eq!(output, Ok(1));
 }

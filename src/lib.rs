@@ -2,23 +2,26 @@ use crate::error::Error;
 use crate::input::{Input, Token};
 
 pub mod error;
+pub mod input;
 #[cfg(test)]
 mod tests;
-pub mod input;
 
-pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error> 
+pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error>
 where
-I: Iterator,
-{}
+	I: Iterator,
+{
+}
 
 impl<I, O, T> Parser<I, O> for T
-where 
+where
 	I: Iterator,
-	T: Fn(&mut Input<I>) -> Result<O, Error> { }
+	T: Fn(&mut Input<I>) -> Result<O, Error>,
+{
+}
 
 /// Creates a parser that succeeds if the next token in the input equals `i`.
 ///
-/// If the token matches, it is consumed and returned. If the token does not match, the parser 
+/// If the token matches, it is consumed and returned. If the token does not match, the parser
 /// fails without consuming any input.
 ///
 /// # Arguments
@@ -46,11 +49,10 @@ where
 	I: Iterator,
 	I::Item: PartialEq + Clone,
 {
-	let f = |x: &I::Item|
-		match *x == *i {
-			true => Ok((*x).clone()),
-			false => Err(Error::UnexpectedToken),
-		};
+	let f = |x: &I::Item| match *x == *i {
+		true => Ok((*x).clone()),
+		false => Err(Error::UnexpectedToken),
+	};
 	satisfy(f)
 }
 
@@ -61,7 +63,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `f` - A predicate that takes a reference to a token and returns `Ok` on success or 
+/// * `f` - A predicate that takes a reference to a token and returns `Ok` on success or
 ///   `Err` on failure.
 ///
 /// # Examples
@@ -90,7 +92,7 @@ where
 	I: Iterator,
 	I::Item: Token,
 {
-	move |input| match input.peek_next() {
+	move |input| match input.next_token_ref() {
 		Some(token) => {
 			match f(token) {
 				Ok(result) => {
@@ -120,21 +122,20 @@ where
 /// assert!(end_of_input()(&mut input).is_ok());
 ///
 /// let tokens: Vec<char> = vec!['a', 'b'];
-/// let mut input = Input::new(tokens); 
+/// let mut input = Input::new(tokens);
 /// assert!(end_of_input()(&mut input).is_err());
 /// assert_eq!(input.consumed_count(), 0); // Input was not consumed.
 /// ```
-pub fn end_of_input<I>() -> impl Parser<I, ()> 
+pub fn end_of_input<I>() -> impl Parser<I, ()>
 where
 	I: Iterator,
 	I::Item: Token,
 {
-	|input| match input.peek_next() {
+	|input| match input.next_token_ref() {
 		None => Ok(()),
 		_ => Err(Error::UnexpectedToken),
 	}
 }
-
 
 /// Creates a parser based on two input parsers. It tries the first parser and falls back to the
 /// second if the first fails without consuming input.
@@ -341,7 +342,7 @@ where
 /// let p2 = is(&2);
 /// let parsers = vec![p1, p2];
 /// let tokens = vec![2, 3];
-/// let mut input = Input::new(tokens); 
+/// let mut input = Input::new(tokens);
 /// assert_eq!(choice(&parsers)(&mut input), Ok(2));
 ///
 /// // Fails when no parser matches
@@ -419,7 +420,7 @@ where
 		for _ in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
-				Err(_) => return Err(Error::UnexpectedToken)
+				Err(_) => return Err(Error::UnexpectedToken),
 			}
 		}
 		Ok(output)
@@ -428,7 +429,7 @@ where
 
 /// Creates a parser that does not consume input in case the given parser succeeds.
 ///
-/// If the given parser succeeds, the matched value is returned, but the input is left unchanged. 
+/// If the given parser succeeds, the matched value is returned, but the input is left unchanged.
 /// If the given parser fails consuming input, this parser also fails consuming input.
 ///
 /// # Arguments
@@ -440,8 +441,9 @@ where
 /// ```
 /// use yapcol_rs::{look_ahead, is, end_of_input};
 /// use yapcol_rs::input::Input;
+/// use yapcol_rs::error::Error;
 ///
-/// // Succeeds and returns the matched value without consuming input
+/// // Succeeds without consuming input.
 /// let tokens = vec![1, 2, 3];
 /// let mut input = Input::new(tokens);
 /// let parser1 = is(&1);
@@ -451,13 +453,25 @@ where
 /// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
 ///
 ///
-/// // Fails consuming input when the token does not match
+/// // Fails without consuming input.
 /// let tokens = vec![2, 3];
 /// let mut input = Input::new(tokens);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
-/// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
-/// 
-/// // Fails on empty input
+/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
+///
+/// // Fails consuming input if the parser consumes.
+/// let tokens = vec![1, 3];
+/// let mut input = Input::new(tokens);
+/// let consuming_parser = |input: &mut Input<_>| {
+///     let o1 = parser1(input)?;
+///     let o2 = parser1(input)?;
+///     Ok((o1, o2))
+/// };
+/// let output = look_ahead(&consuming_parser)(&mut input);
+/// assert_eq!(output, Err(Error::UnexpectedToken));
+/// assert_eq!(input.next_token(), Some(3)); // Input was consumed.
+///
+/// // Fails on empty input.
 /// let tokens: Vec<i32> = vec![];
 /// let mut input = Input::new(tokens);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());

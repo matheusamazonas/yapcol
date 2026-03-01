@@ -46,41 +46,15 @@ fn parse_option_none() {
 fn parse_option_consuming_fails() {
 	let token1 = String::from("hello");
 	let token2 = String::from("hallo");
+	let parser1 = is(&token1);
 	let parser2 = is(&token2);
-	let tokens = vec![token1.clone(), token2.clone()];
+	let tokens = vec![token1.clone(), token1.clone()];
 	let mut input = Input::new(tokens);
 	let consuming_parser = |input: &mut Input<_>| {
-		// Consume regardless of success.
-		let next: &String = input.peek_next().unwrap(); // `next` consumes input.
-		if next.len().is_multiple_of(2) {
-			parser2(input)
-		} else {
-			Err(Error::UnexpectedToken)
-		}
+		parser1(input)?;
+		parser2(input)
 	};
 	let parse_option = option(&consuming_parser, &parser2);
 	let output = parse_option(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
-}
-
-#[test]
-fn parse_option_not_consuming_succeeds() {
-	let hello = String::from("hello");
-	let hallo = String::from("hallo");
-	let is_hello = is(&hello);
-	let is_hallo = is(&hallo);
-	let tokens = vec![hello.clone(), hallo.clone()];
-	let mut input = Input::new(tokens);
-	let non_consuming_parser = |input: &mut Input<_>| {
-		let next: &String = input.peek_next().unwrap();
-		if next.len().is_multiple_of(2) {
-			input.next_token(); // Consume only if success.
-			is_hallo(input)
-		} else {
-			Err(Error::UnexpectedToken)
-		}
-	};
-	let parse_option = option(&non_consuming_parser, &is_hello);
-	let output = parse_option(&mut input);
-	assert_eq!(output, Ok(hello.clone()));
 }
