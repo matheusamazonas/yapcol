@@ -104,7 +104,6 @@ where
 	}
 }
 
-
 /// Creates a parser that succeeds only if the input stream is empty.
 ///
 /// If the input is empty, the parser succeeds and returns `()`. If the input still has tokens,
@@ -427,14 +426,14 @@ where
 	}
 }
 
-/// Creates a parser that applies the given parser without consuming any input.
+/// Creates a parser that does not consume input in case the given parser succeeds.
 ///
 /// If the given parser succeeds, the matched value is returned, but the input is left unchanged. 
-/// If the given parser fails consuming input, so does `look_ahead`. 
+/// If the given parser fails consuming input, this parser also fails consuming input.
 ///
 /// # Arguments
 ///
-/// * `parser` - The parser to apply to the next token.
+/// * `parser` - The parser to look ahead.
 ///
 /// # Examples
 ///
@@ -452,11 +451,10 @@ where
 /// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
 ///
 ///
-/// // Fails without consuming input when the token does not match
+/// // Fails consuming input when the token does not match
 /// let tokens = vec![2, 3];
 /// let mut input = Input::new(tokens);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
-/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
 /// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
 /// 
 /// // Fails on empty input
@@ -471,19 +469,13 @@ where
 	I::Item: Token,
 {
 	|input| {
-		let consume_count = input.consumed_count();
 		input.start_peeking();
-		match parser(input) {
-			Ok(token) => {
-				input.stop_peeking(true);
-				Ok(token)
-			},
-			Err(e) => {
-				let should_backtrack = consume_count == input.consumed_count();
-				input.stop_peeking(should_backtrack);
-				Err(e)
-			}
-		}
+		let output = parser(input);
+		input.stop_peeking(output.is_ok());
+		output
+	}
+}
+
 	}
 }
 
