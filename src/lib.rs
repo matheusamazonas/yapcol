@@ -556,8 +556,43 @@ where
 	}
 }
 
+/// Applies parsers `open` and `close` around `parser`. Often used for parenthesis, brackets, etc.
+/// 
+/// # Arguments 
+/// 
+/// * `open`: The parser that "opens" the between.
+/// * `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
+/// * `close`: The parser that "closes" the between.
+/// 
+/// # Examples 
+/// 
+/// ```
+/// use yapcol_rs::{is, between};
+/// use yapcol_rs::input::Input;
+/// 
+/// let tokens: Vec<i32> = vec![1, 2, 1];
+/// let mut input = Input::new(tokens);
+/// let parser1 = is(&(1));
+/// let parser2 = is(&(2));
+/// let output = between(&parser1, &parser2, &parser1)(&mut input);
+/// assert_eq!(output, Ok(2));
+/// ```
+pub fn between<PO, PC, P, I, O, OO, OC>(open: PO, parser: P, close: PC) -> impl Parser<I, O>
+where
+	PO: Parser<I, OO>,
+	PC: Parser<I, OC>,
+	P: Parser<I, O>,
+	I: Iterator<Item: Token>,
+{
+	move |input| {
+		open(input)?;
+		let output = parser(input)?;
+		close(input)?;
+		Ok(output)
+	}
+}
+
 // TO DO list:
-// - between
 // - separated by (0, 1)
 // - chain left (0, 1)
 // - chain right (0, 1)
