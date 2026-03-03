@@ -140,6 +140,9 @@ where
 /// If `parser1` succeeds, its result is returned. If `parser1` fails without consuming any input,
 /// `parser2` is applied and its result is returned. If `parser1` fails consuming input, the
 /// error is propagated and no attempt to apply `parser2` is made.
+/// 
+///  If you would like to attempt to apply `parser2` even if `parser1` failed consuming input,
+/// check the `attempt` parser combinator.
 ///
 /// # Arguments
 ///
@@ -479,8 +482,79 @@ where
 	}
 }
 
+/// Creates a parser that does not consume input in case the given parser fails.
+///
+/// If the given parser succeeds, the matched value is returned. If the given parser consumed input,
+/// this parser also does.
+/// If the given parser fails consuming input, this parser also fails, but does not consume input.
+/// 
+/// This combinator is often used alongside `option` whenever both input parsers share a prefix. By
+/// doing so, we prevent `option` from failing if its first parser argument failed while consuming
+/// input. For example:
+/// ```rust,ignore
+/// // Instead of this, where `option` would fail early and not even try applying `parser2`.
+/// let parser = option(&parser1, &parser2);
+/// // Do this, so if `parser1` fails consuming input, `parser2` will be applied.
+/// let attempt_parser_1 = attempt(&parser1);
+/// let parser = option(&attempt_parser_1, &parser2);
+/// ```
+///
+/// Warning: this combinator implements arbitrary lookahead. 
+///
+/// # Arguments
+///
+/// * `parser`: The parser to attempt to look ahead.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol_rs::{attempt, is, end_of_input};
+/// use yapcol_rs::input::Input;
+/// use yapcol_rs::error::Error;
+///
+/// // Succeeds consuming input.
+/// let tokens = vec![1, 2, 3];
+/// let mut input = Input::new(tokens);
+/// let parser1 = is(&1);
+/// assert_eq!(attempt(&parser1)(&mut input), Ok(1));
+/// assert_eq!(input.next_token(), Some(2)); // Input was consumed.
+///
+/// // Fails without consuming input.
+/// let tokens = vec![2, 3];
+/// let mut input = Input::new(tokens);
+/// assert!(attempt(&parser1)(&mut input).is_err());
+/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
+/// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
+///
+/// // Fails without consuming input if the parser consumes.
+/// let tokens = vec![1, 3];
+/// let mut input = Input::new(tokens);
+/// let consuming_parser = |input: &mut Input<_>| {
+///     let o1 = parser1(input)?;
+///     let o2 = parser1(input)?;
+///     Ok((o1, o2))
+/// };
+/// let output = attempt(&consuming_parser)(&mut input);
+/// assert_eq!(output, Err(Error::UnexpectedToken));
+/// assert_eq!(input.next_token(), Some(1)); // Input was not consumed.
+///
+/// // Fails on empty input
+/// let tokens: Vec<i32> = vec![];
+/// let mut input = Input::new(tokens);
+/// assert!(attempt(&parser1)(&mut input).is_err());
+/// ```
+pub fn attempt<P, I, O>(parser: &P) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	I: Iterator<Item : Token>,
+{
+	|input| {
+		input.start_peeking();
+		let output = parser(input);
+		input.stop_peeking(output.is_err());
+		output
 	}
-}
+} 
 
 // TO DO list:
 // - between

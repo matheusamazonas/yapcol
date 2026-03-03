@@ -1,8 +1,9 @@
-mod is;
-mod option;
-mod maybe;
-mod many0;
-mod many1;
+mod attempt;
 mod choice;
 mod count;
+mod is;
 mod look_ahead;
+mod many0;
+mod many1;
+mod maybe;
+mod option;
