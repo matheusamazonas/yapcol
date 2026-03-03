@@ -592,8 +592,32 @@ where
 	}
 }
 
+/// A simple combinator that returns the next token in the input, if any.
+///
+/// # Examples
+/// 
+/// ```
+/// use yapcol_rs::{any};
+/// use yapcol_rs::input::Input;
+///
+/// // An example input iterator
+/// let tokens: Vec<i32> = vec![1, 2, 3];
+/// let mut input = Input::new(tokens);
+/// let output = any()(&mut input);
+/// assert_eq!(output, Ok(1));
+/// ```
+pub fn any<I>() -> impl Parser<I, I::Item>
+where
+	I: Iterator<Item: Token>,
+{
+	|input| match input.next_token() {
+		Some(token) => Ok(token),
+		None => Err(Error::EndOfInput),
+	}
+}
+
 // TO DO list:
 // - separated by (0, 1)
 // - chain left (0, 1)
 // - chain right (0, 1)
-// - any
+// - notFollowedBy
