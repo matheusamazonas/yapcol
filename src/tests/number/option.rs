@@ -1,5 +1,5 @@
-use std::vec;
 use crate::*;
+use std::vec;
 
 #[test]
 fn parse_option_first() {

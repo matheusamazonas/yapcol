@@ -7,7 +7,7 @@ impl<T> Token for T where T: PartialEq + Clone {}
 
 pub struct Input<I>
 where
-	I: Iterator<Item : Token>,
+	I: Iterator<Item: Token>,
 {
 	stream: Peekable<I>,
 	consumed_count: u32,
@@ -18,7 +18,7 @@ where
 
 impl<I> Input<I>
 where
-	I: Iterator<Item : Token>,
+	I: Iterator<Item: Token>,
 {
 	pub fn new<T>(i: impl IntoIterator<Item = T, IntoIter = I>) -> Input<I>
 	where

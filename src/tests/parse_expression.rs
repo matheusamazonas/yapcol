@@ -1,6 +1,6 @@
 use crate::error::Error;
-use crate::{end_of_input, satisfy};
 use crate::input::Input;
+use crate::{end_of_input, satisfy};
 
 #[derive(Debug, PartialEq)]
 enum Operator {

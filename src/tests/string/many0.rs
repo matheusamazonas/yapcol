@@ -16,8 +16,7 @@ fn parse_many0_no_match_not_empty() {
 	let token_count = 100;
 	let token = String::from("hello");
 	let parser = is(&token);
-	let tokens = std::iter::repeat_n(String::from("hallo"), token_count)
-		.collect::<Vec<_>>();
+	let tokens = std::iter::repeat_n(String::from("hallo"), token_count).collect::<Vec<_>>();
 	let mut input = Input::new(tokens);
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut input).unwrap();

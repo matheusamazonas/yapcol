@@ -23,8 +23,14 @@ fn parse_maybe_fail_non_consuming() {
 #[test]
 fn parse_maybe_fail_consuming() {
 	let parser = |input: &mut Input<_>| match input.next_token() {
-		Some(token) => if token == 1 { Ok(1) } else { Err(Error::UnexpectedToken)},
-		None => Err(Error::EndOfInput)
+		Some(token) => {
+			if token == 1 {
+				Ok(1)
+			} else {
+				Err(Error::UnexpectedToken)
+			}
+		}
+		None => Err(Error::EndOfInput),
 	};
 	let tokens = vec![2];
 	// todo!()

@@ -31,9 +31,9 @@ fn parse_count_all_same() {
 	let mut input = Input::new(tokens);
 	let parser = count(&parser, repeat_count);
 	let output = parser(&mut input).unwrap();
-	assert_eq!(output.len(), repeat_count);        // The count matched the request.
-	assert!(output.iter().all(|x| *x == token));   // All values match the parser's.
-	assert!(end_of_input()(&mut input).is_ok());   // Ensure that the input was consumed.
+	assert_eq!(output.len(), repeat_count); // The count matched the request.
+	assert!(output.iter().all(|x| *x == token)); // All values match the parser's.
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
@@ -49,9 +49,9 @@ fn parse_count_one_different() {
 	let mut input = Input::new(tokens);
 	let parser = count(&parser, repeat_count);
 	let output = parser(&mut input).unwrap();
-	assert!(output.iter().all(|x| *x == token));  // All values match the parser's.
+	assert!(output.iter().all(|x| *x == token)); // All values match the parser's.
 	assert_eq!(input.consumed_count(), repeat_count as u32); // Input was left intact.
-	assert_eq!(input.next_token(), Some(other));       // Input was consumed as much as possible.
+	assert_eq!(input.next_token(), Some(other)); // Input was consumed as much as possible.
 }
 
 #[test]

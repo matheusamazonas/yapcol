@@ -159,7 +159,7 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	let parser1 = is(&token1);
 	let parser2 = is(&token2);
 	let parser3 = is(&token3);
-		let parser13 = |input: &mut Input<_>| {
+	let parser13 = |input: &mut Input<_>| {
 		let o1 = parser1(input)?;
 		let o2 = parser3(input)?;
 		Ok((o1, o2))
@@ -172,8 +172,6 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	// Use `option` while the first does NOT use `attempt`.
 	let parser = option(&parser13, &parser12);
 	let output = attempt(&parser)(&mut input);
-	let attempt_parser_1 = attempt(&parser1);
-	let parser = option(&attempt_parser_1, &parser2);
 	// The first parser failed consuming input and `attempt` was not used, so the input was
 	// consumed, and `option`'s second operand failed.
 	assert_eq!(output, Err(Error::UnexpectedToken));
