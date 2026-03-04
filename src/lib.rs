@@ -616,8 +616,47 @@ where
 	}
 }
 
-// TO DO list:
-// - separated by (0, 1)
+/// Creates a parser that parsers one or more occurrences of `parser`, separated by `separator`.
+/// 
+/// # Arguments 
+/// 
+/// * `parser`: The parser whose occurrences we're collecting.
+/// * `separator`: The separator parser, whose content we're not interested in.
+/// 
+/// # Examples 
+/// 
+/// ```
+/// use yapcol_rs::{is, separated_by1};
+/// use yapcol_rs::input::Input;
+/// 
+/// let parser1 = is(&(1));
+/// let parser2 = is(&(2));
+/// let tokens = vec![1, 2, 1];
+/// let mut input = Input::new(tokens);
+/// let parser_separated_by1 = separated_by1(&parser1, &parser2);
+/// let output = parser_separated_by1(&mut input);
+/// assert_eq!(output, Ok(vec![1, 1]));
+/// ```
+pub fn separated_by1<P, PS, I, O, OS>(parser: P, separator: PS) -> impl Parser<I, Vec<O>>
+where
+	P: Parser<I, O>,
+	PS: Parser<I, OS>,
+	I: Iterator<Item: Token>,
+{
+	move |input| {
+		let first = parser(input)?;
+		let mut output = Vec::with_capacity(1);
+		output.push(first);
+		while separator(input).is_ok() {
+			let next = parser(input)?;
+			output.push(next);
+		}
+		Ok(output)
+	}
+}
+
+// TO-DO list:
+// - separated by (0)
 // - chain left (0, 1)
 // - chain right (0, 1)
 // - notFollowedBy
