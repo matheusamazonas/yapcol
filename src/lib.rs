@@ -557,19 +557,19 @@ where
 }
 
 /// Applies parsers `open` and `close` around `parser`. Often used for parenthesis, brackets, etc.
-/// 
-/// # Arguments 
-/// 
+///
+/// # Arguments
+///
 /// * `open`: The parser that "opens" the between.
 /// * `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
 /// * `close`: The parser that "closes" the between.
-/// 
-/// # Examples 
-/// 
+///
+/// # Examples
+///
 /// ```
 /// use yapcol_rs::{is, between};
 /// use yapcol_rs::input::Input;
-/// 
+///
 /// let tokens: Vec<i32> = vec![1, 2, 1];
 /// let mut input = Input::new(tokens);
 /// let parser1 = is(&(1));
@@ -595,7 +595,7 @@ where
 /// A simple combinator that returns the next token in the input, if any.
 ///
 /// # Examples
-/// 
+///
 /// ```
 /// use yapcol_rs::{any};
 /// use yapcol_rs::input::Input;
@@ -616,37 +616,16 @@ where
 	}
 }
 
-/// Creates a parser that parsers one or more occurrences of `parser`, separated by `separator`.
-/// 
-/// # Arguments 
-/// 
-/// * `parser`: The parser whose occurrences we're collecting.
-/// * `separator`: The separator parser, whose content we're not interested in.
-/// 
-/// # Examples 
-/// 
-/// ```
-/// use yapcol_rs::{is, separated_by1};
-/// use yapcol_rs::input::Input;
-/// 
-/// let parser1 = is(&(1));
-/// let parser2 = is(&(2));
-/// let tokens = vec![1, 2, 1];
-/// let mut input = Input::new(tokens);
-/// let parser_separated_by1 = separated_by1(&parser1, &parser2);
-/// let output = parser_separated_by1(&mut input);
-/// assert_eq!(output, Ok(vec![1, 1]));
-/// ```
-pub fn separated_by1<P, PS, I, O, OS>(parser: P, separator: PS) -> impl Parser<I, Vec<O>>
+fn separated_tail<P, S, I, O, SO>(
+	parser: P,
+	separator: S,
+) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
 where
 	P: Parser<I, O>,
-	PS: Parser<I, OS>,
+	S: Parser<I, SO>,
 	I: Iterator<Item: Token>,
 {
-	move |input| {
-		let first = parser(input)?;
-		let mut output = Vec::with_capacity(1);
-		output.push(first);
+	move |input, mut output| {
 		while separator(input).is_ok() {
 			let next = parser(input)?;
 			output.push(next);
@@ -655,8 +634,78 @@ where
 	}
 }
 
+/// Creates a parser that parsers zero or more occurrences of `parser`, separated by `separator`.
+///
+/// # Arguments
+///
+/// * `parser`: The parser whose occurrences we're collecting.
+/// * `separator`: The separator parser, whose content we're not interested in.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol_rs::{is, separated_by0};
+/// use yapcol_rs::input::Input;
+///
+/// let parser1 = is(&(1));
+/// let parser2 = is(&(2));
+/// let tokens = vec![1, 2, 1];
+/// let mut input = Input::new(tokens);
+/// let parser_separated_by0 = separated_by0(&parser1, &parser2);
+/// let output = parser_separated_by0(&mut input);
+/// assert_eq!(output, Ok(vec![1, 1]));
+/// ```
+pub fn separated_by0<P, S, I, O, OS>(parser: P, separator: S) -> impl Parser<I, Vec<O>>
+where
+	P: Parser<I, O>,
+	S: Parser<I, OS>,
+	I: Iterator<Item: Token>,
+{
+	move |input| match parser(input) {
+		Ok(token) => {
+			let output = vec![token];
+			separated_tail(&parser, &separator)(input, output)
+		}
+		Err(Error::EndOfInput) => Ok(vec![]),
+		Err(_) => Ok(vec![]),
+	}
+}
+
+/// Creates a parser that parsers one or more occurrences of `parser`, separated by `separator`.
+///
+/// # Arguments
+///
+/// * `parser`: The parser whose occurrences we're collecting.
+/// * `separator`: The separator parser, whose content we're not interested in.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol_rs::{is, separated_by1};
+/// use yapcol_rs::input::Input;
+///
+/// let parser1 = is(&(1));
+/// let parser2 = is(&(2));
+/// let tokens = vec![1, 2, 1];
+/// let mut input = Input::new(tokens);
+/// let parser_separated_by1 = separated_by1(&parser1, &parser2);
+/// let output = parser_separated_by1(&mut input);
+/// assert_eq!(output, Ok(vec![1, 1]));
+/// ```
+pub fn separated_by1<P, S, I, O, OS>(parser: P, separator: S) -> impl Parser<I, Vec<O>>
+where
+	P: Parser<I, O>,
+	S: Parser<I, OS>,
+	I: Iterator<Item: Token>,
+{
+	move |input| {
+		let first = parser(input)?;
+		let output = vec![first];
+		separated_tail(&parser, &separator)(input, output)
+	}
+}
+
 // TO-DO list:
-// - separated by (0)
 // - chain left (0, 1)
 // - chain right (0, 1)
 // - notFollowedBy

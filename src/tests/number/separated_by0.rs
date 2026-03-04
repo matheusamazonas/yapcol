@@ -6,9 +6,9 @@ fn empty() {
 	let parser2 = is(&(2));
 	let tokens = vec![];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
-	assert_eq!(output, Err(Error::EndOfInput));
+	assert_eq!(output, Ok(vec![]));
 }
 
 #[test]
@@ -17,7 +17,7 @@ fn single_no_separator_succeeds() {
 	let parser2 = is(&(2));
 	let tokens = vec![1];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Ok(vec![1]));
 }
@@ -28,7 +28,7 @@ fn single_dangling_separator_fails() {
 	let parser2 = is(&(2));
 	let tokens = vec![1, 2];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -39,7 +39,7 @@ fn two_with_separator_succeeds() {
 	let parser2 = is(&(2));
 	let tokens = vec![1, 2, 1];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Ok(vec![1, 1]));
 }
@@ -50,7 +50,7 @@ fn two_wrong_last_element_fails() {
 	let parser2 = is(&(2));
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }
@@ -61,7 +61,7 @@ fn two_no_separator_succeeds() {
 	let parser2 = is(&(2));
 	let tokens = vec![1, 1];
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input).unwrap();
 	assert_eq!(output, vec![1]);
 }
@@ -79,7 +79,7 @@ fn many_properly_separated_succeeds() {
 		.cloned()
 		.collect();
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input).unwrap();
 	assert_eq!(output.len(), repeat_count);
 }
@@ -97,7 +97,7 @@ fn many_dangling_separator_fails() {
 		.cloned()
 		.collect();
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -116,7 +116,7 @@ fn many_wrong_last_element_fails() {
 		.collect();
 	tokens.push(3);
 	let mut input = Input::new(tokens);
-	let parser_separated_by0 = separated_by1(&parser1, &parser2);
+	let parser_separated_by0 = separated_by0(&parser1, &parser2);
 	let output = parser_separated_by0(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }
