@@ -577,7 +577,7 @@ where
 /// let output = between(&parser1, &parser2, &parser1)(&mut input);
 /// assert_eq!(output, Ok(2));
 /// ```
-pub fn between<PO, PC, P, I, O, OO, OC>(open: PO, parser: P, close: PC) -> impl Parser<I, O>
+pub fn between<PO, PC, P, I, O, OO, OC>(open: &PO, parser: &P, close: &PC) -> impl Parser<I, O>
 where
 	PO: Parser<I, OO>,
 	PC: Parser<I, OC>,
@@ -617,8 +617,8 @@ where
 }
 
 fn separated_tail<P, S, I, O, SO>(
-	parser: P,
-	separator: S,
+	parser: &P,
+	separator: &S,
 ) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
 where
 	P: Parser<I, O>,
@@ -655,7 +655,7 @@ where
 /// let output = parser_separated_by0(&mut input);
 /// assert_eq!(output, Ok(vec![1, 1]));
 /// ```
-pub fn separated_by0<P, S, I, O, OS>(parser: P, separator: S) -> impl Parser<I, Vec<O>>
+pub fn separated_by0<P, S, I, O, OS>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
 	S: Parser<I, OS>,
@@ -692,10 +692,10 @@ where
 /// let output = parser_separated_by1(&mut input);
 /// assert_eq!(output, Ok(vec![1, 1]));
 /// ```
-pub fn separated_by1<P, S, I, O, OS>(parser: P, separator: S) -> impl Parser<I, Vec<O>>
+pub fn separated_by1<P, S, I, O, SO>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
 where
 	P: Parser<I, O>,
-	S: Parser<I, OS>,
+	S: Parser<I, SO>,
 	I: Iterator<Item: Token>,
 {
 	move |input| {
