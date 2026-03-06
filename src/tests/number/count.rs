@@ -2,7 +2,7 @@ use crate::*;
 
 #[test]
 fn parse_count_0_empty() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens: Vec<i32> = vec![];
 	let mut input = Input::new(tokens);
 	let parser = count(&parser, 0);
@@ -12,7 +12,7 @@ fn parse_count_0_empty() {
 
 #[test]
 fn parse_count_0_not_empty() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens: Vec<i32> = vec![4];
 	let mut input = Input::new(tokens);
 	let parser = count(&parser, 0);
@@ -22,7 +22,7 @@ fn parse_count_0_not_empty() {
 
 #[test]
 fn parse_count_all_same() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let repeat_count: usize = 500;
 	let tokens: Vec<i32> = std::iter::repeat_n(1, repeat_count).collect();
 	let mut input = Input::new(tokens);
@@ -35,7 +35,7 @@ fn parse_count_all_same() {
 
 #[test]
 fn parse_count_one_different() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let repeat_count: usize = 500;
 	let mut tokens: Vec<i32> = std::iter::repeat_n(1, repeat_count).collect();
 	tokens.push(42);
@@ -51,7 +51,7 @@ fn parse_count_one_different() {
 
 #[test]
 fn parse_count_not_enough() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![1, 1, 1, 2, 1];
 	let mut input = Input::new(tokens);
 	let parser = count(&parser, 5);

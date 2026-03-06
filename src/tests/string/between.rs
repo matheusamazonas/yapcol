@@ -2,45 +2,33 @@ use crate::*;
 
 #[test]
 fn empty() {
-	let open = String::from("(");
-	let close = String::from(")");
-	let middle = String::from("hello");
-	let tokens: Vec<String> = Vec::new();
+	let tokens: Vec<&str> = Vec::new();
 	let mut input = Input::new(tokens);
-	let output = between(&is(&open), &is(&middle), &is(&close))(&mut input);
+	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn success() {
-	let open = String::from("(");
-	let close = String::from(")");
-	let middle = String::from("hello");
-	let tokens = vec![open.clone(), middle.clone(), close.clone()];
+	let tokens = vec!["(", "hello", ")"];
 	let mut input = Input::new(tokens);
-	let output = between(&is(&open), &is(&middle), &is(&close))(&mut input);
-	assert_eq!(output, Ok(middle.clone()));
+	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
+	assert_eq!(output, Ok("hello"));
 	assert!(input.next_token().is_none());
 }
 
 #[test]
 fn fail_repeated() {
-	let open = String::from("(");
-	let close = String::from(")");
-	let middle = String::from("hello");
-	let tokens = vec![open.clone(), middle.clone(), middle.clone(), close.clone()];
+	let tokens = vec!["(", "hello", "hello", ")"];
 	let mut input = Input::new(tokens);
-	let output = between(&is(&open), &is(&middle), &is(&close))(&mut input);
+	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }
 
 #[test]
 fn fail_no_middle() {
-	let open = String::from("(");
-	let close = String::from(")");
-	let middle = String::from("hello");
-	let tokens = vec![open.clone(), close.clone()];
+	let tokens = vec!["(", ")"];
 	let mut input = Input::new(tokens);
-	let output = between(&is(&open), &is(&middle), &is(&close))(&mut input);
+	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }

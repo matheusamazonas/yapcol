@@ -2,20 +2,18 @@ use crate::*;
 
 #[test]
 fn parse_maybe_success() {
-	let hello = String::from("hello");
-	let parser = is(&hello);
-	let tokens = vec![hello.clone()];
+	let parser = is("hello");
+	let tokens = vec!["hello"];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
-	assert_eq!(parser_maybe(&mut input), Ok(Some(hello.clone())));
+	assert_eq!(parser_maybe(&mut input), Ok(Some("hello")));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
 fn parse_maybe_fail_non_consuming() {
-	let hello = String::from("hello");
-	let parser = is(&hello);
-	let tokens = vec![String::from("hallo")];
+	let parser = is("hello");
+	let tokens = vec!["hallo"];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
@@ -34,7 +32,7 @@ fn parse_maybe_fail_consuming() {
 		}
 		None => Err(Error::EndOfInput),
 	};
-	let tokens = vec![String::from("hallo")];
+	let tokens = vec!["hallo"];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Err(Error::UnexpectedToken));
@@ -43,9 +41,8 @@ fn parse_maybe_fail_consuming() {
 
 #[test]
 fn parse_maybe_on_empty_input() {
-	let hello = String::from("hello");
-	let parser = is(&hello);
-	let tokens: Vec<String> = vec![];
+	let parser = is("hello");
+	let tokens: Vec<&str> = vec![];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));

@@ -2,7 +2,7 @@ use crate::*;
 
 #[test]
 fn parse_many0_empty() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![];
 	let mut input = Input::new(tokens);
 	let parser_many0 = many0(&parser);
@@ -13,7 +13,7 @@ fn parse_many0_empty() {
 #[test]
 fn parse_many0_no_match_not_empty() {
 	let token_count = 100;
-	let parser = is(&(42));
+	let parser = is(42);
 	let tokens = std::iter::repeat_n(43, token_count).collect::<Vec<_>>();
 	let mut input = Input::new(tokens);
 	let parser_many0 = many0(&parser);
@@ -26,7 +26,7 @@ fn parse_many0_no_match_not_empty() {
 #[test]
 fn parse_many0_match() {
 	let token_count = 100;
-	let parser = is(&(42));
+	let parser = is(42);
 	let tokens = std::iter::repeat_n(42, token_count).collect::<Vec<_>>();
 	let mut input = Input::new(tokens);
 	let parser_many0 = many0(&parser);

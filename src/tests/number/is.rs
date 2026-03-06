@@ -2,7 +2,7 @@ use crate::*;
 
 #[test]
 fn parse_right() {
-	let parser = is(&1);
+	let parser = is(1);
 	let tokens = vec![1];
 	let mut input = Input::new(tokens);
 	assert_eq!(parser(&mut input), Ok(1));
@@ -11,7 +11,7 @@ fn parse_right() {
 
 #[test]
 fn parse_wrong() {
-	let parser = is(&1);
+	let parser = is(1);
 	let tokens = vec![2];
 	let mut input = Input::new(tokens);
 	assert_eq!(parser(&mut input), Err(Error::UnexpectedToken));
@@ -20,7 +20,7 @@ fn parse_wrong() {
 
 #[test]
 fn parse_empty() {
-	let parser = is(&1);
+	let parser = is(1);
 	let tokens = vec![];
 	let mut input = Input::new(tokens);
 	assert_eq!(parser(&mut input), Err(Error::EndOfInput));
@@ -28,7 +28,7 @@ fn parse_empty() {
 
 #[test]
 fn parse_negative_number() {
-	let parser = is(&(-1));
+	let parser = is(-1);
 	let tokens = vec![-1];
 	let mut input = Input::new(tokens);
 	assert_eq!(parser(&mut input), Ok(-1));
@@ -37,7 +37,7 @@ fn parse_negative_number() {
 
 #[test]
 fn parse_zero_number() {
-	let parser = is(&0);
+	let parser = is(0);
 	let tokens = vec![0];
 	let mut input = Input::new(tokens);
 	assert_eq!(parser(&mut input), Ok(0));

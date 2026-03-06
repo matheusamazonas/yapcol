@@ -2,7 +2,7 @@ use crate::*;
 
 #[test]
 fn parse_many1_empty() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![];
 	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);
@@ -11,7 +11,7 @@ fn parse_many1_empty() {
 
 #[test]
 fn parse_many1_no_match() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![2, 3, 4];
 	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);
@@ -21,7 +21,7 @@ fn parse_many1_no_match() {
 
 #[test]
 fn parse_many1_one_match() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![1, 3, 4];
 	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);
@@ -35,7 +35,7 @@ fn parse_many1_one_match() {
 #[test]
 fn parse_many1_multiple_matches() {
 	let token_count = 100;
-	let parser = is(&(42));
+	let parser = is(42);
 	let tokens = std::iter::repeat_n(42, token_count).collect::<Vec<_>>();
 	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);
@@ -47,7 +47,7 @@ fn parse_many1_multiple_matches() {
 
 #[test]
 fn parse_many1_partial_match_then_stop() {
-	let parser = is(&(42));
+	let parser = is(42);
 	let tokens = vec![42, 42, 7, 42];
 	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);

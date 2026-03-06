@@ -2,9 +2,9 @@ use crate::*;
 
 #[test]
 fn parse_choice_success() {
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
-	let parser3 = is(&(3));
+	let parser1 = is(1);
+	let parser2 = is(2);
+	let parser3 = is(3);
 	let parsers: Vec<Box<dyn Parser<_, _>>> =
 		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 	let parser_choice = choice(&parsers);
@@ -35,9 +35,9 @@ fn parse_choice_success() {
 
 #[test]
 fn parse_choice_with_negative_and_zero() {
-	let p_neg1 = is(&(-1));
-	let p_zero = is(&0);
-	let p_pos1 = is(&(1));
+	let p_neg1 = is(-1);
+	let p_zero = is(0);
+	let p_pos1 = is(1);
 	let parsers: Vec<Box<dyn Parser<_, _>>> =
 		vec![Box::new(p_neg1), Box::new(p_zero), Box::new(p_pos1)];
 	let parser_choice = choice(&parsers);
@@ -60,9 +60,9 @@ fn parse_choice_with_negative_and_zero() {
 
 #[test]
 fn parse_choice_fail() {
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
-	let parser3 = is(&(3));
+	let parser1 = is(1);
+	let parser2 = is(2);
+	let parser3 = is(3);
 	let parsers: Vec<Box<dyn Parser<_, _>>> =
 		vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 	let parser_choice = choice(&parsers);

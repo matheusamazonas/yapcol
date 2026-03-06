@@ -3,8 +3,8 @@ use std::vec;
 
 #[test]
 fn parse_option_first() {
-	let parser1 = is(&1);
-	let parser2 = is(&2);
+	let parser1 = is(1);
+	let parser2 = is(2);
 	let tokens = vec![1];
 	let mut input = Input::new(tokens);
 	let parse_option = option(&parser1, &parser2);
@@ -14,8 +14,8 @@ fn parse_option_first() {
 
 #[test]
 fn parse_option_second() {
-	let parser1 = is(&1);
-	let parser2 = is(&2);
+	let parser1 = is(1);
+	let parser2 = is(2);
 	let tokens = vec![2];
 	let mut input = Input::new(tokens);
 	let parse_option = option(&parser1, &parser2);
@@ -25,8 +25,8 @@ fn parse_option_second() {
 
 #[test]
 fn parse_option_none() {
-	let parser1 = is(&1);
-	let parser2 = is(&2);
+	let parser1 = is(1);
+	let parser2 = is(2);
 	let tokens = vec![3];
 	let mut input = Input::new(tokens);
 	let parse_option = option(&parser1, &parser2);
@@ -36,8 +36,8 @@ fn parse_option_none() {
 
 #[test]
 fn parse_option_consuming_fails() {
-	let is_1 = is(&1);
-	let is_2 = is(&2);
+	let is_1 = is(1);
+	let is_2 = is(2);
 	let tokens = vec![1, 3];
 	let mut input = Input::new(tokens);
 	let consuming_parser = |input: &mut Input<_>| {

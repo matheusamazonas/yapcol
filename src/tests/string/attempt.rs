@@ -2,131 +2,111 @@ use crate::*;
 
 #[test]
 fn empty() {
-	let token = String::from("hello");
-	let parser = is(&token);
-	let tokens = Vec::new();
+	let tokens: Vec<&str> = Vec::new();
 	let mut input = Input::new(tokens);
+	let parser = is("hello");
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn success_consumes() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("foo");
-	let parser1 = is(&token1);
-	let tokens = vec![token1.clone(), token2.clone(), token3.clone()];
+	let tokens = vec!["hello", "world", "foo"];
 	let mut input = Input::new(tokens);
-	let output = attempt(&parser1)(&mut input);
-	assert_eq!(output, Ok(token1.clone()));
+	let parser = is("hello");
+	let output = attempt(&parser)(&mut input);
+	assert_eq!(output, Ok("hello"));
 	// After attempt succeeds, input should be consumed.
-	assert_eq!(is(&token2)(&mut input), Ok(token2.clone()));
-	assert_eq!(is(&token3)(&mut input), Ok(token3.clone()));
+	assert_eq!(is("world")(&mut input), Ok("world"));
+	assert_eq!(is("foo")(&mut input), Ok("foo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn non_consuming_fail_does_not_consume() {
-	let token1 = String::from("hello");
-	let token2 = String::from("hallo");
-	let tokens = vec![token2.clone()];
+	let tokens = vec!["hallo"];
 	let mut input = Input::new(tokens);
-	let parser1 = is(&token1);
-	let output = attempt(&parser1)(&mut input);
+	let parser = is("hello");
+	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 	// Input should still be intact.
-	assert_eq!(input.next_token(), Some(token2.clone()));
+	assert_eq!(input.next_token(), Some("hallo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn consuming_fail_does_not_consume() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("hillo");
-	let tokens = vec![token1.clone(), token2.clone()];
+	let tokens = vec!["hello", "world"];
 	let mut input = Input::new(tokens);
 	let consuming_parser = |input: &mut Input<_>| {
-		let o1 = is(&token1)(input)?; // Success, consumes token1.
-		let o2 = is(&token3)(input)?; // Fails on token2, consuming parser fails.
+		let o1 = is("hello")(input)?; // Success, consumes "hello".
+		let o2 = is("hillo")(input)?; // Fails on "world", consuming parser fails.
 		Ok((o1, o2))
 	};
 	let output = attempt(&consuming_parser)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 	// Input should be rewound even though the inner parser consumed.
-	assert_eq!(input.next_token(), Some(token1.clone()));
-	assert_eq!(input.next_token(), Some(token2.clone()));
+	assert_eq!(input.next_token(), Some("hello"));
+	assert_eq!(input.next_token(), Some("world"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn attempt_twice() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let parser = is(&token1);
-	let tokens = vec![token1.clone(), token2.clone()];
+	let tokens = vec!["hello", "world"];
 	let mut input = Input::new(tokens);
+	let parser = is("hello");
 	let first = attempt(&parser)(&mut input);
-	assert_eq!(first, Ok(token1.clone()));
-	// First attempt consumed token1.
+	assert_eq!(first, Ok("hello"));
+	// First attempt consumed "hello".
 	let second = attempt(&parser)(&mut input);
 	assert_eq!(second, Err(Error::UnexpectedToken));
-	// Input should still have token2.
-	assert_eq!(input.next_token(), Some(token2.clone()));
+	// Input should still have "world".
+	assert_eq!(input.next_token(), Some("world"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn attempt_with_option_succeeds_consuming() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("hillo");
-	let tokens = vec![token1.clone(), token2.clone(), token3.clone()];
+	let tokens = vec!["hello", "world", "hillo"];
 	let mut input = Input::new(tokens);
-	let parser1 = is(&token1);
-	let parser2 = is(&token2);
-	let parser_attempt_1 = attempt(&parser1);
-	let parser = option(&parser_attempt_1, &parser2);
+	let parser1 = is("hello");
+	let parser2 = is("world");
+	let parser_attempt = attempt(&parser1);
+	let parser = option(&parser_attempt, &parser2);
 	let output = attempt(&parser)(&mut input);
-	// 1 was consumed because the first argument of `option` succeeded.
-	assert_eq!(output, Ok(token1.clone()));
-	assert_eq!(input.next_token(), Some(token2.clone()));
-	assert_eq!(input.next_token(), Some(token3.clone()));
+	// Input was consumed because the first argument of `option` succeeded.
+	assert_eq!(output, Ok("hello"));
+	assert_eq!(input.next_token(), Some("world"));
+	assert_eq!(input.next_token(), Some("hillo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn attempt_with_option_fails_not_consuming() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("hillo");
-	let tokens = vec![token1.clone(), token2.clone(), token3.clone()];
+	let tokens = vec!["hello", "world", "hillo"];
 	let mut input = Input::new(tokens);
-	let parser2 = is(&token2);
-	let parser3 = is(&token3);
+	let parser2 = is("world");
+	let parser3 = is("hillo");
 	let parser_attempt_1 = attempt(&parser2);
 	let parser = option(&parser_attempt_1, &parser3);
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 	// No input was consumed thanks to `attempt`.
-	assert_eq!(input.next_token(), Some(token1.clone()));
-	assert_eq!(input.next_token(), Some(token2.clone()));
-	assert_eq!(input.next_token(), Some(token3.clone()));
+	assert_eq!(input.next_token(), Some("hello"));
+	assert_eq!(input.next_token(), Some("world"));
+	assert_eq!(input.next_token(), Some("hillo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("hillo");
-	let tokens = vec![token1.clone(), token2.clone(), token3.clone()];
+	let tokens = vec!["hello", "world", "hillo"];
 	let mut input = Input::new(tokens);
 	// Create two parsers that share a prefix.
-	let parser1 = is(&token1);
-	let parser2 = is(&token2);
-	let parser3 = is(&token3);
+	let parser1 = is("hello");
+	let parser2 = is("world");
+	let parser3 = is("hillo");
 	let parser13 = |input: &mut Input<_>| {
 		let o1 = parser1(input)?;
 		let o2 = parser3(input)?;
@@ -143,22 +123,19 @@ fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
 	let output = attempt(&parser)(&mut input);
 	// Even though the first parser failed consuming input, `option` succeeded because `attempt`
 	// implements arbitrary lookahead and conserved input.
-	assert_eq!(output, Ok((token1.clone(), token2.clone())));
-	assert_eq!(input.next_token(), Some(token3.clone()));
+	assert_eq!(output, Ok(("hello", "world")));
+	assert_eq!(input.next_token(), Some("hillo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
 #[test]
 fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
-	let token1 = String::from("hello");
-	let token2 = String::from("world");
-	let token3 = String::from("hillo");
-	let tokens = vec![token1.clone(), token2.clone(), token3.clone()];
+	let tokens = vec!["hello", "world", "hillo"];
 	let mut input = Input::new(tokens);
 	// Create two parsers that share a prefix.
-	let parser1 = is(&token1);
-	let parser2 = is(&token2);
-	let parser3 = is(&token3);
+	let parser1 = is("hello");
+	let parser2 = is("world");
+	let parser3 = is("hillo");
 	let parser13 = |input: &mut Input<_>| {
 		let o1 = parser1(input)?;
 		let o2 = parser3(input)?;
@@ -175,8 +152,8 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	// The first parser failed consuming input and `attempt` was not used, so the input was
 	// consumed, and `option`'s second operand failed.
 	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert_eq!(input.next_token(), Some(token1.clone()));
-	assert_eq!(input.next_token(), Some(token2.clone()));
-	assert_eq!(input.next_token(), Some(token3.clone()));
+	assert_eq!(input.next_token(), Some("hello"));
+	assert_eq!(input.next_token(), Some("world"));
+	assert_eq!(input.next_token(), Some("hillo"));
 	assert!(end_of_input()(&mut input).is_ok());
 }

@@ -2,7 +2,7 @@ use crate::*;
 
 #[test]
 fn parse_maybe_success() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![1];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
@@ -12,7 +12,7 @@ fn parse_maybe_success() {
 
 #[test]
 fn parse_maybe_fail_non_consuming() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens = vec![2];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);
@@ -42,7 +42,7 @@ fn parse_maybe_fail_consuming() {
 
 #[test]
 fn parse_maybe_on_empty_input() {
-	let parser = is(&(1));
+	let parser = is(1);
 	let tokens: Vec<i32> = vec![];
 	let mut input = Input::new(tokens);
 	let parser_maybe = maybe(&parser);

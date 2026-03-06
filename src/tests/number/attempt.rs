@@ -4,7 +4,7 @@ use crate::*;
 fn empty() {
 	let tokens: Vec<i32> = Vec::new();
 	let mut input = Input::new(tokens);
-	let parser = is(&(1));
+	let parser = is(1);
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -13,12 +13,12 @@ fn empty() {
 fn success_consumes() {
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
-	let parser = is(&(1));
+	let parser = is(1);
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Ok(1));
-	// After attempt succeeds, input should be consumed.
-	assert_eq!(is(&(2))(&mut input), Ok(2));
-	assert_eq!(is(&(3))(&mut input), Ok(3));
+	// After the attempt succeeds, input should be consumed.
+	assert_eq!(is(2)(&mut input), Ok(2));
+	assert_eq!(is(3)(&mut input), Ok(3));
 	assert!(end_of_input()(&mut input).is_ok());
 }
 
@@ -26,7 +26,7 @@ fn success_consumes() {
 fn non_consuming_fail_does_not_consume() {
 	let tokens = vec![2, 3];
 	let mut input = Input::new(tokens);
-	let parser = is(&(1));
+	let parser = is(1);
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 	// Input should still be intact.
@@ -39,8 +39,8 @@ fn non_consuming_fail_does_not_consume() {
 fn consuming_fail_does_not_consume() {
 	let tokens = vec![1, 3];
 	let mut input = Input::new(tokens);
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
+	let parser1 = is(1);
+	let parser2 = is(2);
 	let consuming_parser = |input: &mut Input<_>| {
 		let o1 = parser1(input)?; // Success, consumes 1.
 		let o2 = parser2(input)?; // Fails on 3, consuming parser fails.
@@ -58,7 +58,7 @@ fn consuming_fail_does_not_consume() {
 fn attempt_twice() {
 	let tokens = vec![1, 2];
 	let mut input = Input::new(tokens);
-	let parser = is(&(1));
+	let parser = is(1);
 	let first = attempt(&parser)(&mut input);
 	assert_eq!(first, Ok(1));
 	// First attempt consumed the 1.
@@ -73,12 +73,12 @@ fn attempt_twice() {
 fn attempt_with_option_succeeds_consuming() {
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
+	let parser1 = is(1);
+	let parser2 = is(2);
 	let parser_attempt_1 = attempt(&parser1);
 	let parser = option(&parser_attempt_1, &parser2);
 	let output = attempt(&parser)(&mut input);
-	// 1 was consumed because the first argument of `option` succeeded.
+	// Input was consumed because the first argument of `option` succeeded.
 	assert_eq!(output, Ok(1));
 	assert_eq!(input.next_token(), Some(2));
 	assert_eq!(input.next_token(), Some(3));
@@ -89,8 +89,8 @@ fn attempt_with_option_succeeds_consuming() {
 fn attempt_with_option_fails_not_consuming() {
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
-	let parser2 = is(&(2));
-	let parser3 = is(&(3));
+	let parser2 = is(2);
+	let parser3 = is(3);
 	let parser_attempt_1 = attempt(&parser2);
 	let parser = option(&parser_attempt_1, &parser3);
 	let output = attempt(&parser)(&mut input);
@@ -107,9 +107,9 @@ fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
 	// Create two parsers that share a prefix.
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
-	let parser3 = is(&(3));
+	let parser1 = is(1);
+	let parser2 = is(2);
+	let parser3 = is(3);
 	let parser13 = |input: &mut Input<_>| {
 		let o1 = parser1(input)?;
 		let o2 = parser3(input)?;
@@ -136,9 +136,9 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	let tokens = vec![1, 2, 3];
 	let mut input = Input::new(tokens);
 	// Create two parsers that share a prefix.
-	let parser1 = is(&(1));
-	let parser2 = is(&(2));
-	let parser3 = is(&(3));
+	let parser1 = is(1);
+	let parser2 = is(2);
+	let parser3 = is(3);
 	let parser13 = |input: &mut Input<_>| {
 		let o1 = parser1(input)?;
 		let o2 = parser3(input)?;
