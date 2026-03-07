@@ -705,7 +705,53 @@ where
 	}
 }
 
+fn parse_chain_left_tail<P, I, O, OP, F>(
+	o1: O,
+	parser: &P,
+	operator_parser: &OP,
+) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	I: Iterator<Item: Token>,
+	OP: Parser<I, F>,
+	F: FnOnce(O, O) -> O,
+	O: Clone,
+{
+	move |input| match operator_parser(input) {
+		Ok(operator) => {
+			let o2 = parser(input)?;
+			let output = operator(o1.clone(), o2);
+			parse_chain_left_tail(output, parser, operator_parser)(input)
+		}
+		Err(_) => Ok(o1.clone()),
+	}
+}
+
+/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`. It combines
+/// all values parsed by `operand_parser` into a final one using functions returned by
+/// `operator_parser`, in a left-associative manner.
+///
+/// # Arguments
+///
+/// * `operand_parser`: Parsers operands that will be combined into a final value, in a
+///   left-associative manner.
+/// * `operator_parser`: Operator's parser, which consumes input and returns a function that
+///   combines output values into one.
+pub fn chain_left1<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	I: Iterator<Item: Token>,
+	OP: Parser<I, F>,
+	F: Fn(O, O) -> O,
+	O: Clone,
+{
+	move |input| {
+		let o1 = operand_parser(input)?;
+		parse_chain_left_tail(o1, operand_parser, operator_parser)(input)
+	}
+}
+
 // TO-DO list:
-// - chain left (0, 1)
+// - chain left (0)
 // - chain right (0, 1)
 // - notFollowedBy
