@@ -123,7 +123,7 @@ fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
 	// Use `option` while the first uses `attempt`.
 	let parser_attempt_1 = attempt(&parser13);
 	let parser = option(&parser_attempt_1, &parser12);
-	let output = attempt(&parser)(&mut input);
+	let output = parser(&mut input);
 	// Even though the first parser failed consuming input, `option` succeeded because `attempt`
 	// implements arbitrary lookahead and conserved input.
 	assert_eq!(output, Ok((1, 2)));
