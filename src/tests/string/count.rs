@@ -45,7 +45,7 @@ fn parse_count_one_different() {
 	let parser = count(&parser, repeat_count);
 	let output = parser(&mut input).unwrap();
 	assert!(output.iter().all(|x| *x == "hello")); // All values match the parser's.
-	assert_eq!(input.consumed_count(), repeat_count as u32); // Input was left intact.
+	assert_eq!(input.consumed_count(), repeat_count); // Input was left intact.
 	assert_eq!(input.next_token(), Some("other")); // Input was consumed as much as possible.
 }
 

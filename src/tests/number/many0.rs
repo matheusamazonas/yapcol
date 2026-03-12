@@ -32,6 +32,6 @@ fn parse_many0_match() {
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut input).unwrap();
 	assert_eq!(output.len(), token_count);
-	assert_eq!(input.consumed_count(), token_count as u32);
+	assert_eq!(input.consumed_count(), token_count);
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
