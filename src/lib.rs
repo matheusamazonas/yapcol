@@ -90,7 +90,7 @@ where
 	F: Fn(&I::Item) -> Result<O, Error>,
 	I: Iterator<Item: Token>,
 {
-	move |input| match input.next_token_ref() {
+	move |input| match input.peek() {
 		Some(token) => {
 			match f(token) {
 				Ok(result) => {
@@ -128,7 +128,7 @@ pub fn end_of_input<I>() -> impl Parser<I, ()>
 where
 	I: Iterator<Item: Token>,
 {
-	|input| match input.next_token_ref() {
+	|input| match input.peek() {
 		None => Ok(()),
 		_ => Err(Error::UnexpectedToken),
 	}
@@ -475,9 +475,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		input.start_peeking();
+		input.start_look_ahead();
 		let output = parser(input);
-		input.stop_peeking(output.is_ok());
+		input.stop_look_ahead(output.is_ok());
 		output
 	}
 }
@@ -549,9 +549,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		input.start_peeking();
+		input.start_look_ahead();
 		let output = parser(input);
-		input.stop_peeking(output.is_err());
+		input.stop_look_ahead(output.is_err());
 		output
 	}
 }
