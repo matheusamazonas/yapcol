@@ -17,6 +17,19 @@ enum Expression {
 	Operation(Box<Expression>, Operator, Box<Expression>),
 }
 
+trait ExpressionParser<I> : Parser<I, Expression> 
+where
+	I: Iterator<Item = char>
+{
+}
+
+impl<I, T> ExpressionParser<I> for T
+where
+	I: Iterator<Item = char>,
+	T: Fn(&mut Input<I>) -> Result<Expression, Error>,
+{
+}
+
 fn parse_digit<I>() -> impl Parser<I, char>
 where
 	I: Iterator<Item = char>,
@@ -31,7 +44,7 @@ where
 	satisfy(f)
 }
 
-fn parse_number<I>() -> impl Parser<I, Expression>
+fn parse_number<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -50,7 +63,7 @@ fn build_operation(op: Operator) -> impl Fn(Expression, Expression) -> Expressio
 	move |o1, o2| Expression::Operation(Box::new(o1), op.clone(), Box::new(o2))
 }
 
-fn parse_expression<I>() -> impl Parser<I, Expression>
+fn parse_expression<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -71,7 +84,7 @@ where
 	}
 }
 
-fn parse_term<I>() -> impl Parser<I, Expression>
+fn parse_term<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -92,7 +105,7 @@ where
 	}
 }
 
-fn parse_factor<I>() -> impl Parser<I, Expression>
+fn parse_factor<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
