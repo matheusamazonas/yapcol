@@ -1,6 +1,8 @@
 mod any;
 mod attempt;
 mod between;
+mod chain_left;
+mod chain_right;
 mod choice;
 mod count;
 mod is;

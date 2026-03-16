@@ -738,6 +738,31 @@ where
 ///   left-associative manner.
 /// * `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
+///
+/// # Examples
+///
+/// ```
+/// // Implements evaluation of the subtraction ('-') operator as left-associative.
+/// use yapcol_rs::{satisfy, chain_left};
+/// use yapcol_rs::error::Error;
+/// use yapcol_rs::input::Input;
+///
+/// let operand = satisfy(|c: &char| match c.to_digit(10)  {
+///     Some(x) => Ok(x as i32),
+///     None => Err(Error::UnexpectedToken)
+/// });
+///
+/// let operator = satisfy(|c: &char| match c {
+///     '-' => Ok(|a, b| a - b),
+///     _ => Err(Error::UnexpectedToken),
+/// });
+///
+/// let tokens: Vec<_> = "3-1-1".chars().collect();
+/// let mut input = Input::new(tokens);
+/// let parser = chain_left(&operand, &operator);
+/// let output = parser(&mut input);
+/// assert_eq!(output, Ok(1)); // (3 - 1) - 1 = 1, not 3 - (1 - 1) = 3
+/// ```
 pub fn chain_left<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
 where
 	P: Parser<I, O>,
@@ -752,7 +777,60 @@ where
 	}
 }
 
+/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`. It combines
+/// all values parsed by `operand_parser` into a final one using functions returned by
+/// `operator_parser`, in a right-associative manner.
+///
+/// # Arguments
+///
+/// * `operand_parser`: Parsers operands that will be combined into a final value, in a
+///   right-associative manner.
+/// * `operator_parser`: Operator's parser, which consumes input and returns a function that
+///   combines output values into one.
+///
+/// # Examples
+///
+/// ```
+/// // Implements evaluation of the subtraction ('-') operator as left-associative.
+/// use yapcol_rs::{satisfy, chain_right};
+/// use yapcol_rs::error::Error;
+/// use yapcol_rs::input::Input;
+///
+/// let operand = satisfy(|c: &char| match c.to_digit(10)  {
+///     Some(x) => Ok(x as i32),
+///     None => Err(Error::UnexpectedToken)
+/// });
+///
+/// let operator = satisfy(|c: &char| match c {
+///     '-' => Ok(|a, b| a - b),
+///     _ => Err(Error::UnexpectedToken),
+/// });
+///
+/// let tokens: Vec<_> = "3-1-1".chars().collect();
+/// let mut input = Input::new(tokens);
+/// let parser = chain_right(&operand, &operator);
+/// let output = parser(&mut input);
+/// assert_eq!(output, Ok(3)); // 3 - (1 - 1) = 3, not (3 - 1) - 1 = 1
+/// ```
+pub fn chain_right<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+where
+	P: Parser<I, O>,
+	I: Iterator<Item: Token>,
+	OP: Parser<I, F>,
+	F: Fn(O, O) -> O,
+{
+	move |input| {
+		let o1 = operand_parser(input)?;
+		match operator_parser(input) {
+			Ok(operator) => {
+				let o2 = chain_right(operand_parser, operator_parser)(input)?;
+				let output = operator(o1, o2);
+				Ok(output)
+			}
+			Err(_) => Ok(o1),
+		}
+	}
+}
+
 // TO-DO list:
-// - chain left (0)
-// - chain right (0, 1)
 // - notFollowedBy
