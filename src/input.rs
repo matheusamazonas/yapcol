@@ -16,13 +16,20 @@ impl LookAheadFrame {
 	}
 }
 
+enum TokenLocation {
+	Stream,
+	StreamLookingAhead,
+	BufferHead,
+	BufferTail,
+}
+
 pub struct Input<I>
 where
 	I: Iterator<Item: Token>,
 {
 	stream: Peekable<I>,
 	consumed_count: usize,
-	next_on_buffer: bool,
+	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
 	look_ahead_buffer: VecDeque<I::Item>,
 }
@@ -38,20 +45,20 @@ where
 		Self {
 			stream: i.into_iter().peekable(),
 			consumed_count: 0,
-			next_on_buffer: false,
+			next_location: TokenLocation::Stream,
 			look_ahead_frames: Vec::new(),
 			look_ahead_buffer: VecDeque::new(),
 		}
 	}
 
 	pub fn next_token(&mut self) -> Option<I::Item> {
-		if !self.look_ahead_frames.is_empty() {
-			let frame = self.look_ahead_frames.last_mut().unwrap();
-			if !self.look_ahead_buffer.is_empty() && frame.next_ix() < self.look_ahead_buffer.len() {
-				let output = self.look_ahead_buffer.get(frame.next_ix()).unwrap();
-				frame.length += 1;
-				Some(output.clone())
-			} else {
+		match self.next_location {
+			TokenLocation::Stream => {
+				self.consumed_count += 1;
+				self.stream.next()
+			}
+			TokenLocation::StreamLookingAhead => {
+				let frame = self.look_ahead_frames.last_mut().unwrap();
 				match self.stream.next() {
 					None => None,
 					Some(token) => {
@@ -62,29 +69,39 @@ where
 					}
 				}
 			}
-		} else if self.next_on_buffer {
-			self.consumed_count += 1;
-			let output = self.look_ahead_buffer.pop_front();
-			self.next_on_buffer = !self.look_ahead_buffer.is_empty();
-			output
-		} else {
-			self.consumed_count += 1;
-			self.stream.next()
+			TokenLocation::BufferHead => {
+				self.consumed_count += 1;
+				let output = self.look_ahead_buffer.pop_front();
+				self.next_location = if self.look_ahead_buffer.is_empty() {
+					TokenLocation::Stream
+				} else {
+					TokenLocation::BufferHead
+				};
+				output
+			}
+			TokenLocation::BufferTail => {
+				let frame = self.look_ahead_frames.last_mut().unwrap();
+				let token = self.look_ahead_buffer.get(frame.next_ix()).unwrap();
+				frame.length += 1;
+				self.next_location = if frame.next_ix() == self.look_ahead_buffer.len() {
+					TokenLocation::StreamLookingAhead
+				} else {
+					TokenLocation::BufferTail
+				};
+				Some(token.clone())
+			}
 		}
 	}
 
 	pub fn peek(&mut self) -> Option<&I::Item> {
-		if !self.look_ahead_frames.is_empty() {
-			let frame = self.look_ahead_frames.last_mut().unwrap();
-			if !self.look_ahead_buffer.is_empty() && frame.next_ix() < self.look_ahead_buffer.len() {
+		match self.next_location {
+			TokenLocation::Stream => self.stream.peek(),
+			TokenLocation::StreamLookingAhead => self.stream.peek(),
+			TokenLocation::BufferHead => self.look_ahead_buffer.front(),
+			TokenLocation::BufferTail => {
+				let frame = self.look_ahead_frames.last_mut().unwrap();
 				self.look_ahead_buffer.get(frame.next_ix())
-			} else {
-				self.stream.peek()
 			}
-		} else if self.next_on_buffer {
-			self.look_ahead_buffer.front()
-		} else {
-			self.stream.peek()
 		}
 	}
 
@@ -106,18 +123,39 @@ where
 				length: 0,
 			},
 		};
-		self.look_ahead_frames.push(new_frame)
+		self.next_location = if self.look_ahead_buffer.is_empty()
+			|| new_frame.next_ix() == self.look_ahead_buffer.len()
+		{
+			TokenLocation::StreamLookingAhead
+		} else {
+			TokenLocation::BufferTail
+		};
+
+		self.look_ahead_frames.push(new_frame);
 	}
 
 	pub fn stop_look_ahead(&mut self, backtrack: bool) {
 		let frame = self.look_ahead_frames.pop().unwrap();
-		if backtrack {
-			self.next_on_buffer = !self.look_ahead_buffer.is_empty();
-		} else {
+		if !backtrack {
 			self.consumed_count += frame.length;
 			let buffer_length = self.look_ahead_buffer.len();
-			self.look_ahead_buffer.truncate(buffer_length - frame.length);
-			self.next_on_buffer = !self.look_ahead_buffer.is_empty();
+			self.look_ahead_buffer
+				.truncate(buffer_length - frame.length);
+		}
+
+		self.next_location = if self.look_ahead_frames.is_empty() {
+			if self.look_ahead_buffer.is_empty() {
+				TokenLocation::Stream
+			} else {
+				TokenLocation::BufferHead
+			}
+		} else {
+			let frame = self.look_ahead_frames.last_mut().unwrap();
+			if frame.next_ix() == self.look_ahead_buffer.len() {
+				TokenLocation::StreamLookingAhead
+			} else {
+				TokenLocation::BufferTail
+			}
 		}
 	}
 }
@@ -195,7 +233,7 @@ mod tests {
 		assert_eq!(input.next_token(), Some(1));
 		input.stop_look_ahead(true);
 		assert_eq!(input.peek(), Some(&1));
-		
+
 		input.start_look_ahead();
 		assert_eq!(input.peek(), Some(&1));
 		input.stop_look_ahead(true);
@@ -210,7 +248,7 @@ mod tests {
 		assert_eq!(input.next_token(), Some(1));
 		input.stop_look_ahead(false);
 		assert_eq!(input.peek(), Some(&2));
-		
+
 		input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
 		input.stop_look_ahead(true);
