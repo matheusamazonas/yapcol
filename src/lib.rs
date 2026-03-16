@@ -738,7 +738,7 @@ where
 ///   left-associative manner.
 /// * `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
-pub fn chain_left1<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+pub fn chain_left<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
 where
 	P: Parser<I, O>,
 	I: Iterator<Item: Token>,

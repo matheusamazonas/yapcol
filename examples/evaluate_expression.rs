@@ -1,7 +1,7 @@
 use std::io;
 use yapcol_rs::error::Error;
 use yapcol_rs::input::Input;
-use yapcol_rs::{attempt, between, chain_left1, is, many0, option, satisfy, Parser};
+use yapcol_rs::{attempt, between, chain_left, is, many0, option, satisfy, Parser};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Operator {
@@ -80,7 +80,7 @@ where
 			}
 		};
 		let factor_parser = parse_term();
-		chain_left1(&factor_parser, &parse_operand)(input)
+		chain_left(&factor_parser, &parse_operand)(input)
 	}
 }
 
@@ -101,7 +101,7 @@ where
 			}
 		};
 		let factor_parser = parse_factor();
-		chain_left1(&factor_parser, &parse_operand)(input)
+		chain_left(&factor_parser, &parse_operand)(input)
 	}
 }
 
