@@ -43,3 +43,14 @@ fn parse_many1_multiple_matches() {
 	assert!(output.iter().all(|x| *x == "hello"));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
+
+#[test]
+fn parse_many1_partial_match_then_stop() {
+	let parser = is("hello");
+	let tokens = vec!["hello", "hello", "hillo", "hello"];
+	let mut input = Input::new(tokens);
+	let parser_many1 = many1(&parser);
+	let output = parser_many1(&mut input).unwrap();
+	assert_eq!(output, vec!["hello", "hello"]);
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+}

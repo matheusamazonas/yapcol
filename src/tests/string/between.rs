@@ -32,3 +32,11 @@ fn fail_no_middle() {
 	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }
+
+#[test]
+fn fail_swap() {
+	let tokens = vec![")", "hello", "("];
+	let mut input = Input::new(tokens);
+	let output = between(&is("("), &is("hello"), &is(")"))(&mut input);
+	assert_eq!(output, Err(Error::UnexpectedToken));
+}
