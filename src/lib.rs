@@ -31,7 +31,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::is;
+/// use yapcol_rs::{is, any};
 /// use yapcol_rs::input::Input;
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
@@ -42,7 +42,7 @@ where
 /// let mut wrong: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
 /// let mut input = Input::new(wrong);
 /// assert!(parser(&mut input).is_err());
-/// assert_eq!(input.consumed_count(), 0); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
 pub fn is<I>(i: I::Item) -> impl Parser<I, I::Item>
 where
@@ -68,7 +68,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::satisfy;
+/// use yapcol_rs::{satisfy, any};
 /// use yapcol_rs::error::Error;
 /// use yapcol_rs::input::Input;
 ///
@@ -78,12 +78,12 @@ where
 ///     if c.is_ascii_digit() { Ok(*c) } else { Err(Error::UnexpectedToken) }
 /// });
 /// assert_eq!(parser(&mut input).unwrap(), '3');
-/// assert_eq!(input.consumed_count(), 1); // Token was consumed.
+/// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
 ///
 /// let tokens: Vec<char> = vec!['a', 'b', 'c'];
 /// let mut input = Input::new(tokens);
 /// assert!(parser(&mut input).is_err());
-/// assert_eq!(input.consumed_count(), 0); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
 pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
 where
@@ -112,7 +112,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::end_of_input;
+/// use yapcol_rs::{end_of_input, any};
+/// use yapcol_rs::error::Error;
 /// use yapcol_rs::input::Input;
 ///
 /// let tokens: Vec<char> = vec![];
@@ -122,7 +123,7 @@ where
 /// let tokens: Vec<char> = vec!['a', 'b'];
 /// let mut input = Input::new(tokens);
 /// assert!(end_of_input()(&mut input).is_err());
-/// assert_eq!(input.consumed_count(), 0); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
 pub fn end_of_input<I>() -> impl Parser<I, ()>
 where
@@ -152,7 +153,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{option, is, end_of_input};
+/// use yapcol_rs::{option, is, end_of_input, any};
 /// use yapcol_rs::input::Input;
 ///
 /// // parser1 succeeds: returns its result.
@@ -171,7 +172,7 @@ where
 /// let tokens: Vec<char> = vec!['c'];
 /// let mut input = Input::new(tokens);
 /// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
-/// assert_eq!(input.consumed_count(), 0);
+/// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
 pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
 where
@@ -202,7 +203,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{maybe, is};
+/// use yapcol_rs::{maybe, is, any};
 /// use yapcol_rs::input::Input;
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
@@ -214,7 +215,7 @@ where
 /// let tokens: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
 /// let mut input = Input::new(tokens);
 /// assert_eq!(parser(&mut input).unwrap(), None);
-/// assert_eq!(input.consumed_count(), 0); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
 pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
 where
@@ -260,12 +261,12 @@ where
 /// let mut input = Input::new(tokens);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![1, 1]));
 ///
-/// // Returns empty vector when no matches are found (never fails)
+/// // Returns an empty vector when no matches are found (never fails)
 /// let tokens: Vec<i32> = vec![2, 3];
 /// let mut input = Input::new(tokens);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 ///
-/// // Returns empty vector on empty input (never fails)
+/// // Returns an empty vector on empty input (never fails)
 /// let tokens: Vec<i32> = vec![];
 /// let mut input = Input::new(tokens);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
@@ -378,7 +379,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{count, is};
+/// use yapcol_rs::{count, is, any};
 /// use yapcol_rs::input::Input;
 ///
 /// // Succeeds when the parser matches exactly `count` times
@@ -386,7 +387,7 @@ where
 /// let tokens = vec![1, 1, 1, 2];
 /// let mut input = Input::new(tokens);
 /// assert_eq!(count(&parser, 3)(&mut input), Ok(vec![1, 1, 1]));
-/// assert_eq!(input.next_token(), Some(2)); // Remaining input after consuming 3 tokens.
+/// assert_eq!(any()(&mut input), Ok(2)); // Remaining input after consuming 3 tokens.
 ///
 /// // Fails when there are not enough matching tokens
 /// let tokens = vec![1, 2, 3];
@@ -432,7 +433,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{look_ahead, is, end_of_input};
+/// use yapcol_rs::{look_ahead, is, end_of_input, any};
 /// use yapcol_rs::input::Input;
 /// use yapcol_rs::error::Error;
 ///
@@ -441,16 +442,16 @@ where
 /// let mut input = Input::new(tokens);
 /// let parser1 = is(1);
 /// assert_eq!(look_ahead(&parser1)(&mut input), Ok(1));
-/// assert_eq!(input.next_token(), Some(1)); // Input was not consumed.
-/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
-/// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(1)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(2)); // any()(&mut input)Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(3)); // Input was not consumed.
 ///
 ///
 /// // Fails without consuming input.
 /// let tokens = vec![2, 3];
 /// let mut input = Input::new(tokens);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
-/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(2)); // Input was not consumed.
 ///
 /// // Fails consuming input if the parser consumes.
 /// let tokens = vec![1, 3];
@@ -462,7 +463,7 @@ where
 /// };
 /// let output = look_ahead(&consuming_parser)(&mut input);
 /// assert_eq!(output, Err(Error::UnexpectedToken));
-/// assert_eq!(input.next_token(), Some(3)); // Input was consumed.
+/// assert_eq!(any()(&mut input), Ok(3)); // Input was consumed.
 ///
 /// // Fails on empty input.
 /// let tokens: Vec<i32> = vec![];
@@ -508,7 +509,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{attempt, is, end_of_input};
+/// use yapcol_rs::{attempt, is, end_of_input, any};
 /// use yapcol_rs::input::Input;
 /// use yapcol_rs::error::Error;
 ///
@@ -517,14 +518,14 @@ where
 /// let mut input = Input::new(tokens);
 /// let parser1 = is(1);
 /// assert_eq!(attempt(&parser1)(&mut input), Ok(1));
-/// assert_eq!(input.next_token(), Some(2)); // Input was consumed.
+/// assert_eq!(any()(&mut input), Ok(2)); // Input was consumed.
 ///
 /// // Fails without consuming input.
 /// let tokens = vec![2, 3];
 /// let mut input = Input::new(tokens);
 /// assert!(attempt(&parser1)(&mut input).is_err());
-/// assert_eq!(input.next_token(), Some(2)); // Input was not consumed.
-/// assert_eq!(input.next_token(), Some(3)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(2)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(3)); // Input was not consumed.
 ///
 /// // Fails without consuming input if the parser consumes.
 /// let tokens = vec![1, 3];
@@ -536,7 +537,7 @@ where
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
 /// assert_eq!(output, Err(Error::UnexpectedToken));
-/// assert_eq!(input.next_token(), Some(1)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok(1)); // Input was not consumed.
 ///
 /// // Fails on empty input
 /// let tokens: Vec<i32> = vec![];

@@ -51,7 +51,7 @@ where
 		}
 	}
 
-	pub fn next_token(&mut self) -> Option<I::Item> {
+	pub(crate) fn next_token(&mut self) -> Option<I::Item> {
 		match self.next_location {
 			TokenLocation::Stream => {
 				self.consumed_count += 1;
@@ -93,7 +93,7 @@ where
 		}
 	}
 
-	pub fn peek(&mut self) -> Option<&I::Item> {
+	pub(crate) fn peek(&mut self) -> Option<&I::Item> {
 		match self.next_location {
 			TokenLocation::Stream => self.stream.peek(),
 			TokenLocation::StreamLookingAhead => self.stream.peek(),
@@ -105,11 +105,11 @@ where
 		}
 	}
 
-	pub fn consumed_count(&self) -> usize {
+	pub(crate) fn consumed_count(&self) -> usize {
 		self.consumed_count
 	}
 
-	pub fn start_look_ahead(&mut self) {
+	pub(crate) fn start_look_ahead(&mut self) {
 		let new_frame = match self.look_ahead_frames.last() {
 			Some(previous) => {
 				let start_index = previous.start_index + previous.length;
@@ -134,7 +134,7 @@ where
 		self.look_ahead_frames.push(new_frame);
 	}
 
-	pub fn stop_look_ahead(&mut self, backtrack: bool) {
+	pub(crate) fn stop_look_ahead(&mut self, backtrack: bool) {
 		let frame = self.look_ahead_frames.pop().unwrap();
 		if !backtrack {
 			self.consumed_count += frame.length;
