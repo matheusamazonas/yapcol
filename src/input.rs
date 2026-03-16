@@ -146,7 +146,7 @@ where
 		if token.id != self.look_ahead_frames.len() {
 			panic!("Look ahead token doesn't match current lookahead depth.")
 		}
-		
+
 		if !backtrack {
 			self.consumed_count += frame.length;
 			let buffer_length = self.look_ahead_buffer.len();
@@ -322,7 +322,7 @@ mod tests {
 		input.stop_look_ahead(token1, true);
 		assert_eq!(input.next_token(), Some(1));
 	}
-	
+
 	#[test]
 	#[should_panic]
 	fn wrong_token() {

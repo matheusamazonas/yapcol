@@ -17,9 +17,9 @@ enum Expression {
 	Operation(Box<Expression>, Operator, Box<Expression>),
 }
 
-trait ExpressionParser<I> : Parser<I, Expression> 
+trait ExpressionParser<I>: Parser<I, Expression>
 where
-	I: Iterator<Item = char>
+	I: Iterator<Item = char>,
 {
 }
 
@@ -117,7 +117,7 @@ where
 		let parse_parenthesis = between(&open, &expression, &close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
 		option(&parse_parenthesis, &number)(input)
-	} 
+	}
 }
 
 fn evaluate(expression: Expression) -> i32 {
@@ -289,7 +289,7 @@ mod parsing_tests {
 		assert_eq!(output, expression2);
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
-	
+
 	#[test]
 	fn parenthesis_number() {
 		let number = "(123)";
@@ -317,16 +317,16 @@ mod parsing_tests {
 		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let expression1 = Expression::Operation(
-			Box::new(Expression::Number(number1)), 
+			Box::new(Expression::Number(number1)),
 			Operator::Addition,
-			Box::new(Expression::Number(number2))
+			Box::new(Expression::Number(number2)),
 		);
 		let expression2 = Expression::Operation(
 			Box::new(expression1),
 			Operator::Multiplication,
-			Box::new(Expression::Number(number3))
+			Box::new(Expression::Number(number3)),
 		);
-		
+
 		assert_eq!(parser(&mut input), Ok(expression2));
 	}
 }
