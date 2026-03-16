@@ -16,6 +16,11 @@ impl LookAheadFrame {
 	}
 }
 
+#[must_use]
+pub(crate) struct LookAheadToken {
+	id: usize,
+}
+
 enum TokenLocation {
 	Stream,
 	StreamLookingAhead,
@@ -109,7 +114,7 @@ where
 		self.consumed_count
 	}
 
-	pub(crate) fn start_look_ahead(&mut self) {
+	pub(crate) fn start_look_ahead(&mut self) -> LookAheadToken {
 		let new_frame = match self.look_ahead_frames.last() {
 			Some(previous) => {
 				let start_index = previous.start_index + previous.length;
@@ -131,11 +136,17 @@ where
 			TokenLocation::BufferTail
 		};
 
+		let token_id = self.look_ahead_frames.len();
 		self.look_ahead_frames.push(new_frame);
+		LookAheadToken { id: token_id }
 	}
 
-	pub(crate) fn stop_look_ahead(&mut self, backtrack: bool) {
+	pub(crate) fn stop_look_ahead(&mut self, token: LookAheadToken, backtrack: bool) {
 		let frame = self.look_ahead_frames.pop().unwrap();
+		if token.id != self.look_ahead_frames.len() {
+			panic!("Look ahead token doesn't match current lookahead depth.")
+		}
+		
 		if !backtrack {
 			self.consumed_count += frame.length;
 			let buffer_length = self.look_ahead_buffer.len();
@@ -168,12 +179,12 @@ mod tests {
 	fn lookahead_no_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		let next = input.next_token();
 		assert_eq!(next, Some(1));
 		let next = input.next_token();
 		assert_eq!(next, Some(2));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token, false);
 		assert!(input.look_ahead_buffer.is_empty());
 		assert_eq!(input.consumed_count(), 2);
 		assert_eq!(input.look_ahead_frames.len(), 0);
@@ -184,12 +195,12 @@ mod tests {
 	fn lookahead_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		let next = input.next_token();
 		assert_eq!(next, Some(1));
 		let next = input.next_token();
 		assert_eq!(next, Some(2));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token, true);
 		assert!(!input.look_ahead_buffer.is_empty());
 		assert_eq!(input.consumed_count(), 0);
 		assert_eq!(input.next_token(), Some(1));
@@ -207,10 +218,10 @@ mod tests {
 	fn peek_twice_while_looking_ahead_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.peek(), Some(&1));
 		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token, true);
 		assert_eq!(input.peek(), Some(&1));
 	}
 
@@ -218,10 +229,10 @@ mod tests {
 	fn peek_twice_while_looking_ahead_not_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.peek(), Some(&1));
 		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token, false);
 		assert_eq!(input.peek(), Some(&1));
 	}
 
@@ -229,14 +240,14 @@ mod tests {
 	fn repeat_peek_look_ahead_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token, true);
 		assert_eq!(input.peek(), Some(&1));
 
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token, true);
 		assert_eq!(input.peek(), Some(&1));
 	}
 
@@ -244,14 +255,14 @@ mod tests {
 	fn repeat_peek_look_ahead_not_backtracking() {
 		let tokens = vec![1, 2];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token, false);
 		assert_eq!(input.peek(), Some(&2));
 
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token, true);
 		assert_eq!(input.peek(), Some(&2));
 		assert_eq!(input.next_token(), Some(2));
 	}
@@ -260,13 +271,13 @@ mod tests {
 	fn nested_lookahead_backtrack() {
 		let tokens = vec![1, 2, 3, 4, 5];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token1 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.start_look_ahead();
+		let token2 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token2, true);
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token1, true);
 		assert_eq!(input.next_token(), Some(1));
 	}
 
@@ -274,13 +285,13 @@ mod tests {
 	fn nested_lookahead_no_backtrack() {
 		let tokens = vec![1, 2, 3, 4, 5];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token1 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.start_look_ahead();
+		let token2 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token2, false);
 		assert_eq!(input.next_token(), Some(3));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token1, false);
 		assert_eq!(input.next_token(), Some(4));
 	}
 
@@ -288,13 +299,13 @@ mod tests {
 	fn nested_look_ahead_backtrack_first() {
 		let tokens = vec![1, 2, 3, 4, 5];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token1 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.start_look_ahead();
+		let token2 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token2, true);
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token1, false);
 		assert_eq!(input.next_token(), Some(3));
 	}
 
@@ -302,13 +313,23 @@ mod tests {
 	fn nested_look_ahead_backtrack_second() {
 		let tokens = vec![1, 2, 3, 4, 5];
 		let mut input = Input::new(tokens);
-		input.start_look_ahead();
+		let token1 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(1));
-		input.start_look_ahead();
+		let token2 = input.start_look_ahead();
 		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(false);
+		input.stop_look_ahead(token2, false);
 		assert_eq!(input.next_token(), Some(3));
-		input.stop_look_ahead(true);
+		input.stop_look_ahead(token1, true);
 		assert_eq!(input.next_token(), Some(1));
+	}
+	
+	#[test]
+	#[should_panic]
+	fn wrong_token() {
+		let tokens = vec![1, 2, 3, 4, 5];
+		let mut input = Input::new(tokens);
+		let token1 = input.start_look_ahead();
+		let _token2 = input.start_look_ahead();
+		input.stop_look_ahead(token1, false);
 	}
 }

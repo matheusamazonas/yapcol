@@ -476,9 +476,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		let output = parser(input);
-		input.stop_look_ahead(output.is_ok());
+		input.stop_look_ahead(token, output.is_ok());
 		output
 	}
 }
@@ -550,9 +550,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		input.start_look_ahead();
+		let token = input.start_look_ahead();
 		let output = parser(input);
-		input.stop_look_ahead(output.is_err());
+		input.stop_look_ahead(token, output.is_err());
 		output
 	}
 }
