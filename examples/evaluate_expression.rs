@@ -1,7 +1,7 @@
 use std::io;
 use yapcol_rs::error::Error;
 use yapcol_rs::input::Input;
-use yapcol_rs::{attempt, chain_left1, end_of_input, is, many0, option, satisfy, Parser};
+use yapcol_rs::{attempt, between, chain_left1, is, many0, option, satisfy, Parser};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Operator {
@@ -87,9 +87,24 @@ where
 				_ => Err(Error::UnexpectedToken),
 			}
 		};
-		let number_parser = parse_number();
-		chain_left1(&number_parser, &parse_operand)(input)
+		let factor_parser = parse_factor();
+		chain_left1(&factor_parser, &parse_operand)(input)
 	}
+}
+
+fn parse_factor<I>() -> impl Parser<I, Expression>
+where
+	I: Iterator<Item = char>,
+{
+	move |input| {
+		let number = parse_number();
+		let open = is('(');
+		let expression = parse_expression();
+		let close = is(')');
+		let parse_parenthesis = between(&open, &expression, &close);
+		let parse_parenthesis = attempt(&parse_parenthesis);
+		option(&parse_parenthesis, &number)(input)
+	} 
 }
 
 fn evaluate(expression: Expression) -> i32 {
@@ -128,6 +143,7 @@ fn main() {
 #[cfg(test)]
 mod parsing_tests {
 	use super::*;
+	use yapcol_rs::end_of_input;
 
 	fn build_operation(x: i32, operator: Operator, y: i32) -> Expression {
 		let operand1 = Box::new(Expression::Number(x));
@@ -136,7 +152,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_number() {
+	fn number() {
 		let number = "123";
 		let tokens: Vec<_> = number.chars().collect();
 		let mut input = Input::new(tokens);
@@ -145,7 +161,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_addition() {
+	fn addition() {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}+{number2}");
@@ -160,7 +176,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_subtraction() {
+	fn subtraction() {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}-{number2}");
@@ -175,7 +191,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_multiplication() {
+	fn multiplication() {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}*{number2}");
@@ -190,7 +206,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_division() {
+	fn division() {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}/{number2}");
@@ -205,7 +221,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_two_addition() {
+	fn two_addition() {
 		let number1 = 123;
 		let number2 = 456;
 		let number3 = 789;
@@ -224,7 +240,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_addition_and_subtraction() {
+	fn addition_and_subtraction() {
 		let number1 = 123;
 		let number2 = 456;
 		let number3 = 789;
@@ -243,7 +259,7 @@ mod parsing_tests {
 	}
 
 	#[test]
-	fn parse_addition_and_multiplication() {
+	fn addition_and_multiplication() {
 		let number1 = 123;
 		let number2 = 456;
 		let number3 = 789;
@@ -260,11 +276,52 @@ mod parsing_tests {
 		assert_eq!(output, expression2);
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
+	
+	#[test]
+	fn parenthesis_number() {
+		let number = "(123)";
+		let tokens: Vec<_> = number.chars().collect();
+		let mut input = Input::new(tokens);
+		let parser = parse_expression();
+		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
+	}
+
+	#[test]
+	fn double_parenthesis_number() {
+		let number = "((123))";
+		let tokens: Vec<_> = number.chars().collect();
+		let mut input = Input::new(tokens);
+		let parser = parse_expression();
+		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
+	}
+
+	#[test]
+	fn parenthesis_changes_precedence() {
+		let number1 = 123;
+		let number2 = 456;
+		let number3 = 789;
+		let tokens = format!("({number1}+{number2})*{number3}");
+		let mut input = Input::new(tokens.chars());
+		let parser = parse_expression();
+		let expression1 = Expression::Operation(
+			Box::new(Expression::Number(number1)), 
+			Operator::Addition,
+			Box::new(Expression::Number(number2))
+		);
+		let expression2 = Expression::Operation(
+			Box::new(expression1),
+			Operator::Multiplication,
+			Box::new(Expression::Number(number3))
+		);
+		
+		assert_eq!(parser(&mut input), Ok(expression2));
+	}
 }
 
 #[cfg(test)]
 mod evaluation_tests {
 	use super::*;
+	use yapcol_rs::end_of_input;
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let mut input = Input::new(input.chars());
