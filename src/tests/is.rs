@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_right() {
+fn success() {
 	let parse = is("hello");
 	let tokens = vec!["hello"];
 	let mut input = Input::new(tokens);
@@ -10,7 +10,7 @@ fn parse_right() {
 }
 
 #[test]
-fn parse_wrong() {
+fn fail() {
 	let parser = is("hello");
 	let tokens = vec!["hallo"];
 	let mut input = Input::new(tokens);

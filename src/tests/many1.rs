@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_many1_empty() {
+fn empty() {
 	let parser = is("hello");
 	let tokens: Vec<&str> = vec![];
 	let mut input = Input::new(tokens);
@@ -10,7 +10,7 @@ fn parse_many1_empty() {
 }
 
 #[test]
-fn parse_many1_no_match() {
+fn no_match() {
 	let parser = is("hello");
 	let tokens = vec!["hallo", "hillo", "hollo"];
 	let mut input = Input::new(tokens);
@@ -20,7 +20,7 @@ fn parse_many1_no_match() {
 }
 
 #[test]
-fn parse_many1_one_match() {
+fn one_match() {
 	let parser = is("hello");
 	let tokens = vec!["hello", "hillo", "hollo"];
 	let mut input = Input::new(tokens);
@@ -32,7 +32,7 @@ fn parse_many1_one_match() {
 }
 
 #[test]
-fn parse_many1_multiple_matches() {
+fn multiple_matches() {
 	let token_count = 100;
 	let parser = is("hello");
 	let tokens = std::iter::repeat_n("hello", token_count).collect::<Vec<_>>();
@@ -45,7 +45,7 @@ fn parse_many1_multiple_matches() {
 }
 
 #[test]
-fn parse_many1_partial_match_then_stop() {
+fn partial_match_then_stop() {
 	let parser = is("hello");
 	let tokens = vec!["hello", "hello", "hillo", "hello"];
 	let mut input = Input::new(tokens);

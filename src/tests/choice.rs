@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_choice_success() {
+fn success() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let parser3 = is("hillo");
@@ -34,7 +34,7 @@ fn parse_choice_success() {
 }
 
 #[test]
-fn parse_choice_fail() {
+fn fail() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let parser3 = is("hillo");

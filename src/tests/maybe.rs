@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_maybe_success() {
+fn success() {
 	let parser = is("hello");
 	let tokens = vec!["hello"];
 	let mut input = Input::new(tokens);
@@ -11,7 +11,7 @@ fn parse_maybe_success() {
 }
 
 #[test]
-fn parse_maybe_fail_non_consuming() {
+fn fail_non_consuming() {
 	let parser = is("hello");
 	let tokens = vec!["hallo"];
 	let mut input = Input::new(tokens);
@@ -21,7 +21,7 @@ fn parse_maybe_fail_non_consuming() {
 }
 
 #[test]
-fn parse_maybe_fail_consuming() {
+fn fail_consuming() {
 	let parser = |input: &mut Input<_>| match input.next_token() {
 		Some(token) => {
 			if token == "hello" {
@@ -40,7 +40,7 @@ fn parse_maybe_fail_consuming() {
 }
 
 #[test]
-fn parse_maybe_on_empty_input() {
+fn empty() {
 	let parser = is("hello");
 	let tokens: Vec<&str> = vec![];
 	let mut input = Input::new(tokens);

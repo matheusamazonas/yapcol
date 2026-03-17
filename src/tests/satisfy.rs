@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_satisfy_even_number() {
+fn even_number() {
 	let is_even_length = satisfy(|token: &&str| {
 		if token.len().is_multiple_of(2) {
 			Ok(<&str>::clone(token))

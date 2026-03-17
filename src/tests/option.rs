@@ -1,7 +1,7 @@
 use crate::*;
 
 #[test]
-fn parse_option_first() {
+fn success_first() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let tokens = vec!["hello"];
@@ -13,7 +13,7 @@ fn parse_option_first() {
 }
 
 #[test]
-fn parse_option_second() {
+fn success_second() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let tokens = vec!["hallo"];
@@ -25,7 +25,7 @@ fn parse_option_second() {
 }
 
 #[test]
-fn parse_option_none() {
+fn fail_not_consuming() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let tokens = vec!["other"];
@@ -36,7 +36,7 @@ fn parse_option_none() {
 }
 
 #[test]
-fn parse_option_consuming_fails() {
+fn fail_consuming() {
 	let parser1 = is("hello");
 	let parser2 = is("hallo");
 	let tokens = vec!["hello", "hello"];
