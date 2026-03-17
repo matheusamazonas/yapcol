@@ -25,6 +25,9 @@ jobs:
 
       - name: Run tests
         run: cargo test --all-features --verbose
+        
+      - name: Run expression evaluation example's tests
+        run: cargo test --example evaluate_expression
 
       - name: Build documentation
         run: cargo doc --no-deps
