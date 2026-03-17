@@ -10,6 +10,7 @@ mod is;
 mod look_ahead;
 mod many0;
 mod many1;
+mod many_until;
 mod maybe;
 mod not_followed_by;
 mod option;

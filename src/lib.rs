@@ -874,3 +874,45 @@ where
 		output
 	}
 }
+
+/// Parsers one or more instances of `parser`, until `end` succeeds.
+///
+/// # Arguments
+///
+/// * `parser`: the parser for the elements to be collected until the end is reached.
+/// * `end`: the parser that delimits the end.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol_rs::{any, is, many_until};
+/// use yapcol_rs::error::Error;
+/// use yapcol_rs::input::Input;
+///
+/// let comments_parser = |input: &mut Input<_>| {
+///     let open = is("/*");
+///     let close = is("*/");
+///     let any = any();
+///     open(input)?;
+///     many_until(&any, &close)(input)
+/// };
+/// let tokens: Vec<&str> = vec!["/*", "this", "is", "a", "comment", "*/"];
+/// let mut input = Input::new(tokens);
+/// let output = comments_parser(&mut input);
+/// assert_eq!(output, Ok(vec!["this", "is", "a", "comment"]));
+/// ```
+pub fn many_until<P, PE, I, O, OE>(parser: &P, end: &PE) -> impl Parser<I, Vec<O>>
+where
+	P: Parser<I, O>,
+	PE: Parser<I, OE>,
+	I: Iterator<Item: Token>,
+{
+	|input| {
+		let mut matches = Vec::new();
+		while end(input).is_err() {
+			let token = parser(input)?;
+			matches.push(token);
+		}
+		Ok(matches)
+	}
+}
