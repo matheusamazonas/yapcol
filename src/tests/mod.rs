@@ -11,6 +11,7 @@ mod look_ahead;
 mod many0;
 mod many1;
 mod maybe;
+mod not_followed_by;
 mod option;
 mod satisfy;
 mod separated_by0;

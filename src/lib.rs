@@ -832,5 +832,45 @@ where
 	}
 }
 
-// TO-DO list:
-// - notFollowedBy
+/// Succeeds if `parser` fails. This combinator does not consume input, even if `parser` does.
+///
+/// # Arguments
+///
+/// * `parser`: the parser which should fail for this combinator to succeed.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol_rs::{is, not_followed_by};
+/// use yapcol_rs::error::Error;
+/// use yapcol_rs::input::Input;
+///
+/// let parser = is("hello");
+/// let tokens: Vec<&str> = vec!["world"];
+/// let mut input = Input::new(tokens);
+/// let not_followed_parser = not_followed_by(&parser);
+/// let output = not_followed_parser(&mut input);
+/// assert_eq!(output, Ok(()));
+///
+/// let tokens: Vec<&str> = vec!["hello"];
+/// let mut input = Input::new(tokens);
+/// let output = not_followed_parser(&mut input);
+/// assert_eq!(output, Err(Error::UnexpectedToken));
+///
+/// ```
+pub fn not_followed_by<P, I, O>(parser: &P) -> impl Parser<I, ()>
+where
+	P: Parser<I, O>,
+	I: Iterator<Item: Token>,
+{
+	|input| {
+		let token = input.start_look_ahead();
+		let output = match parser(input) {
+			Ok(_) => Err(Error::UnexpectedToken),
+			Err(Error::EndOfInput) => Err(Error::EndOfInput),
+			Err(_) => Ok(()),
+		};
+		input.stop_look_ahead(token, true);
+		output
+	}
+}
