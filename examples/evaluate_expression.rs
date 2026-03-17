@@ -1,7 +1,7 @@
 use std::io;
 use yapcol_rs::error::Error;
 use yapcol_rs::input::Input;
-use yapcol_rs::{attempt, between, chain_left, is, many0, option, satisfy, Parser};
+use yapcol_rs::{Parser, attempt, between, chain_left, is, many0, option, satisfy};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Operator {
