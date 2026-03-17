@@ -1,7 +1,7 @@
 use std::io;
-use yapcol_rs::error::Error;
-use yapcol_rs::input::Input;
-use yapcol_rs::{Parser, attempt, between, chain_left, is, many0, option, satisfy};
+use yapcol::error::Error;
+use yapcol::input::Input;
+use yapcol::{Parser, attempt, between, chain_left, is, many0, option, satisfy};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Operator {
@@ -156,7 +156,7 @@ fn main() {
 #[cfg(test)]
 mod parsing_tests {
 	use super::*;
-	use yapcol_rs::end_of_input;
+	use yapcol::end_of_input;
 
 	fn build_operation(x: i32, operator: Operator, y: i32) -> Expression {
 		let operand1 = Box::new(Expression::Number(x));
@@ -334,7 +334,7 @@ mod parsing_tests {
 #[cfg(test)]
 mod evaluation_tests {
 	use super::*;
-	use yapcol_rs::end_of_input;
+	use yapcol::end_of_input;
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let mut input = Input::new(input.chars());

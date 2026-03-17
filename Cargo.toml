@@ -1,5 +1,5 @@
 [package]
-name = "yapcol_rs"
+name = "yapcol"
 version = "0.1.0"
 edition = "2024"
 

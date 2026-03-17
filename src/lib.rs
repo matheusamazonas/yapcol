@@ -31,8 +31,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{is, any};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{is, any};
+/// use yapcol::input::Input;
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
 /// let mut input = Input::new(tokens);
@@ -68,9 +68,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{satisfy, any};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{satisfy, any};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
 /// let mut input = Input::new(tokens);
@@ -112,9 +112,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{end_of_input, any};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{end_of_input, any};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let tokens: Vec<char> = vec![];
 /// let mut input = Input::new(tokens);
@@ -153,8 +153,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{option, is, end_of_input, any};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{option, is, end_of_input, any};
+/// use yapcol::input::Input;
 ///
 /// // parser1 succeeds: returns its result.
 /// let tokens: Vec<char> = vec!['a', 'b'];
@@ -203,8 +203,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{maybe, is, any};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{maybe, is, any};
+/// use yapcol::input::Input;
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
 /// let mut input = Input::new(tokens);
@@ -252,8 +252,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{many0, is};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{many0, is};
+/// use yapcol::input::Input;
 ///
 /// // Matches multiple elements
 /// let parser = is(1);
@@ -288,8 +288,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{many1, is};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{many1, is};
+/// use yapcol::input::Input;
 ///
 /// // Matches multiple elements
 /// let parser = is(1);
@@ -330,8 +330,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{choice, is};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{choice, is};
+/// use yapcol::input::Input;
 ///
 /// // Returns the result of the first matching parser
 /// let p1 = is(1);
@@ -379,8 +379,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{count, is, any};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{count, is, any};
+/// use yapcol::input::Input;
 ///
 /// // Succeeds when the parser matches exactly `count` times
 /// let parser = is(1);
@@ -433,9 +433,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{look_ahead, is, end_of_input, any};
-/// use yapcol_rs::input::Input;
-/// use yapcol_rs::error::Error;
+/// use yapcol::{look_ahead, is, end_of_input, any};
+/// use yapcol::input::Input;
+/// use yapcol::error::Error;
 ///
 /// // Succeeds without consuming input.
 /// let tokens = vec![1, 2, 3];
@@ -509,9 +509,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{attempt, is, end_of_input, any};
-/// use yapcol_rs::input::Input;
-/// use yapcol_rs::error::Error;
+/// use yapcol::{attempt, is, end_of_input, any};
+/// use yapcol::input::Input;
+/// use yapcol::error::Error;
 ///
 /// // Succeeds consuming input.
 /// let tokens = vec![1, 2, 3];
@@ -568,8 +568,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{is, between};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{is, between};
+/// use yapcol::input::Input;
 ///
 /// let tokens: Vec<i32> = vec![1, 2, 1];
 /// let mut input = Input::new(tokens);
@@ -598,8 +598,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{any};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{any};
+/// use yapcol::input::Input;
 ///
 /// // An example input iterator
 /// let tokens: Vec<i32> = vec![1, 2, 3];
@@ -645,8 +645,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{is, separated_by0};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{is, separated_by0};
+/// use yapcol::input::Input;
 ///
 /// let parser1 = is(1);
 /// let parser2 = is(2);
@@ -682,8 +682,8 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{is, separated_by1};
-/// use yapcol_rs::input::Input;
+/// use yapcol::{is, separated_by1};
+/// use yapcol::input::Input;
 ///
 /// let parser1 = is(1);
 /// let parser2 = is(2);
@@ -743,9 +743,9 @@ where
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
-/// use yapcol_rs::{satisfy, chain_left};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{satisfy, chain_left};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let operand = satisfy(|c: &char| match c.to_digit(10)  {
 ///     Some(x) => Ok(x as i32),
@@ -792,9 +792,9 @@ where
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
-/// use yapcol_rs::{satisfy, chain_right};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{satisfy, chain_right};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let operand = satisfy(|c: &char| match c.to_digit(10)  {
 ///     Some(x) => Ok(x as i32),
@@ -841,9 +841,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{is, not_followed_by};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{is, not_followed_by};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let parser = is("hello");
 /// let tokens: Vec<&str> = vec!["world"];
@@ -885,9 +885,9 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol_rs::{any, is, many_until};
-/// use yapcol_rs::error::Error;
-/// use yapcol_rs::input::Input;
+/// use yapcol::{any, is, many_until};
+/// use yapcol::error::Error;
+/// use yapcol::input::Input;
 ///
 /// let comments_parser = |input: &mut Input<_>| {
 ///     let open = is("/*");
