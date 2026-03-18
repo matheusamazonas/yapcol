@@ -476,9 +476,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		let token = input.start_look_ahead();
+		let handler = input.start_look_ahead();
 		let output = parser(input);
-		input.stop_look_ahead(token, output.is_ok());
+		input.stop_look_ahead(handler, output.is_ok());
 		output
 	}
 }
@@ -550,9 +550,9 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		let token = input.start_look_ahead();
+		let handler = input.start_look_ahead();
 		let output = parser(input);
-		input.stop_look_ahead(token, output.is_err());
+		input.stop_look_ahead(handler, output.is_err());
 		output
 	}
 }
@@ -864,13 +864,13 @@ where
 	I: Iterator<Item: Token>,
 {
 	|input| {
-		let token = input.start_look_ahead();
+		let handler = input.start_look_ahead();
 		let output = match parser(input) {
 			Ok(_) => Err(Error::UnexpectedToken),
 			Err(Error::EndOfInput) => Err(Error::EndOfInput),
 			Err(_) => Ok(()),
 		};
-		input.stop_look_ahead(token, true);
+		input.stop_look_ahead(handler, true);
 		output
 	}
 }
