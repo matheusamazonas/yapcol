@@ -1,7 +1,7 @@
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::Input;
-use yapcol::{Parser, attempt, between, chain_left, is, many0, option, satisfy};
+use yapcol::{Parser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Operator {
@@ -9,6 +9,7 @@ enum Operator {
 	Subtraction,
 	Multiplication,
 	Division,
+	Exponentiation,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -67,41 +68,19 @@ fn parse_expression<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
-	move |input| {
-		let parse_operand = |input: &mut Input<I>| {
+	|input| {
+		let parse_operator = |input: &mut Input<I>| {
 			let parse_plus = is('+');
 			let parse_minus = is('-');
-			let attempt_parse_plus = attempt(&parse_plus);
-			let operator = option(&attempt_parse_plus, &parse_minus)(input)?;
+			let parse_attempt_plus = attempt(&parse_plus);
+			let operator = option(&parse_attempt_plus, &parse_minus)(input)?;
 			match operator {
 				'+' => Ok(build_operation(Operator::Addition)),
 				'-' => Ok(build_operation(Operator::Subtraction)),
 				_ => Err(Error::UnexpectedToken),
 			}
 		};
-		let factor_parser = parse_term();
-		chain_left(&factor_parser, &parse_operand)(input)
-	}
-}
-
-fn parse_term<I>() -> impl ExpressionParser<I>
-where
-	I: Iterator<Item = char>,
-{
-	move |input| {
-		let parse_operand = |input: &mut Input<I>| {
-			let parse_multiplication = is('*');
-			let parse_division = is('/');
-			let attempt_parse_multiplication = attempt(&parse_multiplication);
-			let operator = option(&attempt_parse_multiplication, &parse_division)(input)?;
-			match operator {
-				'*' => Ok(build_operation(Operator::Multiplication)),
-				'/' => Ok(build_operation(Operator::Division)),
-				_ => Err(Error::UnexpectedToken),
-			}
-		};
-		let factor_parser = parse_factor();
-		chain_left(&factor_parser, &parse_operand)(input)
+		chain_left(&parse_factor(), &parse_operator)(input)
 	}
 }
 
@@ -109,14 +88,47 @@ fn parse_factor<I>() -> impl ExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
-	move |input| {
-		let number = parse_number();
-		let open = is('(');
-		let expression = parse_expression();
-		let close = is(')');
-		let parse_parenthesis = between(&open, &expression, &close);
+	|input| {
+		let parse_operator = |input: &mut Input<I>| {
+			let parse_multiplication = is('*');
+			let parse_division = is('/');
+			let parse_attempt_multiplication = attempt(&parse_multiplication);
+			let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
+			match operator {
+				'*' => Ok(build_operation(Operator::Multiplication)),
+				'/' => Ok(build_operation(Operator::Division)),
+				_ => Err(Error::UnexpectedToken),
+			}
+		};
+		chain_left(&parse_exponentiation(), &parse_operator)(input)
+	}
+}
+
+fn parse_exponentiation<I>() -> impl ExpressionParser<I>
+where
+	I: Iterator<Item = char>,
+{
+	|input| {
+		let parse_operator = |input: &mut Input<I>| match is('^')(input) {
+			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
+			Err(_) => Err(Error::UnexpectedToken),
+		};
+		chain_right(&parse_bottom(), &parse_operator)(input)
+	}
+}
+
+fn parse_bottom<I>() -> impl ExpressionParser<I>
+where
+	I: Iterator<Item = char>,
+{
+	|input| {
+		let parse_number = parse_number();
+		let parse_open = is('(');
+		let parse_expression = parse_expression();
+		let parse_close = is(')');
+		let parse_parenthesis = between(&parse_open, &parse_expression, &parse_close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
-		option(&parse_parenthesis, &number)(input)
+		option(&parse_parenthesis, &parse_number)(input)
 	}
 }
 
@@ -128,6 +140,7 @@ fn evaluate(expression: Expression) -> i32 {
 			Operator::Subtraction => evaluate(*o1) - evaluate(*o2),
 			Operator::Multiplication => evaluate(*o1) * evaluate(*o2),
 			Operator::Division => evaluate(*o1) / evaluate(*o2),
+			Operator::Exponentiation => evaluate(*o1).pow(evaluate(*o2) as u32),
 		},
 	}
 }
@@ -242,6 +255,7 @@ mod parsing_tests {
 		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
+		// Addition is left-associative.
 		let expression1 = build_operation(number1, Operator::Addition, number2);
 		let expression2 = Expression::Operation(
 			Box::new(expression1),
@@ -284,6 +298,41 @@ mod parsing_tests {
 		let expression2 = Expression::Operation(
 			Box::new(Expression::Number(number1)),
 			Operator::Addition,
+			Box::new(expression1),
+		);
+		assert_eq!(output, expression2);
+		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+	}
+
+	#[test]
+	fn simple_exponentiation() {
+		let number1 = 12;
+		let number2 = 3;
+		let tokens = format!("{number1}^{number2}");
+		let mut input = Input::new(tokens.chars());
+		let parser = parse_expression();
+		let output = parser(&mut input).unwrap();
+		assert_eq!(
+			output,
+			build_operation(number1, Operator::Exponentiation, number2)
+		);
+		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+	}
+
+	#[test]
+	fn double_exponentiation() {
+		let number1 = 2;
+		let number2 = 3;
+		let number3 = 4;
+		let tokens = format!("{number1}^{number2}^{number3}");
+		let mut input = Input::new(tokens.chars());
+		let parser = parse_expression();
+		let output = parser(&mut input).unwrap();
+		let expression1 = build_operation(number2, Operator::Exponentiation, number3);
+		// Exponentiation is right-associative.
+		let expression2 = Expression::Operation(
+			Box::new(Expression::Number(number1)),
+			Operator::Exponentiation,
 			Box::new(expression1),
 		);
 		assert_eq!(output, expression2);
@@ -338,9 +387,9 @@ mod evaluation_tests {
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let mut input = Input::new(input.chars());
-		let expression = parse_expression()(&mut input).unwrap();
+		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
-		evaluate(expression)
+		evaluate(output.unwrap())
 	}
 
 	#[test]
@@ -387,8 +436,31 @@ mod evaluation_tests {
 	}
 
 	#[test]
-	fn mixed_operations() {
+	fn simple_exponentiation() {
+		assert_eq!(parse_and_evaluate("2^3"), 8);
+	}
+
+	#[test]
+	fn double_exponentiation() {
+		// Right-associative, equals to 4^(2^3) = 4^8 = 65536
+		assert_eq!(parse_and_evaluate("4^2^3"), 65_536);
+	}
+
+	#[test]
+	fn mixed_operations_no_exponentiation() {
 		// 10+2*3-1 = 10+(2*3)-1 = 15
 		assert_eq!(parse_and_evaluate("10+2*3-1"), 15);
+	}
+
+	#[test]
+	fn mixed_operations_exponentiation() {
+		// 28/4+2*3-2^3 = (28/4)+(2*3)-((2^3)) = 5
+		assert_eq!(parse_and_evaluate("28/4+2*3-2^3"), 5);
+	}
+
+	#[test]
+	fn mixed_operations_exponentiation_parenthesis() {
+		// 28/4+2*(3-2)^3 = (28/4)+(2*((3-2)^3) = (28/4)+(2*(1^3)) = (28/4)+(2*1) = 7+2 = 9
+		assert_eq!(parse_and_evaluate("28/4+2*(3-2)^3"), 9);
 	}
 }
