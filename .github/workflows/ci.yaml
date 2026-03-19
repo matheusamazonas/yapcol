@@ -26,8 +26,11 @@ jobs:
       - name: Run tests
         run: cargo test --all-features --verbose
         
-      - name: Run expression evaluation example's tests
-        run: cargo test --example evaluate_expression
+      - name: Run expression evaluation example's tests (string variant)
+        run: cargo test --example evaluate_expression_string
+
+      - name: Run expression evaluation example's tests (token variant)
+        run: cargo test --example evaluate_expression_token
 
       - name: Build documentation
         run: cargo doc --no-deps

@@ -2,29 +2,16 @@ use std::io;
 use yapcol::error::Error;
 use yapcol::input::Input;
 use yapcol::{Parser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
+mod expression;
+use expression::{Expression, Operator, evaluate};
 
-#[derive(Debug, PartialEq, Clone)]
-enum Operator {
-	Addition,
-	Subtraction,
-	Multiplication,
-	Division,
-	Exponentiation,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-enum Expression {
-	Number(i32),
-	Operation(Box<Expression>, Operator, Box<Expression>),
-}
-
-trait ExpressionParser<I>: Parser<I, Expression>
+trait StringExpressionParser<I>: Parser<I, Expression>
 where
 	I: Iterator<Item = char>,
 {
 }
 
-impl<I, T> ExpressionParser<I> for T
+impl<I, T> StringExpressionParser<I> for T
 where
 	I: Iterator<Item = char>,
 	T: Fn(&mut Input<I>) -> Result<Expression, Error>,
@@ -45,7 +32,7 @@ where
 	satisfy(f)
 }
 
-fn parse_number<I>() -> impl ExpressionParser<I>
+fn parse_number<I>() -> impl StringExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -64,7 +51,7 @@ fn build_operation(op: Operator) -> impl Fn(Expression, Expression) -> Expressio
 	move |o1, o2| Expression::Operation(Box::new(o1), op.clone(), Box::new(o2))
 }
 
-fn parse_expression<I>() -> impl ExpressionParser<I>
+fn parse_expression<I>() -> impl StringExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -84,7 +71,7 @@ where
 	}
 }
 
-fn parse_factor<I>() -> impl ExpressionParser<I>
+fn parse_factor<I>() -> impl StringExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -104,7 +91,7 @@ where
 	}
 }
 
-fn parse_exponentiation<I>() -> impl ExpressionParser<I>
+fn parse_exponentiation<I>() -> impl StringExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -117,7 +104,7 @@ where
 	}
 }
 
-fn parse_bottom<I>() -> impl ExpressionParser<I>
+fn parse_bottom<I>() -> impl StringExpressionParser<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -129,19 +116,6 @@ where
 		let parse_parenthesis = between(&parse_open, &parse_expression, &parse_close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
 		option(&parse_parenthesis, &parse_number)(input)
-	}
-}
-
-fn evaluate(expression: Expression) -> i32 {
-	match expression {
-		Expression::Number(number) => number,
-		Expression::Operation(o1, op, o2) => match op {
-			Operator::Addition => evaluate(*o1) + evaluate(*o2),
-			Operator::Subtraction => evaluate(*o1) - evaluate(*o2),
-			Operator::Multiplication => evaluate(*o1) * evaluate(*o2),
-			Operator::Division => evaluate(*o1) / evaluate(*o2),
-			Operator::Exponentiation => evaluate(*o1).pow(evaluate(*o2) as u32),
-		},
 	}
 }
 
