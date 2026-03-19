@@ -19,14 +19,14 @@ where
 {
 }
 
-/// Creates a parser that succeeds if the next token in the input equals `i`.
+/// Creates a parser that succeeds if the next token in the input equals `token`.
 ///
 /// If the token matches, it is consumed and returned. If the token does not match, the parser
 /// fails without consuming any input.
 ///
 /// # Arguments
 ///
-/// * `i` - A reference to the token to match against.
+/// - `token`: A reference to the token to match against.
 ///
 /// # Examples
 ///
@@ -44,12 +44,12 @@ where
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
-pub fn is<I>(i: I::Item) -> impl Parser<I, I::Item>
+pub fn is<I>(token: I::Item) -> impl Parser<I, I::Item>
 where
 	I: Iterator<Item: Token>,
 {
-	let f = move |x: &I::Item| match *x == i {
-		true => Ok((*x).clone()),
+	let f = move |t: &I::Item| match *t == token {
+		true => Ok((*t).clone()),
 		false => Err(Error::UnexpectedToken),
 	};
 	satisfy(f)
@@ -62,7 +62,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `f` - A predicate that takes a reference to a token and returns `Ok` on success or
+/// - `f`: A predicate that takes a reference to a token and returns `Ok` on success or
 ///   `Err` on failure.
 ///
 /// # Examples
@@ -147,8 +147,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser1` - The first parser to try.
-/// * `parser2` - The fallback parser, applied only if `parser1` fails without consuming input.
+/// - `parser1`: The first parser to try.
+/// - `parser2`: The fallback parser, applied only if `parser1` fails without consuming input.
 ///
 /// # Examples
 ///
@@ -168,7 +168,7 @@ where
 /// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'b');
 ///
-/// // Both parsers fail: error is returned and input is not consumed.
+/// // Both parsers fail: an error is returned and input is not consumed.
 /// let tokens: Vec<char> = vec!['c'];
 /// let mut input = Input::new(tokens);
 /// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
@@ -198,7 +198,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser` - The parser to make optional.
+/// - `parser`: The parser to make optional.
 ///
 /// # Examples
 ///
@@ -249,6 +249,10 @@ where
 /// Applies `parser` zero or more times, returning a vector of matches.
 /// This parser never fails: if no matches are found, it returns an empty vector.
 ///
+/// # Arguments
+///
+/// - `parser`: The parser to possibly be applied many times.
+///
 /// # Examples
 ///
 /// ```
@@ -284,6 +288,10 @@ where
 
 /// Applies `parser` one or more times, returning a vector of matches.
 /// This parser fails if no matches are found.
+///
+/// # Arguments
+///
+/// - `parser`: The parser to be applied many times.
 ///
 /// # Examples
 ///
@@ -326,6 +334,10 @@ where
 
 /// Applies each parser in `parsers` in order, returning the result of the first one that succeeds.
 /// Fails if all parsers fail.
+///
+/// # Arguments
+///
+/// - `parsers`: An iterator that contains all parsers to attempt until a success.
 ///
 /// # Examples
 ///
@@ -373,8 +385,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser` - The parser to apply repeatedly.
-/// * `count` - The exact number of times to apply the parser.
+/// - `parser`: The parser to apply repeatedly.
+/// - `count`: The exact number of times to apply the parser.
 ///
 /// # Examples
 ///
@@ -428,7 +440,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser` - The parser to look ahead.
+/// - `parser`: The parser to look ahead.
 ///
 /// # Examples
 ///
@@ -445,7 +457,6 @@ where
 /// assert_eq!(any()(&mut input), Ok(1)); // Input was not consumed.
 /// assert_eq!(any()(&mut input), Ok(2)); // any()(&mut input)Input was not consumed.
 /// assert_eq!(any()(&mut input), Ok(3)); // Input was not consumed.
-///
 ///
 /// // Fails without consuming input.
 /// let tokens = vec![2, 3];
@@ -489,8 +500,8 @@ where
 /// this parser also does.
 /// If the given parser fails consuming input, this parser also fails, but does not consume input.
 ///
-/// This combinator is often used alongside `option` whenever both input parsers share a prefix. By
-/// doing so, we prevent `option` from failing if its first parser argument failed while consuming
+/// This combinator is often used alongside [`option`] whenever both input parsers share a prefix. By
+/// doing so, we prevent [`option`] from failing if its first parser argument failed while consuming
 /// input. For example:
 /// ```rust,ignore
 /// // Instead of this, where `option` would fail early and not even try applying `parser2`.
@@ -504,7 +515,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser`: The parser to attempt to look ahead.
+/// - `parser`: The parser to attempt.
 ///
 /// # Examples
 ///
@@ -561,9 +572,9 @@ where
 ///
 /// # Arguments
 ///
-/// * `open`: The parser that "opens" the between.
-/// * `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
-/// * `close`: The parser that "closes" the between.
+/// - `open`: The parser that "opens" the between.
+/// - `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
+/// - `close`: The parser that "closes" the between.
 ///
 /// # Examples
 ///
@@ -639,8 +650,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser`: The parser whose occurrences we're collecting.
-/// * `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: The parser whose occurrences we're collecting.
+/// - `separator`: The separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///
@@ -676,8 +687,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser`: The parser whose occurrences we're collecting.
-/// * `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: The parser whose occurrences we're collecting.
+/// - `separator`: The separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///
@@ -734,9 +745,9 @@ where
 ///
 /// # Arguments
 ///
-/// * `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
 ///   left-associative manner.
-/// * `operator_parser`: Operator's parser, which consumes input and returns a function that
+/// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
 ///
 /// # Examples
@@ -783,9 +794,9 @@ where
 ///
 /// # Arguments
 ///
-/// * `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
 ///   right-associative manner.
-/// * `operator_parser`: Operator's parser, which consumes input and returns a function that
+/// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
 ///
 /// # Examples
@@ -836,7 +847,7 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser`: the parser which should fail for this combinator to succeed.
+/// - `parser`: the parser which should fail for this combinator to succeed.
 ///
 /// # Examples
 ///
@@ -879,8 +890,8 @@ where
 ///
 /// # Arguments
 ///
-/// * `parser`: the parser for the elements to be collected until the end is reached.
-/// * `end`: the parser that delimits the end.
+/// - `parser`: the parser for the elements to be collected until the end is reached.
+/// - `end`: the parser that delimits the end.
 ///
 /// # Examples
 ///

@@ -1,26 +1,75 @@
+//! This module provides the [`Input`] type, which wraps any iterator and exposes it as a token
+//! stream that parsers can consume. It is the primary interface through which parsers read tokens,
+//! and it is the only type in this module that users need to interact with directly.
+//!
+//! # Tokens
+//!
+//! Any type that implements [`PartialEq`] and [`Clone`] can be used as a token. This is
+//! automatically satisfied via the blanket implementation of the [`Token`] trait, so no manual
+//! implementation is required.
+//!
+//! # Creating an input stream
+//!
+//! An [`Input`] is constructed from any type that implements [`IntoIterator`], where the iterator
+//! elements must implement [`Token`]:
+//!
+//! ```
+//! use yapcol::input::Input;
+//!
+//! let tokens = vec!['h', 'e', 'l', 'l', 'o'];
+//! let mut input = Input::new(tokens);
+//! ```
+//!
+//! # Lookahead
+//!
+//! [`Input`] supports arbitrary lookahead: tokens can be fetched and inspected without being
+//! permanently consumed. A lookahead operation is started with
+//! [`Input::start_look_ahead`](Input::start_look_ahead) and stopped with
+//! [`Input::stop_look_ahead`](Input::stop_look_ahead). When stopping, the caller decides whether
+//! to backtrack (keeping the fetched tokens available for re-reading) or to discard them.
+//!
+//! Lookahead operations can be nested. Each nested operation is self-contained, and they must be
+//! stopped in the reverse order of their creation (last started, first stopped).
+//!
+//! In practice, lookahead is used internally by parser combinators such as [`crate::attempt`] and
+//! [`crate::look_ahead`] defined in the crate root, so most users will not need to call these
+//! methods directly.
+
 use std::collections::VecDeque;
 use std::iter::Peekable;
 
+/// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
+/// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
+/// make it token-compatible.
 pub trait Token: PartialEq + Clone {}
 
 impl<T> Token for T where T: PartialEq + Clone {}
 
+/// A frame used to keep track of lookahead operations.
 struct LookAheadFrame {
+	/// Where in the lookahead buffer this frame started.
 	start_index: usize,
+	/// How many tokens this frame takes in the lookahead buffer.
 	length: usize,
 }
 
 impl LookAheadFrame {
+	/// The (lookahead buffer) index of the next token in this frame.
 	fn next_ix(&self) -> usize {
 		self.start_index + self.length
 	}
 }
 
+/// A handler used to enforce the following on lookahead operations:
+/// - That calls to [`Input::stop_look_ahead`] are only possible after a call to
+///   [`Input::start_look_ahead`].
+/// - That the right order of start/stop lookahead operations is performed.
 #[must_use]
 pub(crate) struct LookAheadHandler {
 	id: usize,
 }
 
+/// Possible locations where the next input token might be.
 enum TokenLocation {
 	Stream,
 	StreamLookingAhead,
@@ -28,6 +77,8 @@ enum TokenLocation {
 	BufferTail,
 }
 
+/// An input stream that can be used to fetch input tokens. It's the most important entity in this
+/// module, concentrating all input operations.
 pub struct Input<I>
 where
 	I: Iterator<Item: Token>,
@@ -43,12 +94,26 @@ impl<I> Input<I>
 where
 	I: Iterator<Item: Token>,
 {
-	pub fn new<T>(i: impl IntoIterator<Item = T, IntoIter = I>) -> Input<I>
+	/// Constructs an [`Input`] based on an underlying input source.
+	///
+	/// # Arguments
+	///
+	/// - `source`: the underlying input source containing the input tokens.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::input::Input;
+	///
+	/// let tokens = vec!["hello!"];
+	/// let mut input = Input::new(tokens);
+	/// ```
+	pub fn new<T>(source: impl IntoIterator<Item = T, IntoIter = I>) -> Input<I>
 	where
 		I: Iterator<Item = T>,
 	{
 		Self {
-			stream: i.into_iter().peekable(),
+			stream: source.into_iter().peekable(),
 			consumed_count: 0,
 			next_location: TokenLocation::Stream,
 			look_ahead_frames: Vec::new(),
@@ -56,6 +121,7 @@ where
 		}
 	}
 
+	/// Fetches the next token in the input stream, mutating the input stream.
 	pub(crate) fn next_token(&mut self) -> Option<I::Item> {
 		match self.next_location {
 			TokenLocation::Stream => {
@@ -98,6 +164,8 @@ where
 		}
 	}
 
+	/// Peeks into the input, returning a reference to the next token. Calling this method does not
+	/// mutate the input, and calling it repeatedly will return the same item over and over.
 	pub(crate) fn peek(&mut self) -> Option<&I::Item> {
 		match self.next_location {
 			TokenLocation::Stream => self.stream.peek(),
@@ -110,10 +178,30 @@ where
 		}
 	}
 
+	/// How many tokens the input stream has consumed.
 	pub(crate) fn consumed_count(&self) -> usize {
 		self.consumed_count
 	}
 
+	/// Starts a lookahead operation, putting the input stream into lookahead mode (if it already
+	/// wasn't). During lookahead mode, tokens might be fetched, but they won't be consumed. This
+	/// implements arbitrary lookahead, where tokens will be cached internally, for as long as the
+	/// lookahead mode is enabled.
+	/// For more information on disabling lookahead mode, check [`stop_look_ahead`].
+	///
+	/// This function returns a [`LookAheadHandler`], which *must* be used to stop the look ahead
+	/// operation. Failing to use this handler will trigger compilation warnings.
+	///
+	/// # Nested lookahead operations
+	///
+	/// [`Input`] supports nested lookahead operations, where each operation is self-contained and
+	/// unaware of the others. Repeated calls to this method will create different lookahead
+	/// operations, where each one is "deeper" than the previous one.
+	///
+	/// One rule must be respected when nesting these operations: the order in which the operations
+	/// are stopped must be the reverse order of their creation. In order words, only the most
+	/// recent (active) lookahead operation might be stopped. The [`LookAheadHandler`]s are there
+	/// to enforce this rule.
 	pub(crate) fn start_look_ahead(&mut self) -> LookAheadHandler {
 		let new_frame = match self.look_ahead_frames.last() {
 			Some(previous) => {
@@ -141,6 +229,24 @@ where
 		LookAheadHandler { id: token_id }
 	}
 
+	/// Stops the current lookahead operation, controlling whether the input stream should
+	/// backtrack.
+	///
+	/// # Arguments
+	///
+	/// - `handler`: Handler used to stop the lookahead operation. This handler *must* belong to the
+	///   latest lookahead operation, enforcing the lookahead rule that only the most recent
+	///   operation might be stopped. The function will panic if this invariant is not respected.
+	/// - `backtrack`: Whether the input should backtrack. If `true`, all tokens fetched during the
+	///   lookahead operation will remain cached, and later fetching will return them. In order
+	///   words, it pretends that all the fetching that happened during the lookahead operation
+	///   did not happen. If `false`, it discards the tokens fetched during the lookahead
+	///   operation, and later fetch requests will return new tokens.
+	///
+	/// # Nested lookahead operations
+	///
+	/// A call to this method stops the current lookahead operation but might not stop the
+	/// lookahead mode—that will only happen if the operation being stopped is the only active one.
 	pub(crate) fn stop_look_ahead(&mut self, handler: LookAheadHandler, backtrack: bool) {
 		let frame = self.look_ahead_frames.pop().unwrap();
 		if handler.id != self.look_ahead_frames.len() {
