@@ -6,6 +6,49 @@ pub mod input;
 #[cfg(test)]
 mod tests;
 
+/// The core trait of the `yapcol` crate, representing a parser.
+///
+/// A `Parser` is a function (or any type that implements `Fn`) that takes a mutable reference
+/// to an [`Input`] and returns a `Result` containing either the successfully parsed output
+/// of type `O` or an [`Error`].
+///
+/// This trait is automatically implemented for any function with the signature
+/// `Fn(&mut Input<I>) -> Result<O, Error>`.
+///
+/// # Type Parameters
+///
+/// - `I`: The parser's input. An iterator type whose items implement the [`Token`] trait.
+/// - `O`: The type of the value produced by the parser on success.
+///
+/// # Examples
+///
+/// You can define a custom parser as a function:
+///
+/// ```
+/// use std::str::Chars;
+/// use yapcol::input::Input;
+/// use yapcol::error::Error;
+/// use yapcol::is;
+///
+/// fn my_uppercase_parser(input: &mut Input<Chars>) -> Result<char, Error> {
+///    // You can use existing parsers inside your custom parser
+///    is('A')(input)
+/// }
+///
+/// let mut input = Input::new("Abc".chars());
+/// assert_eq!(my_uppercase_parser(&mut input), Ok('A'));
+/// ```
+///
+/// Most of the time, you will use the built-in combinators which return `impl Parser`:
+///
+/// ```
+/// use yapcol::input::Input;
+/// use yapcol::is;
+///
+/// let mut input = Input::new("Abc".chars());
+/// let mut parser = is('A');
+/// assert_eq!(parser(&mut input), Ok('A'));
+/// ```
 pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error>
 where
 	I: Iterator<Item: Token>,
