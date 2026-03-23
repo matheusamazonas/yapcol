@@ -47,7 +47,8 @@
 //!     a vector of tokens, then parsers the token stream into the custom `Expression` type.
 //! 
 //! These two approaches reflect real-world usage of parsers, which might parse text directly or
-//! perform lexical analysis beforehand.
+//! perform lexical analysis beforehand. Check the `README` file in the `examples` directory for
+//! more information.
 
 use crate::error::Error;
 use crate::input::{Input, Token};
