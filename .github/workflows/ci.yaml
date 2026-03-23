@@ -34,3 +34,6 @@ jobs:
 
       - name: Build documentation
         run: cargo doc --no-deps
+        
+      - name: Simulate publish
+        run: cargo publish --dry-run
