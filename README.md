@@ -1,6 +1,6 @@
 # YAPCoL
 
-**Y**et **A**nother **P**arser **Co**mbinator **L**ibrary. [![CI](https://github.com/matheusamazonas/yapcol/actions/workflows/ci.yaml/badge.svg)](https://github.com/yapcol/batch_apk_installer/actions)
+**Y**et **A**nother **P**arser **Co**mbinator **L**ibrary. [![CI](https://github.com/matheusamazonas/yapcol/actions/workflows/ci.yaml/badge.svg)](https://github.com/matheusamazonas/yapcol/actions)
 [![Crates.io](https://img.shields.io/crates/v/yapcol)](https://crates.io/crates/yapcol)
 
 `yapcol` is a flexible and simple-to-use parser combinator library for Rust. It allows you to build complex parsers by
