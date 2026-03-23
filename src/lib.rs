@@ -11,7 +11,7 @@
 //!   to an [`Input`] and returns a `Result<Output, Error>` is a parser.
 //! - [`Input`]: A wrapper around an iterator that provides buffering and lookahead capabilities.
 //! - **Combinators**: Functions that take one or more parsers and return a new, more complex
-//!   parser. Examples: [`is`], [`many0`], [`option`], [`chain_left`]. 
+//!   parser. Examples: [`is`], [`many0`], [`option`], [`chain_left`].
 //!
 //! # Features
 //!
@@ -34,18 +34,18 @@
 //! let result = parser(&mut input);
 //! assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 //! ```
-//! 
+//!
 //! # Examples
-//! 
+//!
 //! YAPCoL has two crates in the `examples` directory that demonstrate the library's capabilities.
 //! Both of them implement the same application: a simple arithmetic expression parser and
 //! evaluator. Each example uses a slightly different implementation to achieve the task:
-//!   - `evaluate_expression_string` uses a parser that takes a stream of *characters* as input. 
+//!   - `evaluate_expression_string` uses a parser that takes a stream of *characters* as input.
 //!     This example parsers the input string directly into the custom `Expression` type.
 //!   - `evaluate_expression_token` uses a parser that takes a stream of user-defined *tokens* as
 //!     input. This example first performs lexical analysis (lexing) to turn the input string into
 //!     a vector of tokens, then parsers the token stream into the custom `Expression` type.
-//! 
+//!
 //! These two approaches reflect real-world usage of parsers, which might parse text directly or
 //! perform lexical analysis beforehand. Check the `README` file in the `examples` directory for
 //! more information.
