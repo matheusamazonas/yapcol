@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [ "develop", "main" ]
+  pull_request:
+    branches: [ "develop", "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --all-features --verbose
+        
+      - name: Run expression evaluation example's tests (string variant)
+        run: cargo test --example evaluate_expression_string
+
+      - name: Run expression evaluation example's tests (token variant)
+        run: cargo test --example evaluate_expression_token
+
+      - name: Build documentation
+        run: cargo doc --no-deps
+        
+      - name: Simulate publish
+        run: cargo publish --dry-run

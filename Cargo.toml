@@ -1,6 +1,14 @@
 [package]
-name = "yapcol_rs"
+name = "yapcol"
+description = "Yet Another Parser Combinator Library - YAPCoL"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+authors = ["Matheus Amazonas"]
+readme = "README.md"
+homepage = "https://github.com/matheusamazonas/yapcol"
+repository = "https://github.com/matheusamazonas/yapcol"
+categories = ["parsing"]
+keywords = ["parser", "combinator", "parsec"]
 
 [dependencies]
