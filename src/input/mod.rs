@@ -35,15 +35,11 @@
 //! [`crate::look_ahead`] defined in the crate root, so most users will not need to call these
 //! methods directly.
 
+pub mod token;
+
 use std::collections::VecDeque;
 use std::iter::Peekable;
-
-/// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
-/// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
-/// make it token-compatible.
-pub trait Token: PartialEq + Clone {}
-
-impl<T> Token for T where T: PartialEq + Clone {}
+use self::token::Token;
 
 /// A frame used to keep track of lookahead operations.
 struct LookAheadFrame {

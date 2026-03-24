@@ -51,7 +51,8 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::{Input, Token};
+use crate::input::Input;
+use crate::input::token::Token;
 
 pub mod error;
 pub mod input;
