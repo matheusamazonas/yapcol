@@ -1,6 +1,49 @@
-/// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
-/// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
-/// make it token-compatible.
-pub trait Token: PartialEq + Clone {}
+use crate::input::{Input, InputSource, PositionToken, TokenLocation};
+use std::collections::VecDeque;
+use std::iter::Peekable;
 
-impl<T> Token for T where T: PartialEq + Clone {}
+struct TokenInputSource<I>
+where
+	I: Iterator<Item: PositionToken>,
+{
+	source_name: String,
+	stream: Peekable<I>,
+}
+
+impl<I> InputSource for TokenInputSource<I>
+where
+	I: Iterator<Item: PositionToken>,
+{
+	type Token = I::Item;
+
+	fn source_name(&self) -> String {
+		self.source_name.clone()
+	}
+
+	fn next_token(&mut self) -> Option<Self::Token> {
+		self.stream.next()
+	}
+
+	fn peek(&mut self) -> Option<&Self::Token> {
+		self.stream.peek()
+	}
+}
+
+fn new_token_input<S, I>(source: impl IntoIterator<IntoIter = I>) -> Input<I::Item>
+where
+	I: Iterator<Item: PositionToken> + 'static,
+	S: IntoIterator<IntoIter = I>,
+{
+	let source = TokenInputSource {
+		source_name: String::from("test"),
+		stream: source.into_iter().peekable(),
+	};
+
+	Input {
+		source: Box::new(source),
+		consumed_count: 0,
+		next_location: TokenLocation::Stream,
+		look_ahead_frames: Vec::new(),
+		look_ahead_buffer: VecDeque::new(),
+	}
+}

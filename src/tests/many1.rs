@@ -1,19 +1,18 @@
+use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn empty() {
-	let parser = is("hello");
-	let tokens: Vec<&str> = vec![];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = new_string_input("".chars());
 	let parser_many1 = many1(&parser);
 	assert_eq!(parser_many1(&mut input), Err(Error::EndOfInput));
 }
 
 #[test]
 fn no_match() {
-	let parser = is("hello");
-	let tokens = vec!["hallo", "hillo", "hollo"];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = new_string_input("jklmno".chars());
 	let parser_many1 = many1(&parser);
 	assert_eq!(parser_many1(&mut input), Err(Error::UnexpectedToken));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -21,9 +20,8 @@ fn no_match() {
 
 #[test]
 fn one_match() {
-	let parser = is("hello");
-	let tokens = vec!["hello", "hillo", "hollo"];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = new_string_input("hallo".chars());
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), 1);
@@ -34,23 +32,22 @@ fn one_match() {
 #[test]
 fn multiple_matches() {
 	let token_count = 100;
-	let parser = is("hello");
-	let tokens = std::iter::repeat_n("hello", token_count).collect::<Vec<_>>();
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
+	let mut input = new_string_input(tokens);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), token_count);
-	assert!(output.iter().all(|x| *x == "hello"));
+	assert!(output.iter().all(|x| *x == 'h'));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
 fn partial_match_then_stop() {
-	let parser = is("hello");
-	let tokens = vec!["hello", "hello", "hillo", "hello"];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = new_string_input("hhjklmnop".chars());
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
-	assert_eq!(output, vec!["hello", "hello"]);
+	assert_eq!(output, vec!['h', 'h']);
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }

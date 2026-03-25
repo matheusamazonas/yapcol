@@ -51,8 +51,7 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::Input;
-use crate::input::token::Token;
+use crate::input::{Input, PositionToken, Token};
 
 pub mod error;
 pub mod input;
@@ -70,7 +69,7 @@ mod tests;
 ///
 /// # Type Parameters
 ///
-/// - `I`: The parser's input. An iterator type whose items implement the [`Token`] trait.
+/// - `PT`: The parser's input token, which implements the [`PositionToken`] trait.
 /// - `O`: The type of the value produced by the parser on success.
 ///
 /// # Examples
@@ -102,16 +101,16 @@ mod tests;
 /// let mut parser = is('A');
 /// assert_eq!(parser(&mut input), Ok('A'));
 /// ```
-pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error>
+pub trait Parser<PT, O>: Fn(&mut Input<PT>) -> Result<O, Error>
 where
-	I: Iterator<Item: Token>,
+	PT: PositionToken,
 {
 }
 
-impl<I, O, T> Parser<I, O> for T
+impl<PT, O, X> Parser<PT, O> for X
 where
-	I: Iterator<Item: Token>,
-	T: Fn(&mut Input<I>) -> Result<O, Error>,
+	X: Fn(&mut Input<PT>) -> Result<O, Error>,
+	PT: PositionToken,
 {
 }
 
@@ -140,11 +139,11 @@ where
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
-pub fn is<I>(token: I::Item) -> impl Parser<I, I::Item>
+pub fn is<PT>(token: PT::Token) -> impl Parser<PT, PT::Token>
 where
-	I: Iterator<Item: Token>,
+	PT: PositionToken<Token: Token>,
 {
-	let f = move |t: &I::Item| match *t == token {
+	let f = move |t: &PT::Token| match *t == token {
 		true => Ok((*t).clone()),
 		false => Err(Error::UnexpectedToken),
 	};
@@ -181,14 +180,15 @@ where
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
-pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
+pub fn satisfy<F, PT, O>(f: F) -> impl Parser<PT, O>
 where
-	F: Fn(&I::Item) -> Result<O, Error>,
-	I: Iterator<Item: Token>,
+	F: Fn(&PT::Token) -> Result<O, Error>,
+	PT: PositionToken<Token: Token>,
 {
 	move |input| match input.peek() {
-		Some(token) => {
-			match f(token) {
+		Some(pos_token) => {
+			let token = pos_token.token();
+			match f(&token) {
 				Ok(result) => {
 					input.next_token(); // Consume if successful.
 					Ok(result)
@@ -221,9 +221,9 @@ where
 /// assert!(end_of_input()(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
-pub fn end_of_input<I>() -> impl Parser<I, ()>
+pub fn end_of_input<PT>() -> impl Parser<PT, ()>
 where
-	I: Iterator<Item: Token>,
+	PT: PositionToken,
 {
 	|input| match input.peek() {
 		None => Ok(()),
@@ -270,11 +270,11 @@ where
 /// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
-pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
+pub fn option<P1, P2, PT, O>(parser1: &P1, parser2: &P2) -> impl Parser<PT, O>
 where
-	P1: Parser<I, O>,
-	P2: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P1: Parser<PT, O>,
+	P2: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -313,10 +313,10 @@ where
 /// assert_eq!(parser(&mut input).unwrap(), None);
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
-pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
+pub fn maybe<P, PT, O>(parser: &P) -> impl Parser<PT, Option<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -328,10 +328,10 @@ where
 	}
 }
 
-fn many<P, I, O>(parser: &P) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
+fn many<P, PT, O>(parser: &P) -> impl Fn(&mut Input<PT>, Vec<O>) -> Result<Vec<O>, Error>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input, mut output| match parser(input) {
 		Ok(token) => {
@@ -371,10 +371,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 /// ```
-pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
+pub fn many0<P, PT, O>(parser: &P) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
@@ -411,10 +411,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert!(many1(&parser)(&mut input).is_err());
 /// ```
-pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
+pub fn many1<P, PT, O>(parser: &P) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
@@ -459,10 +459,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert!(choice(&parsers)(&mut input).is_err());
 /// ```
-pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
+pub fn choice<'a, P, PT, O, PI>(parsers: &'a PI) -> impl Parser<PT, O>
 where
-	P: Parser<I, O> + 'a,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O> + 'a,
+	PT: PositionToken,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
@@ -512,10 +512,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert!(count(&parser, 1)(&mut input).is_err());
 /// ```
-pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
+pub fn count<P, PT, O>(parser: &P, count: usize) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	move |input| {
 		let mut output = Vec::with_capacity(count);
@@ -577,10 +577,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// ```
-pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
+pub fn look_ahead<P, PT, O>(parser: &P) -> impl Parser<PT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
@@ -651,10 +651,10 @@ where
 /// let mut input = Input::new(tokens);
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// ```
-pub fn attempt<P, I, O>(parser: &P) -> impl Parser<I, O>
+pub fn attempt<P, PT, O>(parser: &P) -> impl Parser<PT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
@@ -685,12 +685,12 @@ where
 /// let output = between(&parser1, &parser2, &parser1)(&mut input);
 /// assert_eq!(output, Ok(2));
 /// ```
-pub fn between<PO, PC, P, I, O, OO, OC>(open: &PO, parser: &P, close: &PC) -> impl Parser<I, O>
+pub fn between<PO, PC, P, PT, O, OO, OC>(open: &PO, parser: &P, close: &PC) -> impl Parser<PT, O>
 where
-	PO: Parser<I, OO>,
-	PC: Parser<I, OC>,
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	PO: Parser<PT, OO>,
+	PC: Parser<PT, OC>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	move |input| {
 		open(input)?;
@@ -714,24 +714,24 @@ where
 /// let output = any()(&mut input);
 /// assert_eq!(output, Ok(1));
 /// ```
-pub fn any<I>() -> impl Parser<I, I::Item>
+pub fn any<PT>() -> impl Parser<PT, PT::Token>
 where
-	I: Iterator<Item: Token>,
+	PT: PositionToken,
 {
 	|input| match input.next_token() {
-		Some(token) => Ok(token),
+		Some(pos_token) => Ok(pos_token.token()),
 		None => Err(Error::EndOfInput),
 	}
 }
 
-fn separated_tail<P, S, I, O, SO>(
+fn separated_tail<P, S, PT, O, SO>(
 	parser: &P,
 	separator: &S,
-) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
+) -> impl Fn(&mut Input<PT>, Vec<O>) -> Result<Vec<O>, Error>
 where
-	P: Parser<I, O>,
-	S: Parser<I, SO>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	S: Parser<PT, SO>,
+	PT: PositionToken,
 {
 	move |input, mut output| {
 		while separator(input).is_ok() {
@@ -763,11 +763,11 @@ where
 /// let output = parser_separated_by0(&mut input);
 /// assert_eq!(output, Ok(vec![1, 1]));
 /// ```
-pub fn separated_by0<P, S, I, O, OS>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
+pub fn separated_by0<P, S, PT, O, OS>(parser: &P, separator: &S) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	S: Parser<I, OS>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	S: Parser<PT, OS>,
+	PT: PositionToken,
 {
 	move |input| match parser(input) {
 		Ok(token) => {
@@ -800,11 +800,11 @@ where
 /// let output = parser_separated_by1(&mut input);
 /// assert_eq!(output, Ok(vec![1, 1]));
 /// ```
-pub fn separated_by1<P, S, I, O, SO>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
+pub fn separated_by1<P, S, PT, O, SO>(parser: &P, separator: &S) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	S: Parser<I, SO>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	S: Parser<PT, SO>,
+	PT: PositionToken,
 {
 	move |input| {
 		let first = parser(input)?;
@@ -813,15 +813,15 @@ where
 	}
 }
 
-fn parse_chain_left_tail<P, I, O, OP, F>(
+fn parse_chain_left_tail<P, PT, O, OP, F>(
 	o1: O,
 	parser: &P,
 	operator_parser: &OP,
-) -> impl Parser<I, O>
+) -> impl Parser<PT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
+	OP: Parser<PT, F>,
 	F: FnOnce(O, O) -> O,
 	O: Clone,
 {
@@ -870,11 +870,11 @@ where
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(1)); // (3 - 1) - 1 = 1, not 3 - (1 - 1) = 3
 /// ```
-pub fn chain_left<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+pub fn chain_left<P, PT, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<PT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
+	OP: Parser<PT, F>,
 	F: Fn(O, O) -> O,
 	O: Clone,
 {
@@ -919,11 +919,11 @@ where
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(3)); // 3 - (1 - 1) = 3, not (3 - 1) - 1 = 1
 /// ```
-pub fn chain_right<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+pub fn chain_right<P, PT, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<PT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
+	OP: Parser<PT, F>,
 	F: Fn(O, O) -> O,
 {
 	move |input| {
@@ -965,10 +965,10 @@ where
 /// assert_eq!(output, Err(Error::UnexpectedToken));
 ///
 /// ```
-pub fn not_followed_by<P, I, O>(parser: &P) -> impl Parser<I, ()>
+pub fn not_followed_by<P, PT, O>(parser: &P) -> impl Parser<PT, ()>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PT: PositionToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
@@ -1008,11 +1008,11 @@ where
 /// let output = comments_parser(&mut input);
 /// assert_eq!(output, Ok(vec!["this", "is", "a", "comment"]));
 /// ```
-pub fn many_until<P, PE, I, O, OE>(parser: &P, end: &PE) -> impl Parser<I, Vec<O>>
+pub fn many_until<P, PE, PT, O, OE>(parser: &P, end: &PE) -> impl Parser<PT, Vec<O>>
 where
-	P: Parser<I, O>,
-	PE: Parser<I, OE>,
-	I: Iterator<Item: Token>,
+	P: Parser<PT, O>,
+	PE: Parser<PT, OE>,
+	PT: PositionToken,
 {
 	|input| {
 		let mut matches = Vec::new();

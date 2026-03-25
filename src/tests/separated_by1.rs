@@ -1,113 +1,83 @@
+use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn empty() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens: Vec<&str> = vec![];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn single_no_separator_succeeds() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens = vec!["hello"];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Ok(vec!["hello"]));
+	assert_eq!(output, Ok(vec!['1']));
 }
 
 #[test]
 fn single_dangling_separator_fails() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens = vec!["hello", ","];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn two_with_separator_succeeds() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens = vec!["hello", ",", "hello"];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Ok(vec!["hello", "hello"]));
+	assert_eq!(output, Ok(vec!['1', '1']));
 }
 
 #[test]
 fn two_wrong_last_element_fails() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens = vec!["hello", ",", "world"];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }
 
 #[test]
 fn two_no_separator_succeeds() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let tokens = vec!["hello", "hello"];
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("11".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input).unwrap();
-	assert_eq!(output, vec!["hello"]);
+	assert_eq!(output, vec!['1']);
 }
 
 #[test]
 fn many_properly_separated_succeeds() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let repeat_count = 10;
-	// Repeating it `2 * repeat_count - 1` ensures that there isn't a dangling separator.
-	let tokens: Vec<&str> = ["hello", ","]
-		.iter()
-		.copied()
-		.cycle()
-		.take(2 * repeat_count - 1)
-		.collect();
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,1,1,1,1,1,1,1,1,1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input).unwrap();
-	assert_eq!(output.len(), repeat_count);
+	assert_eq!(output.len(), 10);
 }
 
 #[test]
 fn many_dangling_separator_fails() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let repeat_count = 100;
-	// Repeating it `2 * repeat_count` ensures that there *is* a dangling separator.
-	let tokens: Vec<&str> = ["hello", ","]
-		.iter()
-		.cycle()
-		.take(2 * repeat_count)
-		.copied()
-		.collect();
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,1,1,1,1,1,1,1,1,1,".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn many_wrong_last_element_fails() {
-	let parse_item = is("hello");
-	let parse_separator = is(",");
-	let repeat_count = 100;
-	// Repeating it `2 * repeat_count` ensures that there *is* a dangling separator.
-	let mut tokens: Vec<&str> = ["hello", ","]
-		.iter()
-		.cycle()
-		.take(2 * repeat_count)
-		.copied()
-		.collect();
-	tokens.push("wrong");
-	let mut input = Input::new(tokens);
+	let parse_item = is('1');
+	let parse_separator = is(',');
+	let mut input = new_string_input("1,1,1,1,1,1,1,1,1,1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken));
 }

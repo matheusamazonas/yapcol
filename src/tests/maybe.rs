@@ -1,20 +1,28 @@
+use crate::input::string::{new_string_input, CharToken};
 use crate::*;
 
 #[test]
-fn success() {
-	let parser = is("hello");
-	let tokens = vec!["hello"];
-	let mut input = Input::new(tokens);
+fn empty() {
+	let parser = is('h');
+	let mut input = new_string_input("".chars());
 	let parser_maybe = maybe(&parser);
-	assert_eq!(parser_maybe(&mut input), Ok(Some("hello")));
+	assert_eq!(parser_maybe(&mut input), Ok(None));
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+}
+
+#[test]
+fn success() {
+	let parser = is('h');
+	let mut input = new_string_input("h".chars());
+	let parser_maybe = maybe(&parser);
+	assert_eq!(parser_maybe(&mut input), Ok(Some('h')));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 
 #[test]
 fn fail_non_consuming() {
-	let parser = is("hello");
-	let tokens = vec!["hallo"];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = new_string_input("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -22,9 +30,9 @@ fn fail_non_consuming() {
 
 #[test]
 fn fail_consuming() {
-	let parser = |input: &mut Input<_>| match input.next_token() {
+	let parser = |input: &mut Input<CharToken>| match input.next_token() {
 		Some(token) => {
-			if token == "hello" {
+			if token.token() == 'h' {
 				Ok(1)
 			} else {
 				Err(Error::UnexpectedToken)
@@ -32,19 +40,8 @@ fn fail_consuming() {
 		}
 		None => Err(Error::EndOfInput),
 	};
-	let tokens = vec!["hallo"];
-	let mut input = Input::new(tokens);
+	let mut input = new_string_input("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Err(Error::UnexpectedToken));
-	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
-}
-
-#[test]
-fn empty() {
-	let parser = is("hello");
-	let tokens: Vec<&str> = vec![];
-	let mut input = Input::new(tokens);
-	let parser_maybe = maybe(&parser);
-	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }

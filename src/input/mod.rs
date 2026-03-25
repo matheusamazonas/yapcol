@@ -35,11 +35,41 @@
 //! [`crate::look_ahead`] defined in the crate root, so most users will not need to call these
 //! methods directly.
 
+pub mod string;
 pub mod token;
 
+#[cfg(test)]
+mod tests;
+
 use std::collections::VecDeque;
-use std::iter::Peekable;
-use self::token::Token;
+
+/// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
+/// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
+/// make it token-compatible.
+pub trait Token: PartialEq + Clone {}
+
+impl<T> Token for T where T: PartialEq + Clone {}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Position {
+	line: usize,
+	column: usize,
+}
+impl Position {
+	pub fn new(line: usize, column: usize) -> Position {
+		Position { line, column }
+	}
+
+	pub fn advance_column(&mut self) {
+		self.column += 1;
+	}
+}
+
+pub trait PositionToken: Clone {
+	type Token: Token;
+	fn token(&self) -> Self::Token;
+	fn position(&self) -> Position;
+}
 
 /// A frame used to keep track of lookahead operations.
 struct LookAheadFrame {
@@ -73,60 +103,40 @@ enum TokenLocation {
 	BufferTail,
 }
 
+trait InputSource {
+	type Token: PositionToken + Sized;
+	fn source_name(&self) -> String;
+	fn next_token(&mut self) -> Option<Self::Token>;
+	fn peek(&mut self) -> Option<&Self::Token>;
+}
+
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
 /// module, concentrating all input operations.
-pub struct Input<I>
+pub struct Input<T>
 where
-	I: Iterator<Item: Token>,
+	T: PositionToken,
 {
-	stream: Peekable<I>,
+	source: Box<dyn InputSource<Token = T>>,
 	consumed_count: usize,
 	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
-	look_ahead_buffer: VecDeque<I::Item>,
+	look_ahead_buffer: VecDeque<T>,
 }
 
-impl<I> Input<I>
+impl<T> Input<T>
 where
-	I: Iterator<Item: Token>,
+	T: PositionToken,
 {
-	/// Constructs an [`Input`] based on an underlying input source.
-	///
-	/// # Arguments
-	///
-	/// - `source`: the underlying input source containing the input tokens.
-	///
-	/// # Examples
-	///
-	/// ```
-	/// use yapcol::input::Input;
-	///
-	/// let tokens = vec!["hello!"];
-	/// let mut input = Input::new(tokens);
-	/// ```
-	pub fn new<T>(source: impl IntoIterator<Item = T, IntoIter = I>) -> Input<I>
-	where
-		I: Iterator<Item = T>,
-	{
-		Self {
-			stream: source.into_iter().peekable(),
-			consumed_count: 0,
-			next_location: TokenLocation::Stream,
-			look_ahead_frames: Vec::new(),
-			look_ahead_buffer: VecDeque::new(),
-		}
-	}
-
 	/// Fetches the next token in the input stream, mutating the input stream.
-	pub(crate) fn next_token(&mut self) -> Option<I::Item> {
+	pub(crate) fn next_token(&mut self) -> Option<T> {
 		match self.next_location {
 			TokenLocation::Stream => {
 				self.consumed_count += 1;
-				self.stream.next()
+				self.source.next_token()
 			}
 			TokenLocation::StreamLookingAhead => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
-				match self.stream.next() {
+				match self.source.next_token() {
 					None => None,
 					Some(token) => {
 						let cloned = token.clone();
@@ -162,10 +172,10 @@ where
 
 	/// Peeks into the input, returning a reference to the next token. Calling this method does not
 	/// mutate the input, and calling it repeatedly will return the same item over and over.
-	pub(crate) fn peek(&mut self) -> Option<&I::Item> {
+	pub(crate) fn peek(&mut self) -> Option<&T> {
 		match self.next_location {
-			TokenLocation::Stream => self.stream.peek(),
-			TokenLocation::StreamLookingAhead => self.stream.peek(),
+			TokenLocation::Stream => self.source.peek(),
+			TokenLocation::StreamLookingAhead => self.source.peek(),
 			TokenLocation::BufferHead => self.look_ahead_buffer.front(),
 			TokenLocation::BufferTail => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
@@ -270,168 +280,5 @@ where
 				TokenLocation::BufferTail
 			}
 		}
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	#[test]
-	fn lookahead_no_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		let next = input.next_token();
-		assert_eq!(next, Some(1));
-		let next = input.next_token();
-		assert_eq!(next, Some(2));
-		input.stop_look_ahead(handler, false);
-		assert!(input.look_ahead_buffer.is_empty());
-		assert_eq!(input.consumed_count(), 2);
-		assert_eq!(input.look_ahead_frames.len(), 0);
-		assert_eq!(input.next_token(), None);
-	}
-
-	#[test]
-	fn lookahead_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		let next = input.next_token();
-		assert_eq!(next, Some(1));
-		let next = input.next_token();
-		assert_eq!(next, Some(2));
-		input.stop_look_ahead(handler, true);
-		assert!(!input.look_ahead_buffer.is_empty());
-		assert_eq!(input.consumed_count(), 0);
-		assert_eq!(input.next_token(), Some(1));
-	}
-
-	#[test]
-	fn peek_twice() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		assert_eq!(input.peek(), Some(&1));
-		assert_eq!(input.peek(), Some(&1));
-	}
-
-	#[test]
-	fn peek_twice_while_looking_ahead_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		assert_eq!(input.peek(), Some(&1));
-		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(handler, true);
-		assert_eq!(input.peek(), Some(&1));
-	}
-
-	#[test]
-	fn peek_twice_while_looking_ahead_not_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		assert_eq!(input.peek(), Some(&1));
-		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(handler, false);
-		assert_eq!(input.peek(), Some(&1));
-	}
-
-	#[test]
-	fn repeat_peek_look_ahead_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		input.stop_look_ahead(handler, true);
-		assert_eq!(input.peek(), Some(&1));
-
-		let handler = input.start_look_ahead();
-		assert_eq!(input.peek(), Some(&1));
-		input.stop_look_ahead(handler, true);
-		assert_eq!(input.peek(), Some(&1));
-	}
-
-	#[test]
-	fn repeat_peek_look_ahead_not_backtracking() {
-		let tokens = vec![1, 2];
-		let mut input = Input::new(tokens);
-		let handler = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		input.stop_look_ahead(handler, false);
-		assert_eq!(input.peek(), Some(&2));
-
-		let handler = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler, true);
-		assert_eq!(input.peek(), Some(&2));
-		assert_eq!(input.next_token(), Some(2));
-	}
-
-	#[test]
-	fn nested_lookahead_backtrack() {
-		let tokens = vec![1, 2, 3, 4, 5];
-		let mut input = Input::new(tokens);
-		let handler1 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		let handler2 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler2, true);
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler1, true);
-		assert_eq!(input.next_token(), Some(1));
-	}
-
-	#[test]
-	fn nested_lookahead_no_backtrack() {
-		let tokens = vec![1, 2, 3, 4, 5];
-		let mut input = Input::new(tokens);
-		let handler1 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		let handler2 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler2, false);
-		assert_eq!(input.next_token(), Some(3));
-		input.stop_look_ahead(handler1, false);
-		assert_eq!(input.next_token(), Some(4));
-	}
-
-	#[test]
-	fn nested_look_ahead_backtrack_first() {
-		let tokens = vec![1, 2, 3, 4, 5];
-		let mut input = Input::new(tokens);
-		let handler1 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		let handler2 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler2, true);
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler1, false);
-		assert_eq!(input.next_token(), Some(3));
-	}
-
-	#[test]
-	fn nested_look_ahead_backtrack_second() {
-		let tokens = vec![1, 2, 3, 4, 5];
-		let mut input = Input::new(tokens);
-		let handler1 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(1));
-		let handler2 = input.start_look_ahead();
-		assert_eq!(input.next_token(), Some(2));
-		input.stop_look_ahead(handler2, false);
-		assert_eq!(input.next_token(), Some(3));
-		input.stop_look_ahead(handler1, true);
-		assert_eq!(input.next_token(), Some(1));
-	}
-
-	#[test]
-	#[should_panic]
-	fn wrong_token() {
-		let tokens = vec![1, 2, 3, 4, 5];
-		let mut input = Input::new(tokens);
-		let handler1 = input.start_look_ahead();
-		let _handler2 = input.start_look_ahead();
-		input.stop_look_ahead(handler1, false);
 	}
 }
