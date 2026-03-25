@@ -719,7 +719,7 @@ where
 	PT: PositionToken,
 {
 	|input| match input.next_token() {
-		Some(pos_token) => Ok(pos_token.token()),
+		Some(pos_token) => Ok(pos_token.token_owned()),
 		None => Err(Error::EndOfInput),
 	}
 }

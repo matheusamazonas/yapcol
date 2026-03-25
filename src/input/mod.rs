@@ -67,7 +67,8 @@ impl Position {
 
 pub trait PositionToken: Clone {
 	type Token: Token;
-	fn token(&self) -> Self::Token;
+	fn token(&self) -> &Self::Token;
+	fn token_owned(self) -> Self::Token;
 	fn position(&self) -> Position;
 }
 

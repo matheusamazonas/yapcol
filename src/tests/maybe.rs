@@ -32,7 +32,7 @@ fn fail_non_consuming() {
 fn fail_consuming() {
 	let parser = |input: &mut Input<CharToken>| match input.next_token() {
 		Some(token) => {
-			if token.token() == 'h' {
+			if token.token_owned() == 'h' {
 				Ok(1)
 			} else {
 				Err(Error::UnexpectedToken)

@@ -29,7 +29,7 @@ where
 	}
 }
 
-fn new_token_input<'a, S, I>(source: S) -> Input<'a, I::Item>
+pub fn new_token_input<'a, S, I>(source: S) -> Input<'a, I::Item>
 where
 	S: IntoIterator<Item: PositionToken, IntoIter = I>,
 	I: Iterator<Item: PositionToken> + 'a,

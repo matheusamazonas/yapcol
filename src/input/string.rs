@@ -11,9 +11,14 @@ pub struct CharToken {
 impl PositionToken for CharToken {
 	type Token = char;
 
-	fn token(&self) -> char {
+	fn token(&self) -> &char {
+		&self.token
+	}
+	
+	fn token_owned(self) -> char {
 		self.token
 	}
+	
 	fn position(&self) -> Position {
 		self.position
 	}
