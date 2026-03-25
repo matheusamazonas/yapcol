@@ -29,10 +29,10 @@ where
 	}
 }
 
-fn new_token_input<S, I>(source: impl IntoIterator<IntoIter = I>) -> Input<I::Item>
+fn new_token_input<'a, S, I>(source: S) -> Input<'a, I::Item>
 where
-	I: Iterator<Item: PositionToken> + 'static,
-	S: IntoIterator<IntoIter = I>,
+	S: IntoIterator<Item: PositionToken, IntoIter = I>,
+	I: Iterator<Item: PositionToken> + 'a,
 {
 	let source = TokenInputSource {
 		source_name: String::from("test"),

@@ -112,18 +112,18 @@ trait InputSource {
 
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
 /// module, concentrating all input operations.
-pub struct Input<T>
+pub struct Input<'a, T>
 where
 	T: PositionToken,
 {
-	source: Box<dyn InputSource<Token = T>>,
+	source: Box<dyn InputSource<Token = T> + 'a>,
 	consumed_count: usize,
 	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
 	look_ahead_buffer: VecDeque<T>,
 }
 
-impl<T> Input<T>
+impl<'a, T> Input<'a, T>
 where
 	T: PositionToken,
 {

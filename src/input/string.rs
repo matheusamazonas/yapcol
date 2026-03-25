@@ -59,9 +59,10 @@ where
 	}
 }
 
-pub fn new_string_input<I>(source: impl IntoIterator<Item = char, IntoIter = I>) -> Input<CharToken>
+pub fn new_string_input<'a, S,I>(source: S) -> Input<'a, CharToken>
 where
-	I: Iterator<Item = char> + 'static,
+	S: IntoIterator<Item = char, IntoIter = I>,
+	I: Iterator<Item = char> + 'a,
 {
 	let source = StringInputSource {
 		source: source.into_iter().peekable(),
