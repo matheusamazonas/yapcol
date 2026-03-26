@@ -43,7 +43,7 @@ fn two_wrong_last_element_fails() {
 	let parse_separator = is(',');
 	let mut input = new_string_input("1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }
 
 #[test]
@@ -79,5 +79,5 @@ fn many_wrong_last_element_fails() {
 	let parse_separator = is(',');
 	let mut input = new_string_input("1,1,1,1,1,1,1,1,1,1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }

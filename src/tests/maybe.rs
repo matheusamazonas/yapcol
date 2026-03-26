@@ -1,5 +1,6 @@
 use crate::input::string::{new_string_input, CharToken};
 use crate::*;
+use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -35,13 +36,13 @@ fn fail_consuming() {
 			if token.token_owned() == 'h' {
 				Ok(1)
 			} else {
-				Err(Error::UnexpectedToken)
+				Err(Error::UnexpectedToken(Position::new(1, 1)))
 			}
 		}
 		None => Err(Error::EndOfInput),
 	};
 	let mut input = new_string_input("j".chars());
 	let parser_maybe = maybe(&parser);
-	assert_eq!(parser_maybe(&mut input), Err(Error::UnexpectedToken));
+	assert_eq!(parser_maybe(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }

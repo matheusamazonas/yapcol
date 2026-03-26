@@ -51,7 +51,7 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::{Input, PositionToken, Token};
+use crate::input::{Input, Position, PositionToken, Token};
 
 pub mod error;
 pub mod input;
@@ -145,7 +145,7 @@ where
 {
 	let f = move |t: &PT::Token| match *t == token {
 		true => Ok((*t).clone()),
-		false => Err(Error::UnexpectedToken),
+		false => Err(Error::UnexpectedToken(Position::placeholder())),
 	};
 	satisfy(f)
 }
@@ -188,11 +188,12 @@ where
 	move |input| match input.peek() {
 		Some(pos_token) => {
 			let token = pos_token.token();
-			match f(&token) {
+			match f(token) {
 				Ok(result) => {
 					input.next_token(); // Consume if successful.
 					Ok(result)
 				}
+				Err(Error::UnexpectedToken(_)) => Err(Error::UnexpectedToken(pos_token.position())),
 				Err(e) => Err(e),
 			}
 		}
@@ -227,7 +228,7 @@ where
 {
 	|input| match input.peek() {
 		None => Ok(()),
-		_ => Err(Error::UnexpectedToken),
+		Some(t) => Err(Error::UnexpectedToken(t.position())),
 	}
 }
 
@@ -469,7 +470,7 @@ where
 		parsers
 			.into_iter()
 			.find_map(|p| p(input).ok())
-			.ok_or(Error::UnexpectedToken)
+			.ok_or(input.get_position_error())
 	}
 }
 
@@ -522,7 +523,7 @@ where
 		for _ in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
-				Err(_) => return Err(Error::UnexpectedToken),
+				Err(e) => return Err(e),
 			}
 		}
 		Ok(output)
@@ -972,13 +973,13 @@ where
 {
 	|input| {
 		let handler = input.start_look_ahead();
-		let output = match parser(input) {
-			Ok(_) => Err(Error::UnexpectedToken),
+		let output = parser(input);
+		input.stop_look_ahead(handler, true);
+		match output {
+			Ok(_) => Err(input.get_position_error()),
 			Err(Error::EndOfInput) => Err(Error::EndOfInput),
 			Err(_) => Ok(()),
-		};
-		input.stop_look_ahead(handler, true);
-		output
+		}
 	}
 }
 

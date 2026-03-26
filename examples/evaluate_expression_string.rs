@@ -1,6 +1,6 @@
 use std::io;
 use yapcol::error::Error;
-use yapcol::input::Input;
+use yapcol::input::{Input, Position};
 use yapcol::{attempt, between, chain_left, chain_right, is, many0, option, satisfy, Parser};
 mod expression;
 use expression::{evaluate, Expression, Operator};
@@ -15,7 +15,7 @@ fn parse_digit() -> impl Parser<CharToken, char> {
 		if c.is_ascii_digit() {
 			Ok(*c)
 		} else {
-			Err(Error::UnexpectedToken)
+			Err(Error::UnexpectedToken(Position::placeholder()))
 		}
 	};
 	satisfy(f)
@@ -28,7 +28,7 @@ fn parse_number() -> impl StringExpressionParser {
 		let digits: String = digits.iter().collect();
 		match digits.parse::<i32>() {
 			Ok(number) => Ok(Expression::Number(number)),
-			Err(_) => Err(Error::UnexpectedToken),
+			Err(_) => Err(input.get_position_error()),
 		}
 	}
 }
@@ -47,7 +47,7 @@ fn parse_expression() -> impl StringExpressionParser {
 			match operator {
 				'+' => Ok(build_operation(Operator::Addition)),
 				'-' => Ok(build_operation(Operator::Subtraction)),
-				_ => Err(Error::UnexpectedToken),
+				_ => Err(input.get_position_error()),
 			}
 		};
 		chain_left(&parse_factor(), &parse_operator)(input)
@@ -64,7 +64,7 @@ fn parse_factor() -> impl StringExpressionParser {
 			match operator {
 				'*' => Ok(build_operation(Operator::Multiplication)),
 				'/' => Ok(build_operation(Operator::Division)),
-				_ => Err(Error::UnexpectedToken),
+				_ => Err(input.get_position_error()),
 			}
 		};
 		chain_left(&parse_exponentiation(), &parse_operator)(input)
@@ -75,7 +75,7 @@ fn parse_exponentiation() -> impl StringExpressionParser {
 	|input| {
 		let parse_operator = |input: &mut Input<_>| match is('^')(input) {
 			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-			Err(_) => Err(Error::UnexpectedToken),
+			Err(_) => Err(input.get_position_error()),
 		};
 		chain_right(&parse_bottom(), &parse_operator)(input)
 	}
@@ -106,7 +106,7 @@ fn main() {
 				let mut input = new_string_input(input.chars());
 				match parse_expression()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
-					Err(e) => println!("Failed to parse expression: {:?}", e),
+					Err(e) => println!("Failed to parse expression: {e}"),
 				}
 			}
 			Err(_) => println!("Failed to read input."),

@@ -16,7 +16,7 @@ fn followed() {
 	let mut input = new_string_input("h".chars());
 	let not_followed_parser = not_followed_by(&parser);
 	let output = not_followed_parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }
 
 #[test]
@@ -41,5 +41,5 @@ fn look_ahead_followed() {
 	let mut input = new_string_input("hello".chars());
 	let not_followed_parser = not_followed_by(&lookahead_parser);
 	let output = not_followed_parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }

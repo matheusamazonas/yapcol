@@ -20,19 +20,19 @@ fn success() {
 fn fail_repeated() {
 	let mut input = new_string_input("(xx)".chars());
 	let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }
 
 #[test]
 fn fail_no_middle() {
 	let mut input = new_string_input("()".chars());
 	let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }
 
 #[test]
 fn fail_swap() {
 	let mut input = new_string_input(")xx(".chars());
 	let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }

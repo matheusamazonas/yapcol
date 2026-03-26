@@ -13,6 +13,6 @@ fn success() {
 fn fail() {
 	let parser = is('j');
 	let mut input = new_string_input("h".chars());
-	assert_eq!(parser(&mut input), Err(Error::UnexpectedToken));
+	assert_eq!(parser(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }

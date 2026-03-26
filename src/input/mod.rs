@@ -41,7 +41,9 @@ pub mod token;
 #[cfg(test)]
 mod tests;
 
+use crate::error::Error;
 use std::collections::VecDeque;
+use std::fmt::Display;
 
 /// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
 /// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
@@ -62,6 +64,16 @@ impl Position {
 
 	pub fn advance_column(&mut self) {
 		self.column += 1;
+	}
+
+	pub fn placeholder() -> Position {
+		Position::new(0, 0)
+	}
+}
+
+impl Display for Position {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "{}:{}", self.line, self.column)
 	}
 }
 
@@ -188,6 +200,13 @@ where
 	/// How many tokens the input stream has consumed.
 	pub(crate) fn consumed_count(&self) -> usize {
 		self.consumed_count
+	}
+
+	pub fn get_position_error(&mut self) -> Error {
+		match self.peek() {
+			Some(token) => Error::UnexpectedToken(token.position()),
+			None => Error::EndOfInput,
+		}
 	}
 
 	/// Starts a lookahead operation, putting the input stream into lookahead mode (if it already

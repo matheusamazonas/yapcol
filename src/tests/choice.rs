@@ -26,7 +26,7 @@ fn success() {
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	// 4, fail.
 	let mut input = new_string_input("u".chars());
-	assert_eq!(parser_choice(&mut input), Err(Error::UnexpectedToken));
+	assert_eq!(parser_choice(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }
 
@@ -41,6 +41,6 @@ fn fail() {
 	// 1, success.
 	let mut input = new_string_input("x".chars());
 	let output = parser_choice(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }

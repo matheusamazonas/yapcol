@@ -4,6 +4,9 @@
 //! returns `Result<O, Error>`, so understanding the variants is enough to handle all failure
 //! cases.
 
+use crate::input::Position;
+use std::fmt::Display;
+
 /// The error type returned by all parsers in this crate.
 ///
 /// A parser returns `Err(Error::UnexpectedToken)` when the next token does not satisfy its
@@ -27,10 +30,19 @@
 /// is('a')(&mut input).unwrap(); // Consume the only token
 /// assert_eq!(any()(&mut input), Err(Error::EndOfInput));
 /// ```
-#[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
-	UnexpectedToken,
+	UnexpectedToken(Position),
 	/// The input stream was exhausted before the parser could match.
 	EndOfInput,
+}
+
+impl Display for Error {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Error::UnexpectedToken(pos) => write!(f, "Unexpected token at {}.", pos),
+			Error::EndOfInput => write!(f, "End of input reached."),
+		}
+	}
 }

@@ -29,7 +29,7 @@ fn non_consuming_fail_does_not_consume() {
 	let parser = is('h');
 	let mut input = new_string_input("j".chars());
 	let output = look_ahead(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 	// Input should still be intact.
 	assert_eq!(any()(&mut input), Ok('j'));
 	assert!(end_of_input()(&mut input).is_ok());
@@ -44,7 +44,7 @@ fn consuming_fail_consumes() {
 		Ok((output1, output2))
 	};
 	let output = look_ahead(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 	// Input was consumed.
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert!(end_of_input()(&mut input).is_ok());
@@ -55,7 +55,7 @@ fn parse_does_not_consume_on_failure() {
 	let parser = is('h');
 	let mut input = new_string_input("jello".chars());
 	let result = look_ahead(&parser)(&mut input);
-	assert_eq!(result, Err(Error::UnexpectedToken));
+	assert_eq!(result, Err(Error::UnexpectedToken(Position::new(1, 1))));
 	// Input should still be intact
 	assert_eq!(is('j')(&mut input), Ok('j'));
 	assert_eq!(is('e')(&mut input), Ok('e'));

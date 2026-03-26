@@ -14,11 +14,11 @@ impl PositionToken for CharToken {
 	fn token(&self) -> &char {
 		&self.token
 	}
-	
+
 	fn token_owned(self) -> char {
 		self.token
 	}
-	
+
 	fn position(&self) -> Position {
 		self.position
 	}
@@ -64,7 +64,7 @@ where
 	}
 }
 
-pub fn new_string_input<'a, S,I>(source: S) -> Input<'a, CharToken>
+pub fn new_string_input<'a, S, I>(source: S) -> Input<'a, CharToken>
 where
 	S: IntoIterator<Item = char, IntoIter = I>,
 	I: Iterator<Item = char> + 'a,
@@ -72,7 +72,7 @@ where
 	let source = StringInputSource {
 		source: source.into_iter().peekable(),
 		source_name: String::from("input"),
-		position: Position::new(0, 0),
+		position: Position::new(1, 1),
 		peeked_token: None,
 	};
 

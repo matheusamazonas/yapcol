@@ -6,12 +6,12 @@ fn parse_evaluate_right_subtraction() -> impl Parser<CharToken, i32> {
 	|input| {
 		let operand = satisfy(|c: &char| match c.to_digit(10) {
 			Some(x) => Ok(x as i32),
-			None => Err(Error::UnexpectedToken),
+			None => Err(Error::UnexpectedToken(Position::new(1, 1))),
 		});
 
 		let operator = satisfy(|c: &char| match c {
 			'-' => Ok(|a, b| a - b),
-			_ => Err(Error::UnexpectedToken),
+			_ => Err(Error::UnexpectedToken(Position::new(1, 1))),
 		});
 
 		chain_right(&operand, &operator)(input)

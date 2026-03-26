@@ -61,7 +61,7 @@ fn tokenize(input: String) -> Vec<SourceToken> {
 			}
 			c => panic!("Unexpected character: {c}"),
 		};
-		let position = Position::new(0, i);
+		let position = Position::new(1, i);
 		i += 1;
 		tokens.push(SourceToken { token, position });
 	}
@@ -77,7 +77,7 @@ impl<T> TokenExpressionParser for T where T: Fn(&mut Input<SourceToken>) -> Resu
 fn parse_number() -> impl TokenExpressionParser {
 	let f = |token: &Token| match token {
 		Token::Number(number) => Ok(Expression::Number(*number)),
-		_ => Err(Error::UnexpectedToken),
+		_ => Err(Error::UnexpectedToken(Position::placeholder())),
 	};
 	satisfy(f)
 }
@@ -97,7 +97,7 @@ fn parse_operations(
 		let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
-			_ => Err(Error::UnexpectedToken),
+			_ => Err(input.get_position_error()),
 		}
 	}
 }
@@ -123,7 +123,7 @@ fn parse_exponentiation() -> impl TokenExpressionParser {
 		))(input)
 		{
 			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-			Err(_) => Err(Error::UnexpectedToken),
+			Err(e) => Err(e),
 		};
 		chain_right(&parse_bottom(), &parse_operator)(input)
 	}
@@ -156,7 +156,7 @@ fn main() {
 				let mut input = new_token_input(tokens);
 				match parse_expression()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
-					Err(e) => println!("Failed to parse expression: {:?}", e),
+					Err(e) => println!("Failed to parse expression: {e}"),
 				}
 			}
 			Err(_) => println!("Failed to read input."),

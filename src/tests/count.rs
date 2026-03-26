@@ -57,5 +57,5 @@ fn count_not_enough() {
 	let mut input = new_string_input(tokens);
 	let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
 	let output = parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
 }
