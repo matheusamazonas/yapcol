@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -45,7 +45,7 @@ fn consuming_fail_consumes() {
 		Ok((output1, output2))
 	};
 	let output = look_ahead(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
 	// Input was consumed.
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert!(end_of_input()(&mut input).is_ok());

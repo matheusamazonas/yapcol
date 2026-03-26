@@ -1,9 +1,9 @@
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::{Input, Position, PositionToken};
-use yapcol::{attempt, between, chain_left, chain_right, is, option, satisfy, Parser};
+use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
 mod expression;
-use expression::{evaluate, Expression, Operator};
+use expression::{Expression, Operator, evaluate};
 use yapcol::input::token::new_token_input;
 
 #[derive(Debug, PartialEq, Clone)]

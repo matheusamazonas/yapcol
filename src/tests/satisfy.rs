@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn digits() {
@@ -17,7 +17,10 @@ fn digits() {
 	assert!(end_of_input()(&mut input).is_ok());
 	// Words fails and does not consume.
 	let mut input = new_string_input("hello".chars());
-	assert_eq!(parser(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		parser(&mut input),
+		Err(Error::UnexpectedToken(Position::new(1, 1)))
+	);
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
 }

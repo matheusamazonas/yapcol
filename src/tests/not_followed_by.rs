@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {

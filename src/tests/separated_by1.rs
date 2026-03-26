@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -44,7 +44,7 @@ fn two_wrong_last_element_fails() {
 	let parse_separator = is(',');
 	let mut input = new_string_input("1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 3))));
 }
 
 #[test]
@@ -80,5 +80,5 @@ fn many_wrong_last_element_fails() {
 	let parse_separator = is(',');
 	let mut input = new_string_input("1,1,1,1,1,1,1,1,1,1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 21))));
 }

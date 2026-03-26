@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn success_first() {
@@ -30,7 +30,10 @@ fn fail_not_consuming() {
 	let parser2 = is('j');
 	let mut input = new_string_input("kello".chars());
 	let parse_option = option(&parser1, &parser2);
-	assert_eq!(parse_option(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		parse_option(&mut input),
+		Err(Error::UnexpectedToken(Position::new(1, 1)))
+	);
 	assert_eq!(any()(&mut input), Ok('k')); // Ensure that the input was NOT consumed.
 }
 
@@ -45,6 +48,6 @@ fn fail_consuming() {
 	};
 	let parse_option = option(&consuming_parser, &parser2);
 	let output = parse_option(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
 	assert_eq!(any()(&mut input), Ok('e')); // Ensure that the input was consumed.
 }

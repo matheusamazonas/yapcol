@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -41,7 +41,7 @@ fn consuming_fail_does_not_consume() {
 		Ok((o1, o2))
 	};
 	let output = attempt(&consuming_parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
 	// Input should be rewound even though the inner parser consumed.
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
@@ -59,7 +59,7 @@ fn attempt_twice() {
 	assert_eq!(first, Ok('h'));
 	// First attempt consumed 'h'.
 	let second = attempt(&parser)(&mut input);
-	assert_eq!(second, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(second, Err(Error::UnexpectedToken(Position::new(1, 2))));
 	// Input should still have "ello".
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert_eq!(any()(&mut input), Ok('l'));
@@ -155,7 +155,7 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	let output = attempt(&parser)(&mut input);
 	// The first parser failed consuming input and `attempt` was not used, so the input was
 	// consumed, and `option`'s second operand failed.
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert_eq!(any()(&mut input), Ok('l'));

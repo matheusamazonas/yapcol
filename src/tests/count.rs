@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn count_zero_empty() {
@@ -58,5 +58,5 @@ fn count_not_enough() {
 	let mut input = new_string_input(tokens);
 	let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
 	let output = parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 4))));
 }

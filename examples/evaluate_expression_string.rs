@@ -1,10 +1,10 @@
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::Input;
-use yapcol::{attempt, between, chain_left, chain_right, is, many0, option, satisfy, Parser};
+use yapcol::{Parser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
 mod expression;
-use expression::{evaluate, Expression, Operator};
-use yapcol::input::string::{new_string_input, CharToken};
+use expression::{Expression, Operator, evaluate};
+use yapcol::input::string::{CharToken, new_string_input};
 
 trait StringExpressionParser: Parser<CharToken, Expression> {}
 

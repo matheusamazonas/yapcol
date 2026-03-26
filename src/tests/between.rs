@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -21,14 +21,14 @@ fn success() {
 fn fail_repeated() {
 	let mut input = new_string_input("(xx)".chars());
 	let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 3))));
 }
 
 #[test]
 fn fail_no_middle() {
 	let mut input = new_string_input("()".chars());
 	let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
 }
 
 #[test]

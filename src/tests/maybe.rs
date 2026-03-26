@@ -1,6 +1,6 @@
-use crate::input::string::{new_string_input, CharToken};
-use crate::*;
 use crate::input::Position;
+use crate::input::string::{CharToken, new_string_input};
+use crate::*;
 
 #[test]
 fn empty() {
@@ -43,6 +43,9 @@ fn fail_consuming() {
 	};
 	let mut input = new_string_input("j".chars());
 	let parser_maybe = maybe(&parser);
-	assert_eq!(parser_maybe(&mut input), Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		parser_maybe(&mut input),
+		Err(Error::UnexpectedToken(Position::new(1, 1)))
+	);
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }

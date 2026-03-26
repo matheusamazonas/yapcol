@@ -1,4 +1,4 @@
-use crate::input::string::{new_string_input, CharToken};
+use crate::input::string::{CharToken, new_string_input};
 use crate::*;
 
 /// Implements a right-associative parser for subtraction operation and evaluates it.

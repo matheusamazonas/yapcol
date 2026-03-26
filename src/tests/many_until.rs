@@ -1,6 +1,6 @@
+use crate::input::Position;
 use crate::input::string::new_string_input;
 use crate::*;
-use crate::input::Position;
 
 #[test]
 fn empty() {
@@ -39,6 +39,6 @@ fn fail() {
 	let mut input = new_string_input("xxxxxy".chars());
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 6))));
 	assert_eq!(any()(&mut input), Ok('y')); // Input was consumed while looking for the end.
 }

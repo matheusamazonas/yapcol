@@ -1,5 +1,5 @@
-use crate::input::string::new_string_input;
 use crate::input::PositionToken;
+use crate::input::string::new_string_input;
 
 #[test]
 fn lookahead_no_backtracking() {
