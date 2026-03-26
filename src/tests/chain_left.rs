@@ -4,11 +4,7 @@ use crate::*;
 /// Implements a left-associative parser for subtraction operation and evaluates it.
 fn parse_evaluate_left_subtraction() -> impl Parser<CharToken, i32> {
 	|input| {
-		let operand = satisfy(|c: &char| match c.to_digit(10) {
-			Some(x) => Some(x as i32),
-			None => None,
-		});
-
+		let operand = satisfy(|c: &char| c.to_digit(10).map(|x| x as i32));
 		let operator = satisfy(|c: &char| match c {
 			'-' => Some(|a, b| a - b),
 			_ => None,
