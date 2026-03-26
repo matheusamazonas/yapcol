@@ -143,10 +143,12 @@ pub fn is<PT>(token: PT::Token) -> impl Parser<PT, PT::Token>
 where
 	PT: PositionToken<Token: Token>,
 {
-	let f = move |t: &PT::Token| if *t == token {
-		Some((*t).clone())
-	} else {
-		None
+	let f = move |t: &PT::Token| {
+		if *t == token {
+			Some((*t).clone())
+		} else {
+			None
+		}
 	};
 	satisfy(f)
 }
@@ -193,7 +195,7 @@ where
 				Some(result) => {
 					input.next_token(); // Consume if successful.
 					Ok(result)
-				},
+				}
 				None => Err(Error::UnexpectedToken(pos_token.position())),
 			}
 		}
@@ -470,7 +472,7 @@ where
 		parsers
 			.into_iter()
 			.find_map(|p| p(input).ok())
-			.ok_or(input.get_position_error())
+			.ok_or(Error::UnexpectedToken(input.position()))
 	}
 }
 
@@ -976,7 +978,7 @@ where
 		let output = parser(input);
 		input.stop_look_ahead(handler, true);
 		match output {
-			Ok(_) => Err(input.get_position_error()),
+			Ok(_) => Err(Error::UnexpectedToken(input.position())),
 			Err(Error::EndOfInput) => Err(Error::EndOfInput),
 			Err(_) => Ok(()),
 		}

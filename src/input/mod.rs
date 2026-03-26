@@ -41,7 +41,6 @@ pub mod token;
 #[cfg(test)]
 mod tests;
 
-use crate::error::Error;
 use std::collections::VecDeque;
 use std::fmt::Display;
 
@@ -130,6 +129,7 @@ where
 	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
 	look_ahead_buffer: VecDeque<T>,
+	last_token_position: Position,
 }
 
 impl<'a, T> Input<'a, T>
@@ -141,13 +141,16 @@ where
 		match self.next_location {
 			TokenLocation::Stream => {
 				self.consumed_count += 1;
-				self.source.next_token()
+				let token = self.source.next_token()?;
+				self.last_token_position = token.position();
+				Some(token)
 			}
 			TokenLocation::StreamLookingAhead => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
 				match self.source.next_token() {
 					None => None,
 					Some(token) => {
+						self.last_token_position = token.position();
 						let cloned = token.clone();
 						self.look_ahead_buffer.push_back(token);
 						frame.length += 1;
@@ -163,7 +166,9 @@ where
 				} else {
 					TokenLocation::BufferHead
 				};
-				output
+				let token = output?;
+				self.last_token_position = token.position();
+				Some(token)
 			}
 			TokenLocation::BufferTail => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
@@ -174,6 +179,7 @@ where
 				} else {
 					TokenLocation::BufferTail
 				};
+				self.last_token_position = token.position();
 				Some(token.clone())
 			}
 		}
@@ -198,10 +204,10 @@ where
 		self.consumed_count
 	}
 
-	pub fn get_position_error(&mut self) -> Error {
+	pub fn position(&mut self) -> Position {
 		match self.peek() {
-			Some(token) => Error::UnexpectedToken(token.position()),
-			None => Error::EndOfInput,
+			Some(token) => token.position(),
+			None => self.last_token_position,
 		}
 	}
 
@@ -295,6 +301,10 @@ where
 			} else {
 				TokenLocation::BufferTail
 			}
+		};
+
+		if let Some(token) = self.peek() {
+			self.last_token_position = token.position();
 		}
 	}
 }

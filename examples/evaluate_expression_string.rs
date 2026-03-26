@@ -1,6 +1,6 @@
 use std::io;
 use yapcol::error::Error;
-use yapcol::input::{Input, Position};
+use yapcol::input::Input;
 use yapcol::{attempt, between, chain_left, chain_right, is, many0, option, satisfy, Parser};
 mod expression;
 use expression::{evaluate, Expression, Operator};
@@ -12,11 +12,7 @@ impl<T> StringExpressionParser for T where T: Fn(&mut Input<CharToken>) -> Resul
 
 fn parse_digit() -> impl Parser<CharToken, char> {
 	let f = |c: &char| {
-		if c.is_ascii_digit() {
-			Some(*c)
-		} else {
-			None
-		}
+		if c.is_ascii_digit() { Some(*c) } else { None }
 	};
 	satisfy(f)
 }
@@ -28,7 +24,7 @@ fn parse_number() -> impl StringExpressionParser {
 		let digits: String = digits.iter().collect();
 		match digits.parse::<i32>() {
 			Ok(number) => Ok(Expression::Number(number)),
-			Err(_) => Err(input.get_position_error()),
+			Err(_) => Err(Error::UnexpectedToken(input.position())),
 		}
 	}
 }
@@ -47,7 +43,7 @@ fn parse_expression() -> impl StringExpressionParser {
 			match operator {
 				'+' => Ok(build_operation(Operator::Addition)),
 				'-' => Ok(build_operation(Operator::Subtraction)),
-				_ => Err(input.get_position_error()),
+				_ => Err(Error::UnexpectedToken(input.position())),
 			}
 		};
 		chain_left(&parse_factor(), &parse_operator)(input)
@@ -64,7 +60,7 @@ fn parse_factor() -> impl StringExpressionParser {
 			match operator {
 				'*' => Ok(build_operation(Operator::Multiplication)),
 				'/' => Ok(build_operation(Operator::Division)),
-				_ => Err(input.get_position_error()),
+				_ => Err(Error::UnexpectedToken(input.position())),
 			}
 		};
 		chain_left(&parse_exponentiation(), &parse_operator)(input)
@@ -75,7 +71,7 @@ fn parse_exponentiation() -> impl StringExpressionParser {
 	|input| {
 		let parse_operator = |input: &mut Input<_>| match is('^')(input) {
 			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-			Err(_) => Err(input.get_position_error()),
+			Err(_) => Err(Error::UnexpectedToken(input.position())),
 		};
 		chain_right(&parse_bottom(), &parse_operator)(input)
 	}

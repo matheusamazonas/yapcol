@@ -1,4 +1,4 @@
-use crate::input::{Input, InputSource, PositionToken, TokenLocation};
+use crate::input::{Input, InputSource, Position, PositionToken, TokenLocation};
 use std::collections::VecDeque;
 use std::iter::Peekable;
 
@@ -45,5 +45,6 @@ where
 		next_location: TokenLocation::Stream,
 		look_ahead_frames: Vec::new(),
 		look_ahead_buffer: VecDeque::new(),
+		last_token_position: Position::new(1, 1),
 	}
 }

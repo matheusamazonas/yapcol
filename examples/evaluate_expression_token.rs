@@ -97,7 +97,7 @@ fn parse_operations(
 		let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
-			_ => Err(input.get_position_error()),
+			_ => Err(Error::UnexpectedToken(input.position())),
 		}
 	}
 }
