@@ -51,7 +51,7 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::{Input, Position, PositionToken, Token};
+use crate::input::{Input, PositionToken, Token};
 
 pub mod error;
 pub mod input;
@@ -143,22 +143,23 @@ pub fn is<PT>(token: PT::Token) -> impl Parser<PT, PT::Token>
 where
 	PT: PositionToken<Token: Token>,
 {
-	let f = move |t: &PT::Token| match *t == token {
-		true => Ok((*t).clone()),
-		false => Err(Error::UnexpectedToken(Position::placeholder())),
+	let f = move |t: &PT::Token| if *t == token {
+		Some((*t).clone())
+	} else {
+		None
 	};
 	satisfy(f)
 }
 
-/// Creates a parser that succeeds if the given predicate returns `Ok` for the next token.
+/// Creates a parser that succeeds if the given predicate returns `Some` for the next token.
 ///
 /// If the predicate succeeds, the token is consumed and the result is returned. If the predicate
 /// fails, the parser fails without consuming any input.
 ///
 /// # Arguments
 ///
-/// - `f`: A predicate that takes a reference to a token and returns `Ok` on success or
-///   `Err` on failure.
+/// - `f`: A predicate that takes a reference to a token and returns `Sone` on success or
+///   `None` on failure.
 ///
 /// # Examples
 ///
@@ -182,19 +183,18 @@ where
 /// ```
 pub fn satisfy<F, PT, O>(f: F) -> impl Parser<PT, O>
 where
-	F: Fn(&PT::Token) -> Result<O, Error>,
+	F: Fn(&PT::Token) -> Option<O>,
 	PT: PositionToken<Token: Token>,
 {
 	move |input| match input.peek() {
 		Some(pos_token) => {
 			let token = pos_token.token();
 			match f(token) {
-				Ok(result) => {
+				Some(result) => {
 					input.next_token(); // Consume if successful.
 					Ok(result)
-				}
-				Err(Error::UnexpectedToken(_)) => Err(Error::UnexpectedToken(pos_token.position())),
-				Err(e) => Err(e),
+				},
+				None => Err(Error::UnexpectedToken(pos_token.position())),
 			}
 		}
 		None => Err(Error::EndOfInput),

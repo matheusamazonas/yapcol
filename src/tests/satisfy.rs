@@ -1,13 +1,14 @@
 use crate::input::string::new_string_input;
 use crate::*;
+use crate::input::Position;
 
 #[test]
 fn digits() {
 	let parser = satisfy(|token: &char| {
 		if token.is_ascii_digit() {
-			Ok(*token)
+			Some(*token)
 		} else {
-			Err(Error::UnexpectedToken(Position::new(1, 1)))
+			None
 		}
 	});
 	// Digits.

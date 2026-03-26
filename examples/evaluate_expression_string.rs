@@ -13,9 +13,9 @@ impl<T> StringExpressionParser for T where T: Fn(&mut Input<CharToken>) -> Resul
 fn parse_digit() -> impl Parser<CharToken, char> {
 	let f = |c: &char| {
 		if c.is_ascii_digit() {
-			Ok(*c)
+			Some(*c)
 		} else {
-			Err(Error::UnexpectedToken(Position::placeholder()))
+			None
 		}
 	};
 	satisfy(f)

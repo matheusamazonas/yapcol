@@ -76,8 +76,8 @@ impl<T> TokenExpressionParser for T where T: Fn(&mut Input<SourceToken>) -> Resu
 
 fn parse_number() -> impl TokenExpressionParser {
 	let f = |token: &Token| match token {
-		Token::Number(number) => Ok(Expression::Number(*number)),
-		_ => Err(Error::UnexpectedToken(Position::placeholder())),
+		Token::Number(number) => Some(Expression::Number(*number)),
+		_ => None,
 	};
 	satisfy(f)
 }

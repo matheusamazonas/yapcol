@@ -65,10 +65,6 @@ impl Position {
 	pub fn advance_column(&mut self) {
 		self.column += 1;
 	}
-
-	pub fn placeholder() -> Position {
-		Position::new(0, 0)
-	}
 }
 
 impl Display for Position {
