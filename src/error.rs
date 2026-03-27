@@ -18,13 +18,13 @@ use std::fmt::Display;
 /// ```
 /// use yapcol::{is, any};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::{Input, Position};
 ///
 /// let tokens = vec!['a'];
 /// let mut input = Input::new(tokens);
 ///
 /// // Fails with UnexpectedToken when the token does not match.
-/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken));
+/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(Position::new(1,1))));
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
