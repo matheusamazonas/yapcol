@@ -65,7 +65,7 @@ impl Display for Position {
 	}
 }
 
-pub trait PositionToken: Clone {
+pub trait InputToken: Clone {
 	type Token: PartialEq + Clone;
 	fn token(&self) -> &Self::Token;
 	fn token_owned(self) -> Self::Token;
@@ -105,7 +105,7 @@ enum TokenLocation {
 }
 
 trait InputSource {
-	type Token: PositionToken + Sized;
+	type Token: InputToken + Sized;
 	fn source_name(&self) -> String;
 	fn next_token(&mut self) -> Option<Self::Token>;
 	fn peek(&mut self) -> Option<&Self::Token>;
@@ -113,24 +113,24 @@ trait InputSource {
 
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
 /// module, concentrating all input operations.
-pub struct Input<'a, T>
+pub struct Input<'a, IT>
 where
-	T: PositionToken,
+	IT: InputToken,
 {
-	source: Box<dyn InputSource<Token = T> + 'a>,
+	source: Box<dyn InputSource<Token =IT> + 'a>,
 	consumed_count: usize,
 	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
-	look_ahead_buffer: VecDeque<T>,
+	look_ahead_buffer: VecDeque<IT>,
 	last_token_position: Position,
 }
 
-impl<'a, T> Input<'a, T>
+impl<'a, IT> Input<'a, IT>
 where
-	T: PositionToken,
+	IT: InputToken,
 {
 	/// Fetches the next token in the input stream, mutating the input stream.
-	pub(crate) fn next_token(&mut self) -> Option<T> {
+	pub(crate) fn next_token(&mut self) -> Option<IT> {
 		match self.next_location {
 			TokenLocation::Stream => {
 				self.consumed_count += 1;
@@ -180,7 +180,7 @@ where
 
 	/// Peeks into the input, returning a reference to the next token. Calling this method does not
 	/// mutate the input, and calling it repeatedly will return the same item over and over.
-	pub(crate) fn peek(&mut self) -> Option<&T> {
+	pub(crate) fn peek(&mut self) -> Option<&IT> {
 		match self.next_location {
 			TokenLocation::Stream => self.source.peek(),
 			TokenLocation::StreamLookingAhead => self.source.peek(),

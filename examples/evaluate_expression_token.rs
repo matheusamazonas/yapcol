@@ -1,9 +1,9 @@
 use std::io;
 use yapcol::error::Error;
-use yapcol::input::{Input, Position, PositionToken};
-use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
+use yapcol::input::{Input, InputToken, Position};
+use yapcol::{attempt, between, chain_left, chain_right, is, option, satisfy, Parser};
 mod expression;
-use expression::{Expression, Operator, evaluate};
+use expression::{evaluate, Expression, Operator};
 use yapcol::input::token::new_token_input;
 
 #[derive(Debug, PartialEq, Clone)]
@@ -20,7 +20,7 @@ struct SourceToken {
 	token: Token,
 }
 
-impl PositionToken for SourceToken {
+impl InputToken for SourceToken {
 	type Token = Token;
 
 	fn token(&self) -> &Self::Token {

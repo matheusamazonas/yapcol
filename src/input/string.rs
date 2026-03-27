@@ -1,4 +1,4 @@
-use crate::input::{Input, InputSource, Position, PositionToken, TokenLocation};
+use crate::input::{Input, InputSource, InputToken, Position, TokenLocation};
 use std::collections::VecDeque;
 use std::iter::Peekable;
 
@@ -8,7 +8,7 @@ pub struct CharToken {
 	position: Position,
 }
 
-impl PositionToken for CharToken {
+impl InputToken for CharToken {
 	type Token = char;
 
 	fn token(&self) -> &char {

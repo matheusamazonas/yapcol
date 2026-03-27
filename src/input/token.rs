@@ -1,10 +1,10 @@
-use crate::input::{Input, InputSource, Position, PositionToken, TokenLocation};
+use crate::input::{Input, InputSource, InputToken, Position, TokenLocation};
 use std::collections::VecDeque;
 use std::iter::Peekable;
 
 struct TokenInputSource<I>
 where
-	I: Iterator<Item: PositionToken>,
+	I: Iterator<Item: InputToken>,
 {
 	source_name: String,
 	stream: Peekable<I>,
@@ -12,7 +12,7 @@ where
 
 impl<I> InputSource for TokenInputSource<I>
 where
-	I: Iterator<Item: PositionToken>,
+	I: Iterator<Item: InputToken>,
 {
 	type Token = I::Item;
 
@@ -31,8 +31,8 @@ where
 
 pub fn new_token_input<'a, S, I>(source: S) -> Input<'a, I::Item>
 where
-	S: IntoIterator<Item: PositionToken, IntoIter = I>,
-	I: Iterator<Item: PositionToken> + 'a,
+	S: IntoIterator<Item: InputToken, IntoIter = I>,
+	I: Iterator<Item: InputToken> + 'a,
 {
 	let source = TokenInputSource {
 		source_name: String::from("test"),
