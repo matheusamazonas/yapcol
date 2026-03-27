@@ -51,7 +51,7 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::{Input, PositionToken, Token};
+use crate::input::{Input, PositionToken};
 
 pub mod error;
 pub mod input;
@@ -141,7 +141,7 @@ where
 /// ```
 pub fn is<PT>(token: PT::Token) -> impl Parser<PT, PT::Token>
 where
-	PT: PositionToken<Token: Token>,
+	PT: PositionToken,
 {
 	let f = move |t: &PT::Token| {
 		if *t == token {
@@ -186,7 +186,7 @@ where
 pub fn satisfy<F, PT, O>(f: F) -> impl Parser<PT, O>
 where
 	F: Fn(&PT::Token) -> Option<O>,
-	PT: PositionToken<Token: Token>,
+	PT: PositionToken,
 {
 	move |input| match input.peek() {
 		Some(pos_token) => {

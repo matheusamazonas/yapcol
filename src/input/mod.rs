@@ -44,13 +44,6 @@ mod tests;
 use std::collections::VecDeque;
 use std::fmt::Display;
 
-/// The smallest unit of input supported. If you'd like to use a custom type as tokens (e.g.,
-/// for lexical analysis, a.k.a. lexing), implementing [`PartialEq`] and [`Clone`] is enough to
-/// make it token-compatible.
-pub trait Token: PartialEq + Clone {}
-
-impl<T> Token for T where T: PartialEq + Clone {}
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Position {
 	line: usize,
@@ -73,7 +66,7 @@ impl Display for Position {
 }
 
 pub trait PositionToken: Clone {
-	type Token: Token;
+	type Token: PartialEq + Clone;
 	fn token(&self) -> &Self::Token;
 	fn token_owned(self) -> Self::Token;
 	fn position(&self) -> Position;
