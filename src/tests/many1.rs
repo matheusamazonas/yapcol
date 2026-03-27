@@ -1,11 +1,10 @@
 use crate::input::Position;
-use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn empty() {
 	let parser = is('h');
-	let mut input = new_string_input("".chars());
+	let mut input = Input::new("".chars());
 	let parser_many1 = many1(&parser);
 	assert_eq!(parser_many1(&mut input), Err(Error::EndOfInput));
 }
@@ -13,7 +12,7 @@ fn empty() {
 #[test]
 fn no_match() {
 	let parser = is('h');
-	let mut input = new_string_input("jklmno".chars());
+	let mut input = Input::new("jklmno".chars());
 	let parser_many1 = many1(&parser);
 	assert_eq!(
 		parser_many1(&mut input),
@@ -25,7 +24,7 @@ fn no_match() {
 #[test]
 fn one_match() {
 	let parser = is('h');
-	let mut input = new_string_input("hallo".chars());
+	let mut input = Input::new("hallo".chars());
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), 1);
@@ -38,7 +37,7 @@ fn multiple_matches() {
 	let token_count = 100;
 	let parser = is('h');
 	let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
-	let mut input = new_string_input(tokens);
+	let mut input = Input::new(tokens);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), token_count);
@@ -49,7 +48,7 @@ fn multiple_matches() {
 #[test]
 fn partial_match_then_stop() {
 	let parser = is('h');
-	let mut input = new_string_input("hhjklmnop".chars());
+	let mut input = Input::new("hhjklmnop".chars());
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output, vec!['h', 'h']);

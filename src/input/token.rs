@@ -1,8 +1,7 @@
-use crate::input::{Input, InputSource, InputToken, Position, TokenLocation};
-use std::collections::VecDeque;
+use crate::input::{InputSource, InputToken};
 use std::iter::Peekable;
 
-struct TokenInputSource<I>
+pub struct TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
@@ -29,22 +28,17 @@ where
 	}
 }
 
-pub fn new_token_input<'a, S, I>(source: S) -> Input<'a, I::Item>
+impl<I> TokenInputSource<I>
 where
-	S: IntoIterator<Item: InputToken, IntoIter = I>,
-	I: Iterator<Item: InputToken> + 'a,
+	I: Iterator<Item: InputToken>,
 {
-	let source = TokenInputSource {
-		source_name: String::from("test"),
-		stream: source.into_iter().peekable(),
-	};
-
-	Input {
-		source: Box::new(source),
-		consumed_count: 0,
-		next_location: TokenLocation::Stream,
-		look_ahead_frames: Vec::new(),
-		look_ahead_buffer: VecDeque::new(),
-		last_token_position: Position::new(1, 1),
+	pub fn new<S>(source: S) -> Self
+	where
+		S: IntoIterator<Item: InputToken, IntoIter = I>,
+	{
+		Self {
+			source_name: String::from("test"),
+			stream: source.into_iter().peekable(),
+		}
 	}
 }

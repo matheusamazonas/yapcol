@@ -1,5 +1,4 @@
-use crate::input::{Input, InputSource, InputToken, Position, TokenLocation};
-use std::collections::VecDeque;
+use crate::input::{InputSource, InputToken, Position};
 use std::iter::Peekable;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -25,12 +24,12 @@ impl InputToken for CharToken {
 }
 
 impl CharToken {
-	pub fn new(token: char, position: Position) -> Self {
+	fn new(token: char, position: Position) -> Self {
 		Self { token, position }
 	}
 }
 
-struct StringInputSource<I>
+pub(crate) struct StringInputSource<I>
 where
 	I: Iterator<Item = char>,
 {
@@ -64,24 +63,19 @@ where
 	}
 }
 
-pub fn new_string_input<'a, S, I>(source: S) -> Input<'a, CharToken>
+impl<I> StringInputSource<I>
 where
-	S: IntoIterator<Item = char, IntoIter = I>,
-	I: Iterator<Item = char> + 'a,
+	I: Iterator<Item = char>,
 {
-	let source = StringInputSource {
-		source: source.into_iter().peekable(),
-		source_name: String::from("input"),
-		position: Position::new(1, 1),
-		peeked_token: None,
-	};
-
-	Input {
-		source: Box::new(source),
-		consumed_count: 0,
-		next_location: TokenLocation::Stream,
-		look_ahead_frames: Vec::new(),
-		look_ahead_buffer: VecDeque::new(),
-		last_token_position: Position::new(1, 1),
+	pub(crate) fn new<S>(source: S) -> Self
+	where
+		S: IntoIterator<Item = char, IntoIter = I>,
+	{
+		StringInputSource {
+			source: source.into_iter().peekable(),
+			source_name: String::from("input"),
+			position: Position::new(1, 1),
+			peeked_token: None,
+		}
 	}
 }

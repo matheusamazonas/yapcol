@@ -1,10 +1,9 @@
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::{Input, InputToken, Position};
-use yapcol::{attempt, between, chain_left, chain_right, is, option, satisfy, Parser};
+use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
 mod expression;
-use expression::{evaluate, Expression, Operator};
-use yapcol::input::token::new_token_input;
+use expression::{Expression, Operator, evaluate};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Token {
@@ -153,7 +152,7 @@ fn main() {
 			Ok(_) => {
 				input.retain(|c| c != '\n');
 				let tokens = tokenize(input.clone());
-				let mut input = new_token_input(tokens);
+				let mut input = Input::new_from_tokens(tokens);
 				match parse_expression()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
 					Err(e) => println!("Failed to parse expression: {e}"),
@@ -242,7 +241,7 @@ mod evaluation_tests {
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let tokens = tokenize(String::from(input));
-		let mut input = new_token_input(tokens);
+		let mut input = Input::new_from_tokens(tokens);
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())

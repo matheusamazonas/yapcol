@@ -1,11 +1,10 @@
 use crate::input::Position;
-use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn count_zero_empty() {
 	let parser = is('h');
-	let mut input = new_string_input("".chars());
+	let mut input = Input::new("".chars());
 	let parser = count(&parser, 0);
 	let output = parser(&mut input);
 	assert_eq!(output, Ok(vec![]));
@@ -14,7 +13,7 @@ fn count_zero_empty() {
 #[test]
 fn count_0_not_empty() {
 	let parser = is('h');
-	let mut input = new_string_input("jello".chars());
+	let mut input = Input::new("jello".chars());
 	let parser = count(&parser, 0);
 	let output = parser(&mut input);
 	assert_eq!(output, Ok(vec![]));
@@ -25,7 +24,7 @@ fn count_all_same() {
 	let parser = is('h');
 	let repeat_count: usize = 500;
 	let tokens: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
-	let mut input = new_string_input(tokens);
+	let mut input = Input::new(tokens);
 	let parser = count(&parser, repeat_count);
 	let output = parser(&mut input).unwrap();
 	assert_eq!(output.len(), repeat_count); // The count matched the request.
@@ -41,7 +40,7 @@ fn count_one_different() {
 	tokens.push('x');
 	let mut tail: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
 	tokens.append(&mut tail);
-	let mut input = new_string_input(tokens);
+	let mut input = Input::new(tokens);
 	let parser = count(&parser, repeat_count);
 	let output = parser(&mut input).unwrap();
 	assert!(output.iter().all(|x| *x == 'h')); // All values match the parser's.
@@ -55,7 +54,7 @@ fn count_not_enough() {
 	let mut tokens: Vec<_> = std::iter::repeat_n('h', 3).collect();
 	tokens.push('x');
 	tokens.push('y');
-	let mut input = new_string_input(tokens);
+	let mut input = Input::new(tokens);
 	let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
 	let output = parser(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 4))));

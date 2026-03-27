@@ -51,6 +51,7 @@
 //! more information.
 
 use crate::error::Error;
+use crate::input::string::CharToken;
 use crate::input::{Input, InputToken};
 
 pub mod error;
@@ -113,6 +114,10 @@ where
 	IT: InputToken,
 {
 }
+
+pub trait StringParser<O>: Parser<CharToken, O> {}
+
+impl<O, X> StringParser<O> for X where X: Fn(&mut Input<CharToken>) -> Result<O, Error> {}
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///

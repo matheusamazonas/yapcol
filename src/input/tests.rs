@@ -1,9 +1,8 @@
-use crate::input::string::new_string_input;
-use crate::input::InputToken;
+use crate::input::{Input, InputToken};
 
 #[test]
 fn lookahead_no_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	assert_eq!(input.next_token().unwrap().token_owned(), '2');
@@ -16,7 +15,7 @@ fn lookahead_no_backtracking() {
 
 #[test]
 fn lookahead_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	assert_eq!(input.next_token().unwrap().token_owned(), '2');
@@ -28,14 +27,14 @@ fn lookahead_backtracking() {
 
 #[test]
 fn peek_twice() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	assert_eq!(input.peek().unwrap().token(), &'1');
 	assert_eq!(input.peek().unwrap().token(), &'1');
 }
 
 #[test]
 fn peek_twice_while_looking_ahead_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.peek().unwrap().token(), &'1');
 	assert_eq!(input.peek().unwrap().token(), &'1');
@@ -45,7 +44,7 @@ fn peek_twice_while_looking_ahead_backtracking() {
 
 #[test]
 fn peek_twice_while_looking_ahead_not_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.peek().unwrap().token(), &'1');
 	assert_eq!(input.peek().unwrap().token(), &'1');
@@ -55,7 +54,7 @@ fn peek_twice_while_looking_ahead_not_backtracking() {
 
 #[test]
 fn repeat_peek_look_ahead_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	input.stop_look_ahead(handler, true);
@@ -69,7 +68,7 @@ fn repeat_peek_look_ahead_backtracking() {
 
 #[test]
 fn repeat_peek_look_ahead_not_backtracking() {
-	let mut input = new_string_input("12".chars());
+	let mut input = Input::new("12".chars());
 	let handler = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	input.stop_look_ahead(handler, false);
@@ -84,7 +83,7 @@ fn repeat_peek_look_ahead_not_backtracking() {
 
 #[test]
 fn nested_lookahead_backtrack() {
-	let mut input = new_string_input("12345".chars());
+	let mut input = Input::new("12345".chars());
 	let handler1 = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	let handler2 = input.start_look_ahead();
@@ -97,7 +96,7 @@ fn nested_lookahead_backtrack() {
 
 #[test]
 fn nested_lookahead_no_backtrack() {
-	let mut input = new_string_input("12345".chars());
+	let mut input = Input::new("12345".chars());
 	let handler1 = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	let handler2 = input.start_look_ahead();
@@ -110,7 +109,7 @@ fn nested_lookahead_no_backtrack() {
 
 #[test]
 fn nested_look_ahead_backtrack_first() {
-	let mut input = new_string_input("12345".chars());
+	let mut input = Input::new("12345".chars());
 	let handler1 = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	let handler2 = input.start_look_ahead();
@@ -123,7 +122,7 @@ fn nested_look_ahead_backtrack_first() {
 
 #[test]
 fn nested_look_ahead_backtrack_second() {
-	let mut input = new_string_input("12345".chars());
+	let mut input = Input::new("12345".chars());
 	let handler1 = input.start_look_ahead();
 	assert_eq!(input.next_token().unwrap().token_owned(), '1');
 	let handler2 = input.start_look_ahead();
@@ -137,7 +136,7 @@ fn nested_look_ahead_backtrack_second() {
 #[test]
 #[should_panic]
 fn wrong_token() {
-	let mut input = new_string_input("12345".chars());
+	let mut input = Input::new("12345".chars());
 	let handler1 = input.start_look_ahead();
 	let _handler2 = input.start_look_ahead();
 	input.stop_look_ahead(handler1, false);

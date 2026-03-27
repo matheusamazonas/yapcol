@@ -36,11 +36,13 @@
 //! methods directly.
 
 pub mod string;
-pub mod token;
+mod token;
 
 #[cfg(test)]
 mod tests;
 
+use crate::input::string::{CharToken, StringInputSource};
+use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
 use std::fmt::Display;
 
@@ -113,11 +115,8 @@ trait InputSource {
 
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
 /// module, concentrating all input operations.
-pub struct Input<'a, IT>
-where
-	IT: InputToken,
-{
-	source: Box<dyn InputSource<Token =IT> + 'a>,
+pub struct Input<'a, IT> {
+	source: Box<dyn InputSource<Token = IT> + 'a>,
 	consumed_count: usize,
 	next_location: TokenLocation,
 	look_ahead_frames: Vec<LookAheadFrame>,
@@ -125,10 +124,44 @@ where
 	last_token_position: Position,
 }
 
+impl<'a> Input<'a, CharToken> {
+	pub fn new<S, I>(source: S) -> Self
+	where
+		S: IntoIterator<Item = char, IntoIter = I>,
+		I: Iterator<Item = char> + 'a,
+	{
+		let source = StringInputSource::new(source);
+		Input {
+			source: Box::new(source),
+			consumed_count: 0,
+			next_location: TokenLocation::Stream,
+			look_ahead_frames: Vec::new(),
+			look_ahead_buffer: VecDeque::new(),
+			last_token_position: Position::new(1, 1),
+		}
+	}
+}
+
 impl<'a, IT> Input<'a, IT>
 where
 	IT: InputToken,
 {
+	pub fn new_from_tokens<S, I>(source: S) -> Input<'a, IT>
+	where
+		S: IntoIterator<Item = IT, IntoIter = I>,
+		I: Iterator<Item = IT> + 'a,
+	{
+		let source = TokenInputSource::new(source);
+		Input {
+			source: Box::new(source),
+			consumed_count: 0,
+			next_location: TokenLocation::Stream,
+			look_ahead_frames: Vec::new(),
+			look_ahead_buffer: VecDeque::new(),
+			last_token_position: Position::new(1, 1),
+		}
+	}
+
 	/// Fetches the next token in the input stream, mutating the input stream.
 	pub(crate) fn next_token(&mut self) -> Option<IT> {
 		match self.next_location {

@@ -1,11 +1,10 @@
 use crate::input::Position;
-use crate::input::string::{CharToken, new_string_input};
 use crate::*;
 
 #[test]
 fn empty() {
 	let parser = is('h');
-	let mut input = new_string_input("".chars());
+	let mut input = Input::new("".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -14,7 +13,7 @@ fn empty() {
 #[test]
 fn success() {
 	let parser = is('h');
-	let mut input = new_string_input("h".chars());
+	let mut input = Input::new("h".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(Some('h')));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -23,7 +22,7 @@ fn success() {
 #[test]
 fn fail_non_consuming() {
 	let parser = is('h');
-	let mut input = new_string_input("j".chars());
+	let mut input = Input::new("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -41,7 +40,7 @@ fn fail_consuming() {
 		}
 		None => Err(Error::EndOfInput),
 	};
-	let mut input = new_string_input("j".chars());
+	let mut input = Input::new("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(
 		parser_maybe(&mut input),

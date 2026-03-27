@@ -1,12 +1,11 @@
 use crate::input::Position;
-use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn empty() {
 	let any_parser = any();
 	let end_comment_parser = is('#');
-	let mut input = new_string_input("".chars());
+	let mut input = Input::new("".chars());
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
@@ -16,7 +15,7 @@ fn empty() {
 fn success_none() {
 	let any_parser = any();
 	let end_comment_parser = is('#');
-	let mut input = new_string_input("#".chars());
+	let mut input = Input::new("#".chars());
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input).unwrap();
 	assert_eq!(output, Vec::<char>::new());
@@ -26,7 +25,7 @@ fn success_none() {
 fn success_multiple() {
 	let any_parser = any();
 	let end_comment_parser = is('#');
-	let mut input = new_string_input("Hello world #".chars());
+	let mut input = Input::new("Hello world #".chars());
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input).unwrap();
 	assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
@@ -36,7 +35,7 @@ fn success_multiple() {
 fn fail() {
 	let any_parser = is('x');
 	let end_comment_parser = is('#');
-	let mut input = new_string_input("xxxxxy".chars());
+	let mut input = Input::new("xxxxxy".chars());
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 6))));

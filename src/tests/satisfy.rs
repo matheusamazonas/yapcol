@@ -1,5 +1,4 @@
 use crate::input::Position;
-use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
@@ -12,11 +11,11 @@ fn digits() {
 		}
 	});
 	// Digits.
-	let mut input = new_string_input("1".chars());
+	let mut input = Input::new("1".chars());
 	assert_eq!(parser(&mut input), Ok('1'));
 	assert!(end_of_input()(&mut input).is_ok());
 	// Words fails and does not consume.
-	let mut input = new_string_input("hello".chars());
+	let mut input = Input::new("hello".chars());
 	assert_eq!(
 		parser(&mut input),
 		Err(Error::UnexpectedToken(Position::new(1, 1)))

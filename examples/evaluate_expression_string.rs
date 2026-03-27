@@ -1,16 +1,16 @@
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::Input;
-use yapcol::{Parser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
+use yapcol::{StringParser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
 mod expression;
 use expression::{Expression, Operator, evaluate};
-use yapcol::input::string::{CharToken, new_string_input};
+use yapcol::input::string::CharToken;
 
-trait StringExpressionParser: Parser<CharToken, Expression> {}
+trait StringExpressionParser: StringParser<Expression> {}
 
 impl<T> StringExpressionParser for T where T: Fn(&mut Input<CharToken>) -> Result<Expression, Error> {}
 
-fn parse_digit() -> impl Parser<CharToken, char> {
+fn parse_digit() -> impl StringParser<char> {
 	let f = |c: &char| {
 		if c.is_ascii_digit() { Some(*c) } else { None }
 	};
@@ -99,7 +99,7 @@ fn main() {
 		match stdin.read_line(input) {
 			Ok(_) if input.len() == 2 && input.starts_with('q') => break,
 			Ok(_) => {
-				let mut input = new_string_input(input.chars());
+				let mut input = Input::new(input.chars());
 				match parse_expression()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
 					Err(e) => println!("Failed to parse expression: {e}"),
@@ -123,7 +123,7 @@ mod parsing_tests {
 
 	#[test]
 	fn number() {
-		let mut input = new_string_input("123".chars());
+		let mut input = Input::new("123".chars());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
@@ -133,7 +133,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}+{number2}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -148,7 +148,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}-{number2}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -163,7 +163,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}*{number2}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -178,7 +178,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}/{number2}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -194,7 +194,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}+{number3}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		// Addition is left-associative.
@@ -214,7 +214,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}-{number3}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number1, Operator::Addition, number2);
@@ -233,7 +233,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}*{number3}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number2, Operator::Multiplication, number3);
@@ -251,7 +251,7 @@ mod parsing_tests {
 		let number1 = 12;
 		let number2 = 3;
 		let tokens = format!("{number1}^{number2}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -267,7 +267,7 @@ mod parsing_tests {
 		let number2 = 3;
 		let number3 = 4;
 		let tokens = format!("{number1}^{number2}^{number3}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number2, Operator::Exponentiation, number3);
@@ -283,14 +283,14 @@ mod parsing_tests {
 
 	#[test]
 	fn parenthesis_number() {
-		let mut input = new_string_input("(123)".chars());
+		let mut input = Input::new("(123)".chars());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
 
 	#[test]
 	fn double_parenthesis_number() {
-		let mut input = new_string_input("((123))".chars());
+		let mut input = Input::new("((123))".chars());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
@@ -301,7 +301,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("({number1}+{number2})*{number3}");
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let parser = parse_expression();
 		let expression1 = Expression::Operation(
 			Box::new(Expression::Number(number1)),
@@ -324,7 +324,7 @@ mod evaluation_tests {
 	use yapcol::end_of_input;
 
 	fn parse_and_evaluate(tokens: &str) -> i32 {
-		let mut input = new_string_input(tokens.chars());
+		let mut input = Input::new(tokens.chars());
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())

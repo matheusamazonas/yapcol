@@ -1,12 +1,11 @@
 use crate::input::Position;
-use crate::input::string::new_string_input;
 use crate::*;
 
 #[test]
 fn success_first() {
 	let parser1 = is('h');
 	let parser2 = is('j');
-	let mut input = new_string_input("h".chars());
+	let mut input = Input::new("h".chars());
 	let parse_option = option(&parser1, &parser2);
 	let output = parse_option(&mut input).unwrap();
 	assert_eq!(output, 'h');
@@ -17,7 +16,7 @@ fn success_first() {
 fn success_second() {
 	let parser1 = is('h');
 	let parser2 = is('j');
-	let mut input = new_string_input("j".chars());
+	let mut input = Input::new("j".chars());
 	let parse_option = option(&parser1, &parser2);
 	let output = parse_option(&mut input).unwrap();
 	assert_eq!(output, 'j');
@@ -28,7 +27,7 @@ fn success_second() {
 fn fail_not_consuming() {
 	let parser1 = is('h');
 	let parser2 = is('j');
-	let mut input = new_string_input("kello".chars());
+	let mut input = Input::new("kello".chars());
 	let parse_option = option(&parser1, &parser2);
 	assert_eq!(
 		parse_option(&mut input),
@@ -41,7 +40,7 @@ fn fail_not_consuming() {
 fn fail_consuming() {
 	let parser1 = is('h');
 	let parser2 = is('j');
-	let mut input = new_string_input("hello".chars());
+	let mut input = Input::new("hello".chars());
 	let consuming_parser = |input: &mut Input<_>| {
 		parser1(input)?;
 		parser2(input)
