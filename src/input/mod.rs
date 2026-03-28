@@ -35,37 +35,17 @@
 //! [`crate::look_ahead`] defined in the crate root, so most users will not need to call these
 //! methods directly.
 
+pub mod position;
 pub mod string;
 mod token;
 
 #[cfg(test)]
 mod tests;
 
+use crate::input::position::Position;
 use crate::input::string::{CharToken, StringInputSource};
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
-use std::fmt::Display;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Position {
-	line: usize,
-	column: usize,
-}
-impl Position {
-	pub fn new(line: usize, column: usize) -> Position {
-		Position { line, column }
-	}
-
-	pub fn advance_column(&mut self) {
-		self.column += 1;
-	}
-}
-
-impl Display for Position {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "{}:{}", self.line, self.column)
-	}
-}
 
 pub trait InputToken: Clone {
 	type Token: PartialEq + Clone;

@@ -532,7 +532,8 @@ where
 ///
 /// ```
 /// use yapcol::{look_ahead, is, end_of_input, any};
-/// use yapcol::input::{Input, Position};
+/// use yapcol::input::Input;
+/// use yapcol::input::position::Position;
 /// use yapcol::error::Error;
 ///
 /// // Succeeds without consuming input.
@@ -603,7 +604,8 @@ where
 ///
 /// ```
 /// use yapcol::{attempt, is, end_of_input, any};
-/// use yapcol::input::{Input, Position};
+/// use yapcol::input::Input;
+/// use yapcol::input::position::Position;
 /// use yapcol::error::Error;
 ///
 /// // Succeeds consuming input.
@@ -922,7 +924,8 @@ where
 /// ```
 /// use yapcol::{is, not_followed_by};
 /// use yapcol::error::Error;
-/// use yapcol::input::{Input, Position};
+/// use yapcol::input::Input;
+/// use yapcol::input::position::Position;
 ///
 /// let parser = is('j');
 /// let mut input = Input::new("hello".chars());

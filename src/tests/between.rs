@@ -1,4 +1,4 @@
-use crate::input::Position;
+use crate::input::position::Position;
 use crate::*;
 
 #[test]

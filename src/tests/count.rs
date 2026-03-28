@@ -1,5 +1,5 @@
-use crate::input::Position;
 use crate::*;
+use input::position::Position;
 
 #[test]
 fn count_zero_empty() {

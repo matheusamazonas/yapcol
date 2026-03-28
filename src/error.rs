@@ -4,7 +4,7 @@
 //! returns `Result<O, Error>`, so understanding the variants is enough to handle all failure
 //! cases.
 
-use crate::input::Position;
+use crate::input::position::Position;
 use std::fmt::Display;
 
 /// The error type returned by all parsers in this crate.
@@ -18,7 +18,8 @@ use std::fmt::Display;
 /// ```
 /// use yapcol::{is, any};
 /// use yapcol::error::Error;
-/// use yapcol::input::{Input, Position};
+/// use yapcol::input::Input;
+/// use yapcol::input::position::Position;
 ///
 /// let tokens = vec!['a'];
 /// let mut input = Input::new(tokens);

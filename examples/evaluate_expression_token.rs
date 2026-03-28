@@ -1,6 +1,7 @@
 use std::io;
 use yapcol::error::Error;
-use yapcol::input::{Input, InputToken, Position};
+use yapcol::input::position::Position;
+use yapcol::input::{Input, InputToken};
 use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
 mod expression;
 use expression::{Expression, Operator, evaluate};
