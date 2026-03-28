@@ -35,6 +35,7 @@
 //! [`crate::look_ahead`] defined in the crate root, so most users will not need to call these
 //! methods directly.
 
+mod lookahead;
 pub mod position;
 mod source;
 pub mod string;
@@ -43,6 +44,7 @@ mod token;
 #[cfg(test)]
 mod tests;
 
+use crate::input::lookahead::{LookAheadFrame, LookAheadHandler, TokenLocation};
 use crate::input::position::Position;
 use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
@@ -53,38 +55,6 @@ pub trait InputToken: Clone {
 	fn token(&self) -> &Self::Token;
 	fn token_owned(self) -> Self::Token;
 	fn position(&self) -> Position;
-}
-
-/// A frame used to keep track of lookahead operations.
-struct LookAheadFrame {
-	/// Where in the lookahead buffer this frame started.
-	start_index: usize,
-	/// How many tokens this frame takes in the lookahead buffer.
-	length: usize,
-}
-
-impl LookAheadFrame {
-	/// The (lookahead buffer) index of the next token in this frame.
-	fn next_ix(&self) -> usize {
-		self.start_index + self.length
-	}
-}
-
-/// A handler used to enforce the following on lookahead operations:
-/// - That calls to [`Input::stop_look_ahead`] are only possible after a call to
-///   [`Input::start_look_ahead`].
-/// - That the right order of start/stop lookahead operations is performed.
-#[must_use]
-pub(crate) struct LookAheadHandler {
-	id: usize,
-}
-
-/// Possible locations where the next input token might be.
-enum TokenLocation {
-	Stream,
-	StreamLookingAhead,
-	BufferHead,
-	BufferTail,
 }
 
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
@@ -236,7 +206,7 @@ where
 
 		let token_id = self.look_ahead_frames.len();
 		self.look_ahead_frames.push(new_frame);
-		LookAheadHandler { id: token_id }
+		LookAheadHandler::new(token_id)
 	}
 
 	/// Stops the current lookahead operation, controlling whether the input stream should
@@ -259,7 +229,7 @@ where
 	/// lookahead mode—that will only happen if the operation being stopped is the only active one.
 	pub(crate) fn stop_look_ahead(&mut self, handler: LookAheadHandler, backtrack: bool) {
 		let frame = self.look_ahead_frames.pop().unwrap();
-		if handler.id != self.look_ahead_frames.len() {
+		if handler.id() != self.look_ahead_frames.len() {
 			panic!("Look ahead handler doesn't match current lookahead depth.")
 		}
 
