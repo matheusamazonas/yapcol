@@ -30,7 +30,7 @@ fn fail_non_consuming() {
 
 #[test]
 fn fail_consuming() {
-	let parser = |input: &mut Input<CharToken>| match input.next_token() {
+	let parser = |input: &mut StringInput| match input.next_token() {
 		Some(token) => {
 			if token.token_owned() == 'h' {
 				Ok(1)

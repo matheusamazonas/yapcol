@@ -52,7 +52,7 @@
 
 use crate::error::Error;
 use crate::input::string::CharToken;
-use crate::input::{Input, InputToken};
+use crate::input::{Input, InputToken, StringInput};
 
 pub mod error;
 pub mod input;
@@ -79,12 +79,11 @@ mod tests;
 ///
 /// ```
 /// use std::str::Chars;
-/// use yapcol::input::Input;
+/// use yapcol::input::{Input, StringInput};
 /// use yapcol::error::Error;
-/// use yapcol::input::string::CharToken;
 /// use yapcol::is;
 ///
-/// fn my_uppercase_parser(input: &mut Input<CharToken>) -> Result<char, Error> {
+/// fn my_uppercase_parser(input: &mut StringInput) -> Result<char, Error> {
 ///    // You can use existing parsers inside your custom parser
 ///    is('A')(input)
 /// }
@@ -118,7 +117,7 @@ where
 
 pub trait StringParser<O>: Parser<CharToken, O> {}
 
-impl<O, X> StringParser<O> for X where X: Fn(&mut Input<CharToken>) -> Result<O, Error> {}
+impl<O, X> StringParser<O> for X where X: Fn(&mut StringInput) -> Result<O, Error> {}
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///

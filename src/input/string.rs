@@ -67,7 +67,7 @@ impl<I> StringInputSource<I>
 where
 	I: Iterator<Item = char>,
 {
-	pub(crate) fn new<S>(source: S) -> Self
+	pub fn new<S>(source: S) -> Self
 	where
 		S: IntoIterator<Item = char, IntoIter = I>,
 	{

@@ -107,7 +107,7 @@ enum TokenLocation {
 }
 
 trait InputSource {
-	type Token: InputToken + Sized;
+	type Token: InputToken;
 	fn source_name(&self) -> String;
 	fn next_token(&mut self) -> Option<Self::Token>;
 	fn peek(&mut self) -> Option<&Self::Token>;
@@ -124,7 +124,9 @@ pub struct Input<'a, IT> {
 	last_token_position: Position,
 }
 
-impl<'a> Input<'a, CharToken> {
+pub type StringInput<'a> = Input<'a, CharToken>;
+
+impl<'a> StringInput<'a> {
 	pub fn new<S, I>(source: S) -> Self
 	where
 		S: IntoIterator<Item = char, IntoIter = I>,
