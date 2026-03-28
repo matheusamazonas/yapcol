@@ -4,11 +4,10 @@ use yapcol::input::Input;
 use yapcol::{StringParser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
 mod expression;
 use expression::{Expression, Operator, evaluate};
-use yapcol::input::string::CharToken;
 
 trait StringExpressionParser: StringParser<Expression> {}
 
-impl<T> StringExpressionParser for T where T: Fn(&mut Input<CharToken>) -> Result<Expression, Error> {}
+impl<T> StringExpressionParser for T where T: StringParser<Expression> {}
 
 fn parse_digit() -> impl StringParser<char> {
 	let f = |c: &char| {
