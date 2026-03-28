@@ -51,8 +51,8 @@
 //! more information.
 
 use crate::error::Error;
-use crate::input::string::CharToken;
-use crate::input::{Input, InputToken, StringInput};
+use crate::input::string::{CharToken, StringInput};
+use crate::input::{Input, InputToken};
 
 pub mod error;
 pub mod input;
@@ -79,7 +79,8 @@ mod tests;
 ///
 /// ```
 /// use std::str::Chars;
-/// use yapcol::input::{Input, StringInput};
+/// use yapcol::input::Input;
+/// use yapcol::input::string::StringInput;
 /// use yapcol::error::Error;
 /// use yapcol::is;
 ///

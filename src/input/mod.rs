@@ -36,6 +36,7 @@
 //! methods directly.
 
 pub mod position;
+mod source;
 pub mod string;
 mod token;
 
@@ -43,7 +44,7 @@ mod token;
 mod tests;
 
 use crate::input::position::Position;
-use crate::input::string::{CharToken, StringInputSource};
+use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
 
@@ -86,13 +87,6 @@ enum TokenLocation {
 	BufferTail,
 }
 
-trait InputSource {
-	type Token: InputToken;
-	fn source_name(&self) -> String;
-	fn next_token(&mut self) -> Option<Self::Token>;
-	fn peek(&mut self) -> Option<&Self::Token>;
-}
-
 /// An input stream that can be used to fetch input tokens. It's the most important entity in this
 /// module, concentrating all input operations.
 pub struct Input<'a, IT> {
@@ -102,26 +96,6 @@ pub struct Input<'a, IT> {
 	look_ahead_frames: Vec<LookAheadFrame>,
 	look_ahead_buffer: VecDeque<IT>,
 	last_token_position: Position,
-}
-
-pub type StringInput<'a> = Input<'a, CharToken>;
-
-impl<'a> StringInput<'a> {
-	pub fn new<S, I>(source: S) -> Self
-	where
-		S: IntoIterator<Item = char, IntoIter = I>,
-		I: Iterator<Item = char> + 'a,
-	{
-		let source = StringInputSource::new(source);
-		Input {
-			source: Box::new(source),
-			consumed_count: 0,
-			next_location: TokenLocation::Stream,
-			look_ahead_frames: Vec::new(),
-			look_ahead_buffer: VecDeque::new(),
-			last_token_position: Position::new(1, 1),
-		}
-	}
 }
 
 impl<'a, IT> Input<'a, IT>
