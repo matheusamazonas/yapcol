@@ -4,7 +4,7 @@ use input::position::Position;
 #[test]
 fn empty() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("".chars());
+	let mut input = Input::new_from_chars("".chars(), None);
 	let parse_look_ahead = look_ahead(&parser)(&mut input);
 	assert_eq!(parse_look_ahead, Err(Error::EndOfInput));
 }
@@ -12,7 +12,7 @@ fn empty() {
 #[test]
 fn success_does_not_consume() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	let output = look_ahead(&parser)(&mut input);
 	assert_eq!(output, Ok('h'));
 	// After look_ahead, input should still start with hello
@@ -27,9 +27,12 @@ fn success_does_not_consume() {
 #[test]
 fn non_consuming_fail_does_not_consume() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("j".chars());
+	let mut input = Input::new_from_chars("j".chars(), None);
 	let output = look_ahead(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
 	// Input should still be intact.
 	assert_eq!(any()(&mut input), Ok('j'));
 	assert!(end_of_input()(&mut input).is_ok());
@@ -37,14 +40,17 @@ fn non_consuming_fail_does_not_consume() {
 
 #[test]
 fn consuming_fail_consumes() {
-	let mut input = Input::new_from_chars("he".chars());
+	let mut input = Input::new_from_chars("he".chars(), None);
 	let parser = |input: &mut Input<_>| {
 		let output1 = is('h')(input)?; // Success, therefore it consumed.
 		let output2 = is('a')(input)?; // Failed, so the whole parser fails consuming.
 		Ok((output1, output2))
 	};
 	let output = look_ahead(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+	);
 	// Input was consumed.
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert!(end_of_input()(&mut input).is_ok());
@@ -53,9 +59,12 @@ fn consuming_fail_consumes() {
 #[test]
 fn parse_does_not_consume_on_failure() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("jello".chars());
+	let mut input = Input::new_from_chars("jello".chars(), None);
 	let result = look_ahead(&parser)(&mut input);
-	assert_eq!(result, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		result,
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
 	// Input should still be intact
 	assert_eq!(is('j')(&mut input), Ok('j'));
 	assert_eq!(is('e')(&mut input), Ok('e'));
@@ -68,7 +77,7 @@ fn parse_does_not_consume_on_failure() {
 #[test]
 fn parse_look_ahead_twice() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("h".chars());
+	let mut input = Input::new_from_chars("h".chars(), None);
 	let first = look_ahead(&parser)(&mut input);
 	let second = look_ahead(&parser)(&mut input);
 	assert_eq!(first, Ok('h'));

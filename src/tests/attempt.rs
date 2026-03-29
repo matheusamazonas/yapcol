@@ -3,7 +3,7 @@ use crate::*;
 
 #[test]
 fn empty() {
-	let mut input = Input::new_from_chars("".chars());
+	let mut input = Input::new_from_chars("".chars(), None);
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
@@ -11,7 +11,7 @@ fn empty() {
 
 #[test]
 fn success_consumes() {
-	let mut input = Input::new_from_chars("hel".chars());
+	let mut input = Input::new_from_chars("hel".chars(), None);
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Ok('h'));
@@ -23,24 +23,30 @@ fn success_consumes() {
 
 #[test]
 fn non_consuming_fail_does_not_consume() {
-	let mut input = Input::new_from_chars("jello".chars());
+	let mut input = Input::new_from_chars("jello".chars(), None);
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
 	// Input should still be intact.
 	assert_eq!(any()(&mut input), Ok('j'));
 }
 
 #[test]
 fn consuming_fail_does_not_consume() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	let consuming_parser = |input: &mut Input<_>| {
 		let o1 = is('h')(input)?; // Success, consumes 'h'.
 		let o2 = is('x')(input)?; // Fails on  'x', consuming parser fails.
 		Ok((o1, o2))
 	};
 	let output = attempt(&consuming_parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+	);
 	// Input should be rewound even though the inner parser consumed.
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
@@ -52,13 +58,16 @@ fn consuming_fail_does_not_consume() {
 
 #[test]
 fn attempt_twice() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	let parser = is('h');
 	let first = attempt(&parser)(&mut input);
 	assert_eq!(first, Ok('h'));
 	// First attempt consumed 'h'.
 	let second = attempt(&parser)(&mut input);
-	assert_eq!(second, Err(Error::UnexpectedToken(Position::new(1, 2))));
+	assert_eq!(
+		second,
+		Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+	);
 	// Input should still have "ello".
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert_eq!(any()(&mut input), Ok('l'));
@@ -69,7 +78,7 @@ fn attempt_twice() {
 
 #[test]
 fn attempt_with_option_succeeds_consuming() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	let parser1 = is('h');
 	let parser2 = is('e');
 	let parser_attempt = attempt(&parser1);
@@ -86,13 +95,16 @@ fn attempt_with_option_succeeds_consuming() {
 
 #[test]
 fn attempt_with_option_fails_not_consuming() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	let parser1 = is('e');
 	let parser2 = is('l');
 	let parser_attempt_1 = attempt(&parser1);
 	let parser = option(&parser_attempt_1, &parser2);
 	let output = attempt(&parser)(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
 	// No input was consumed thanks to `attempt`.
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
@@ -104,7 +116,7 @@ fn attempt_with_option_fails_not_consuming() {
 
 #[test]
 fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	// Create two parsers that share a prefix.
 	let parser1 = is('h');
 	let parser2 = is('e');
@@ -134,7 +146,7 @@ fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
 
 #[test]
 fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	// Create two parsers that share a prefix.
 	let parser1 = is('h');
 	let parser2 = is('e');
@@ -154,7 +166,10 @@ fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
 	let output = attempt(&parser)(&mut input);
 	// The first parser failed consuming input and `attempt` was not used, so the input was
 	// consumed, and `option`'s second operand failed.
-	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 2))));
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+	);
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));
 	assert_eq!(any()(&mut input), Ok('l'));

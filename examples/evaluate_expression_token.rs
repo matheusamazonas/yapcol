@@ -97,7 +97,10 @@ fn parse_operations(
 		let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
-			_ => Err(Error::UnexpectedToken(input.position())),
+			_ => Err(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+			)),
 		}
 	}
 }
@@ -153,7 +156,7 @@ fn main() {
 			Ok(_) => {
 				input.retain(|c| c != '\n');
 				let tokens = tokenize(input.clone());
-				let mut input = Input::new_from_tokens(tokens);
+				let mut input = Input::new_from_tokens(tokens, Some("stdin".to_string()));
 				match parse_expression()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
 					Err(e) => println!("Failed to parse expression: {e}"),
@@ -242,7 +245,7 @@ mod evaluation_tests {
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let tokens = tokenize(String::from(input));
-		let mut input = Input::new_from_tokens(tokens);
+		let mut input = Input::new_from_tokens(tokens, None);
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())

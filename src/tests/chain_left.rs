@@ -16,28 +16,28 @@ fn parse_evaluate_left_subtraction() -> impl Parser<CharToken, i32> {
 
 #[test]
 fn empty() {
-	let mut input = Input::new_from_chars("".chars());
+	let mut input = Input::new_from_chars("".chars(), None);
 	let output = parse_evaluate_left_subtraction()(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
 
 #[test]
 fn one_operand() {
-	let mut input = Input::new_from_chars("1".chars());
+	let mut input = Input::new_from_chars("1".chars(), None);
 	let output = parse_evaluate_left_subtraction()(&mut input);
 	assert_eq!(output, Ok(1));
 }
 
 #[test]
 fn two_operands() {
-	let mut input = Input::new_from_chars("9-7".chars());
+	let mut input = Input::new_from_chars("9-7".chars(), None);
 	let output = parse_evaluate_left_subtraction()(&mut input);
 	assert_eq!(output, Ok(2));
 }
 
 #[test]
 fn tree_operands() {
-	let mut input = Input::new_from_chars("3-1-2".chars()); // (3 - 1) - 2 = 0, not 3 - (1 - 2) = 4
+	let mut input = Input::new_from_chars("3-1-2".chars(), None); // (3 - 1) - 2 = 0, not 3 - (1 - 2) = 4
 	let output = parse_evaluate_left_subtraction()(&mut input);
 	assert_eq!(output, Ok(0));
 }

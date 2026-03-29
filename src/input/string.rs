@@ -36,7 +36,7 @@ where
 	I: Iterator<Item = char>,
 {
 	source: Peekable<I>,
-	source_name: String,
+	source_name: Option<String>,
 	position: Position,
 	peeked_token: Option<CharToken>,
 }
@@ -45,13 +45,13 @@ impl<I> StringInputSource<I>
 where
 	I: Iterator<Item = char>,
 {
-	pub(crate) fn new<S>(source: S) -> Self
+	pub(crate) fn new<S>(source: S, source_name: Option<String>) -> Self
 	where
 		S: IntoIterator<Item = char, IntoIter = I>,
 	{
 		StringInputSource {
 			source: source.into_iter().peekable(),
-			source_name: String::from("input"),
+			source_name,
 			position: Position::new(1, 1),
 			peeked_token: None,
 		}
@@ -64,8 +64,8 @@ where
 {
 	type Token = CharToken;
 
-	fn source_name(&self) -> String {
-		self.source_name.clone()
+	fn source_name(&self) -> Option<&String> {
+		self.source_name.as_ref()
 	}
 
 	fn next_token(&mut self) -> Option<CharToken> {
@@ -85,11 +85,11 @@ where
 pub type StringInput<'a> = Input<'a, CharToken>;
 
 impl<'a> StringInput<'a> {
-	pub fn new_from_chars<S>(chars: S) -> Input<'a, CharToken>
+	pub fn new_from_chars<S>(chars: S, source_name: Option<String>) -> Input<'a, CharToken>
 	where
 		S: IntoIterator<Item = char, IntoIter: Iterator<Item = char> + 'a>,
 	{
-		let source = StringInputSource::new(chars);
+		let source = StringInputSource::new(chars, source_name);
 		Input::new(Box::new(source))
 	}
 }

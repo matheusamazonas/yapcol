@@ -25,7 +25,7 @@
 //! use yapcol::input::core::{Input};
 //! use yapcol::{is, many0};
 //!
-//! let mut input = Input::new_from_chars("aaab".chars());
+//! let mut input = Input::new_from_chars("aaab".chars(), None);
 //!
 //! // Combine `is` and `many0` to parse multiple 'a's
 //! let is_a = is('a');
@@ -89,7 +89,7 @@ mod tests;
 ///    is('A')(input)
 /// }
 ///
-/// let mut input = Input::new_from_chars("Abc".chars());
+/// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// assert_eq!(my_uppercase_parser(&mut input), Ok('A'));
 /// ```
 ///
@@ -99,7 +99,7 @@ mod tests;
 /// use yapcol::input::core::Input;
 /// use yapcol::is;
 ///
-/// let mut input = Input::new_from_chars("Abc".chars());
+/// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// let mut parser = is('A');
 /// assert_eq!(parser(&mut input), Ok('A'));
 /// ```
@@ -136,12 +136,12 @@ impl<O, X> StringParser<O> for X where X: Fn(&mut StringInput) -> Result<O, Erro
 /// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = is('h');
 /// assert!(parser(&mut input).is_ok());
 ///
 /// let mut wrong: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
-/// let mut input = Input::new_from_chars(wrong);
+/// let mut input = Input::new_from_chars(wrong, None);
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
@@ -177,7 +177,7 @@ where
 /// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = satisfy(|c: &char| {
 ///     if c.is_ascii_digit() { Some(*c) } else { None }
 /// });
@@ -185,7 +185,7 @@ where
 /// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
 ///
 /// let tokens: Vec<char> = vec!['a', 'b', 'c'];
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
@@ -194,18 +194,23 @@ where
 	F: Fn(&IT::Token) -> Option<O>,
 	IT: InputToken,
 {
-	move |input| match input.peek() {
-		Some(input_token) => {
-			let token = input_token.token();
-			match f(token) {
-				Some(result) => {
-					input.next_token(); // Consume if successful.
-					Ok(result)
+	move |input| {
+		match input.peek() {
+			Some(input_token) => {
+				let token = input_token.token();
+				match f(token) {
+					Some(result) => {
+						input.next_token(); // Consume if successful.
+						Ok(result)
+					}
+					None => {
+						let position = input_token.position();
+						Err(Error::UnexpectedToken(input.source_name(), position))
+					}
 				}
-				None => Err(Error::UnexpectedToken(input_token.position())),
 			}
+			None => Err(Error::EndOfInput),
 		}
-		None => Err(Error::EndOfInput),
 	}
 }
 
@@ -222,11 +227,11 @@ where
 /// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec![];
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(end_of_input()(&mut input).is_ok());
 ///
 /// let tokens: Vec<char> = vec!['a', 'b'];
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(end_of_input()(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
@@ -236,7 +241,10 @@ where
 {
 	|input| match input.peek() {
 		None => Ok(()),
-		Some(t) => Err(Error::UnexpectedToken(t.position())),
+		Some(t) => {
+			let position = t.position();
+			Err(Error::UnexpectedToken(input.source_name(), position))
+		}
 	}
 }
 
@@ -262,17 +270,17 @@ where
 /// use yapcol::input::core::{Input};
 ///
 /// // parser1 succeeds: returns its result.
-/// let mut input = Input::new_from_chars("ab".chars());
+/// let mut input = Input::new_from_chars("ab".chars(), None);
 /// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'a');
 ///
 /// // parser1 fails without consuming input: parser2 is tried.
-/// let mut input = Input::new_from_chars("b".chars());
+/// let mut input = Input::new_from_chars("b".chars(), None);
 /// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'b');
 ///
 /// // Both parsers fail: an error is returned and input is not consumed.
-/// let mut input = Input::new_from_chars("c".chars());
+/// let mut input = Input::new_from_chars("c".chars(), None);
 /// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
@@ -308,12 +316,12 @@ where
 /// use yapcol::{maybe, is, any};
 /// use yapcol::input::core::{Input};
 ///
-/// let mut input = Input::new_from_chars("hello".chars());
+/// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let ph = is('h');
 /// let parser = maybe(&ph);
 /// assert_eq!(parser(&mut input).unwrap(), Some('h'));
 ///
-/// let mut input = Input::new_from_chars("world".chars());
+/// let mut input = Input::new_from_chars("world".chars(), None);
 /// assert_eq!(parser(&mut input).unwrap(), None);
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
@@ -361,15 +369,15 @@ where
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars());
+/// let mut input = Input::new_from_chars("112".chars(), None);
 /// assert_eq!(many0(&parser)(&mut input), Ok("11".chars().collect()));
 ///
 /// // Returns an empty vector when no matches are found (never fails)
-/// let mut input = Input::new_from_chars("23".chars());
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 ///
 /// // Returns an empty vector on empty input (never fails)
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 /// ```
 pub fn many0<P, IT, O>(parser: &P) -> impl Parser<IT, Vec<O>>
@@ -398,15 +406,15 @@ where
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars());
+/// let mut input = Input::new_from_chars("112".chars(), None);
 /// assert_eq!(many1(&parser)(&mut input), Ok("11".chars().collect()));
 ///
 /// // Fails when no matches are found
-/// let mut input = Input::new_from_chars("23".chars());
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(many1(&parser)(&mut input).is_err());
 ///
 /// // Fails on empty input
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(many1(&parser)(&mut input).is_err());
 /// ```
 pub fn many1<P, IT, O>(parser: &P) -> impl Parser<IT, Vec<O>>
@@ -443,15 +451,15 @@ where
 /// let p1 = is('1');
 /// let p2 = is('2');
 /// let parsers = vec![p1, p2];
-/// let mut input = Input::new_from_chars("23".chars());
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert_eq!(choice(&parsers)(&mut input), Ok('2'));
 ///
 /// // Fails when no parser matches
-/// let mut input = Input::new_from_chars("34".chars());
+/// let mut input = Input::new_from_chars("34".chars(), None);
 /// assert!(choice(&parsers)(&mut input).is_err());
 ///
 /// // Fails on empty input
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(choice(&parsers)(&mut input).is_err());
 /// ```
 pub fn choice<'a, P, IT, O, PI>(parsers: &'a PI) -> impl Parser<IT, O>
@@ -464,7 +472,7 @@ where
 		parsers
 			.into_iter()
 			.find_map(|p| p(input).ok())
-			.ok_or(Error::UnexpectedToken(input.position()))
+			.ok_or(Error::UnexpectedToken(input.source_name(), input.position()))
 	}
 }
 
@@ -487,20 +495,20 @@ where
 ///
 /// // Succeeds when the parser matches exactly `count` times
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1112".chars());
+/// let mut input = Input::new_from_chars("1112".chars(), None);
 /// assert_eq!(count(&parser, 3)(&mut input), Ok("111".chars().collect()));
 /// assert_eq!(any()(&mut input), Ok('2')); // Remaining input after consuming 3 tokens.
 ///
 /// // Fails when there are not enough matching tokens
-/// let mut input = Input::new_from_chars("123".chars());
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// assert!(count(&parser, 3)(&mut input).is_err());
 ///
 /// // Succeeds with count = 0, returning an empty vector
-/// let mut input = Input::new_from_chars("123".chars());
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// assert_eq!(count(&parser, 0)(&mut input), Ok(vec![]));
 ///
 /// // Fails on empty input when count > 0
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(count(&parser, 1)(&mut input).is_err());
 /// ```
 pub fn count<P, IT, O>(parser: &P, count: usize) -> impl Parser<IT, Vec<O>>
@@ -538,7 +546,7 @@ where
 /// use yapcol::error::Error;
 ///
 /// // Succeeds without consuming input.
-/// let mut input = Input::new_from_chars("123".chars());
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// let parser1 = is('1');
 /// assert_eq!(look_ahead(&parser1)(&mut input), Ok('1'));
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
@@ -546,23 +554,23 @@ where
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input.
-/// let mut input = Input::new_from_chars("23".chars());
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 ///
 /// // Fails consuming input if the parser consumes.
-/// let mut input = Input::new_from_chars("13".chars());
+/// let mut input = Input::new_from_chars("13".chars(), None);
 /// let consuming_parser = |input: &mut Input<_>| {
 ///     let o1 = parser1(input)?;
 ///     let o2 = parser1(input)?;
 ///     Ok((o1, o2))
 /// };
 /// let output = look_ahead(&consuming_parser)(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1,2))));
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,2))));
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was consumed.
 ///
 /// // Fails on empty input.
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// ```
 pub fn look_ahead<P, IT, O>(parser: &P) -> impl Parser<IT, O>
@@ -610,30 +618,30 @@ where
 /// use yapcol::error::Error;
 ///
 /// // Succeeds consuming input.
-/// let mut input = Input::new_from_chars("123".chars());
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// let parser1 = is('1');
 /// assert_eq!(attempt(&parser1)(&mut input), Ok('1'));
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was consumed.
 ///
 /// // Fails without consuming input.
-/// let mut input = Input::new_from_chars("23".chars());
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input if the parser consumes.
-/// let mut input = Input::new_from_chars("13".chars());
+/// let mut input = Input::new_from_chars("13".chars(), None);
 /// let consuming_parser = |input: &mut Input<_>| {
 ///     let o1 = parser1(input)?;
 ///     let o2 = parser1(input)?;
 ///     Ok((o1, o2))
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1,2))));
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,2))));
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
 /// // Fails on empty input
-/// let mut input = Input::new_from_chars("".chars());
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// ```
 pub fn attempt<P, IT, O>(parser: &P) -> impl Parser<IT, O>
@@ -663,7 +671,7 @@ where
 /// use yapcol::{is, between};
 /// use yapcol::input::core::{Input};
 ///
-/// let mut input = Input::new_from_chars("121".chars());
+/// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser1 = is('1');
 /// let parser2 = is('2');
 /// let output = between(&parser1, &parser2, &parser1)(&mut input);
@@ -693,7 +701,7 @@ where
 /// use yapcol::input::core::Input;
 ///
 /// // An example input iterator
-/// let mut input = Input::new_from_chars("123".chars());
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// let output = any()(&mut input);
 /// assert_eq!(output, Ok('1'));
 /// ```
@@ -740,7 +748,7 @@ where
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');
-/// let mut input = Input::new_from_chars("121".chars());
+/// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser_separated_by0 = separated_by0(&parser1, &parser2);
 /// let output = parser_separated_by0(&mut input);
 /// assert_eq!(output, Ok("11".chars().collect()));
@@ -776,7 +784,7 @@ where
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');
-/// let mut input = Input::new_from_chars("121".chars());
+/// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser_separated_by1 = separated_by1(&parser1, &parser2);
 /// let output = parser_separated_by1(&mut input);
 /// assert_eq!(output, Ok("11".chars().collect()));
@@ -843,7 +851,7 @@ where
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = chain_left(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(1)); // (3 - 1) - 1 = 1, not 3 - (1 - 1) = 3
@@ -889,7 +897,7 @@ where
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new_from_chars(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = chain_right(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(3)); // 3 - (1 - 1) = 3, not (3 - 1) - 1 = 1
@@ -929,14 +937,14 @@ where
 /// use yapcol::input::position::Position;
 ///
 /// let parser = is('j');
-/// let mut input = Input::new_from_chars("hello".chars());
+/// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let not_followed_parser = not_followed_by(&parser);
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(output, Ok(()));
 ///
-/// let mut input = Input::new_from_chars("jello".chars());
+/// let mut input = Input::new_from_chars("jello".chars(), None);
 /// let output = not_followed_parser(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1,1))));
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,1))));
 ///
 /// ```
 pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>
@@ -949,7 +957,10 @@ where
 		let output = parser(input);
 		input.stop_look_ahead(handler, true);
 		match output {
-			Ok(_) => Err(Error::UnexpectedToken(input.position())),
+			Ok(_) => Err(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+			)),
 			Err(Error::EndOfInput) => Err(Error::EndOfInput),
 			Err(_) => Ok(()),
 		}
@@ -977,7 +988,7 @@ where
 ///     open(input)?;
 ///     many_until(&any, &close)(input)
 /// };
-/// let mut input = Input::new_from_chars("#this is a comment$".chars());
+/// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
 /// let output = comments_parser(&mut input);
 /// assert_eq!(output, Ok("this is a comment".chars().collect()));
 /// ```

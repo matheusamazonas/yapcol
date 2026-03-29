@@ -17,7 +17,7 @@
 //! use yapcol::input::core::Input;
 //!
 //! let tokens = "hello".chars();
-//! let mut input = Input::new_from_chars(tokens);
+//! let mut input = Input::new_from_chars(tokens, None);
 //! ```
 //!
 //! # Lookahead

@@ -37,12 +37,12 @@ where
 		}
 	}
 
-	pub fn new_from_tokens<S, I>(source: S) -> Input<'a, IT>
+	pub fn new_from_tokens<S, I>(source: S, source_name: Option<String>) -> Input<'a, IT>
 	where
 		S: IntoIterator<Item = IT, IntoIter = I>,
 		I: Iterator<Item = IT> + 'a,
 	{
-		let source = TokenInputSource::new(source);
+		let source = TokenInputSource::new(source, source_name);
 		Input::new(Box::new(source))
 	}
 
@@ -112,6 +112,10 @@ where
 	/// How many tokens the input stream has consumed.
 	pub(crate) fn consumed_count(&self) -> usize {
 		self.consumed_count
+	}
+
+	pub fn source_name(&self) -> Option<String> {
+		self.source.source_name().map(|s| (*s).clone())
 	}
 
 	pub fn position(&mut self) -> Position {
@@ -226,7 +230,7 @@ mod tests {
 
 	#[test]
 	fn lookahead_no_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
@@ -239,7 +243,7 @@ mod tests {
 
 	#[test]
 	fn lookahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
@@ -251,14 +255,14 @@ mod tests {
 
 	#[test]
 	fn peek_twice() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
 	}
 
 	#[test]
 	fn peek_twice_while_looking_ahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
@@ -268,7 +272,7 @@ mod tests {
 
 	#[test]
 	fn peek_twice_while_looking_ahead_not_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
@@ -278,7 +282,7 @@ mod tests {
 
 	#[test]
 	fn repeat_peek_look_ahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		input.stop_look_ahead(handler, true);
@@ -292,7 +296,7 @@ mod tests {
 
 	#[test]
 	fn repeat_peek_look_ahead_not_backtracking() {
-		let mut input = Input::new_from_chars("12".chars());
+		let mut input = Input::new_from_chars("12".chars(), None);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		input.stop_look_ahead(handler, false);
@@ -307,7 +311,7 @@ mod tests {
 
 	#[test]
 	fn nested_lookahead_backtrack() {
-		let mut input = Input::new_from_chars("12345".chars());
+		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		let handler2 = input.start_look_ahead();
@@ -320,7 +324,7 @@ mod tests {
 
 	#[test]
 	fn nested_lookahead_no_backtrack() {
-		let mut input = Input::new_from_chars("12345".chars());
+		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		let handler2 = input.start_look_ahead();
@@ -333,7 +337,7 @@ mod tests {
 
 	#[test]
 	fn nested_look_ahead_backtrack_first() {
-		let mut input = Input::new_from_chars("12345".chars());
+		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		let handler2 = input.start_look_ahead();
@@ -346,7 +350,7 @@ mod tests {
 
 	#[test]
 	fn nested_look_ahead_backtrack_second() {
-		let mut input = Input::new_from_chars("12345".chars());
+		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		let handler2 = input.start_look_ahead();
@@ -360,7 +364,7 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn wrong_token() {
-		let mut input = Input::new_from_chars("12345".chars());
+		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		let _handler2 = input.start_look_ahead();
 		input.stop_look_ahead(handler1, false);

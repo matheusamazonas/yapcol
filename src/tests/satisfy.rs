@@ -11,14 +11,14 @@ fn digits() {
 		}
 	});
 	// Digits.
-	let mut input = Input::new_from_chars("1".chars());
+	let mut input = Input::new_from_chars("1".chars(), None);
 	assert_eq!(parser(&mut input), Ok('1'));
 	assert!(end_of_input()(&mut input).is_ok());
 	// Words fails and does not consume.
-	let mut input = Input::new_from_chars("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars(), None);
 	assert_eq!(
 		parser(&mut input),
-		Err(Error::UnexpectedToken(Position::new(1, 1)))
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
 	);
 	assert_eq!(any()(&mut input), Ok('h'));
 	assert_eq!(any()(&mut input), Ok('e'));

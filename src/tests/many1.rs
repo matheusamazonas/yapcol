@@ -4,7 +4,7 @@ use input::position::Position;
 #[test]
 fn empty() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("".chars());
+	let mut input = Input::new_from_chars("".chars(), None);
 	let parser_many1 = many1(&parser);
 	assert_eq!(parser_many1(&mut input), Err(Error::EndOfInput));
 }
@@ -12,11 +12,11 @@ fn empty() {
 #[test]
 fn no_match() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("jklmno".chars());
+	let mut input = Input::new_from_chars("jklmno".chars(), None);
 	let parser_many1 = many1(&parser);
 	assert_eq!(
 		parser_many1(&mut input),
-		Err(Error::UnexpectedToken(Position::new(1, 1)))
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
 	);
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 }
@@ -24,7 +24,7 @@ fn no_match() {
 #[test]
 fn one_match() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("hallo".chars());
+	let mut input = Input::new_from_chars("hallo".chars(), None);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), 1);
@@ -37,7 +37,7 @@ fn multiple_matches() {
 	let token_count = 100;
 	let parser = is('h');
 	let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
-	let mut input = Input::new_from_chars(tokens);
+	let mut input = Input::new_from_chars(tokens, None);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output.len(), token_count);
@@ -48,7 +48,7 @@ fn multiple_matches() {
 #[test]
 fn partial_match_then_stop() {
 	let parser = is('h');
-	let mut input = Input::new_from_chars("hhjklmnop".chars());
+	let mut input = Input::new_from_chars("hhjklmnop".chars(), None);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
 	assert_eq!(output, vec!['h', 'h']);

@@ -6,7 +6,7 @@ pub(crate) struct TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
-	source_name: String,
+	source_name: Option<String>,
 	stream: Peekable<I>,
 }
 
@@ -16,8 +16,8 @@ where
 {
 	type Token = I::Item;
 
-	fn source_name(&self) -> String {
-		self.source_name.clone()
+	fn source_name(&self) -> Option<&String> {
+		self.source_name.as_ref()
 	}
 
 	fn next_token(&mut self) -> Option<Self::Token> {
@@ -33,12 +33,12 @@ impl<I> TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
-	pub fn new<S>(source: S) -> Self
+	pub fn new<S>(source: S, source_name: Option<String>) -> Self
 	where
 		S: IntoIterator<Item: InputToken, IntoIter = I>,
 	{
 		Self {
-			source_name: String::from("test"),
+			source_name,
 			stream: source.into_iter().peekable(),
 		}
 	}

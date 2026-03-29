@@ -22,10 +22,11 @@ use std::fmt::Display;
 /// use yapcol::input::position::Position;
 ///
 /// let tokens = vec!['a'];
-/// let mut input = Input::new_from_chars(tokens);
+/// let source_name = Some(String::from("file.txt"));
+/// let mut input = Input::new_from_chars(tokens, source_name.clone());
 ///
 /// // Fails with UnexpectedToken when the token does not match.
-/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(Position::new(1,1))));
+/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1,1))));
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
@@ -34,7 +35,7 @@ use std::fmt::Display;
 #[derive(Clone, PartialEq, Debug)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
-	UnexpectedToken(Position),
+	UnexpectedToken(Option<String>, Position),
 	/// The input stream was exhausted before the parser could match.
 	EndOfInput,
 }
@@ -42,7 +43,10 @@ pub enum Error {
 impl Display for Error {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Error::UnexpectedToken(pos) => write!(f, "Unexpected token at {}.", pos),
+			Error::UnexpectedToken(Some(source_name), pos) => {
+				write!(f, "Unexpected token at {}:{}.", source_name, pos)
+			}
+			Error::UnexpectedToken(None, pos) => write!(f, "Unexpected token at {}.", pos),
 			Error::EndOfInput => write!(f, "End of input reached."),
 		}
 	}
