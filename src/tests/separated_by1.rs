@@ -5,7 +5,7 @@ use input::position::Position;
 fn empty() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("".chars());
+	let mut input = Input::new_from_chars("".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -14,7 +14,7 @@ fn empty() {
 fn single_no_separator_succeeds() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1".chars());
+	let mut input = Input::new_from_chars("1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Ok(vec!['1']));
 }
@@ -23,7 +23,7 @@ fn single_no_separator_succeeds() {
 fn single_dangling_separator_fails() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,".chars());
+	let mut input = Input::new_from_chars("1,".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -32,7 +32,7 @@ fn single_dangling_separator_fails() {
 fn two_with_separator_succeeds() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,1".chars());
+	let mut input = Input::new_from_chars("1,1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Ok(vec!['1', '1']));
 }
@@ -41,7 +41,7 @@ fn two_with_separator_succeeds() {
 fn two_wrong_last_element_fails() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,2".chars());
+	let mut input = Input::new_from_chars("1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 3))));
 }
@@ -50,7 +50,7 @@ fn two_wrong_last_element_fails() {
 fn two_no_separator_succeeds() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("11".chars());
+	let mut input = Input::new_from_chars("11".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input).unwrap();
 	assert_eq!(output, vec!['1']);
 }
@@ -59,7 +59,7 @@ fn two_no_separator_succeeds() {
 fn many_properly_separated_succeeds() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,1,1,1,1,1,1,1,1,1".chars());
+	let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input).unwrap();
 	assert_eq!(output.len(), 10);
 }
@@ -68,7 +68,7 @@ fn many_properly_separated_succeeds() {
 fn many_dangling_separator_fails() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,1,1,1,1,1,1,1,1,1,".chars());
+	let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
 }
@@ -77,7 +77,7 @@ fn many_dangling_separator_fails() {
 fn many_wrong_last_element_fails() {
 	let parse_item = is('1');
 	let parse_separator = is(',');
-	let mut input = Input::new("1,1,1,1,1,1,1,1,1,1,2".chars());
+	let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,2".chars());
 	let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 21))));
 }

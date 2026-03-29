@@ -18,11 +18,11 @@ use std::fmt::Display;
 /// ```
 /// use yapcol::{is, any};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 /// use yapcol::input::position::Position;
 ///
 /// let tokens = vec!['a'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens);
 ///
 /// // Fails with UnexpectedToken when the token does not match.
 /// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(Position::new(1,1))));

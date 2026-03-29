@@ -3,7 +3,7 @@ use crate::*;
 
 #[test]
 fn empty() {
-	let mut input = Input::new("".chars());
+	let mut input = Input::new_from_chars("".chars());
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
@@ -11,7 +11,7 @@ fn empty() {
 
 #[test]
 fn success_consumes() {
-	let mut input = Input::new("hel".chars());
+	let mut input = Input::new_from_chars("hel".chars());
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Ok('h'));
@@ -23,7 +23,7 @@ fn success_consumes() {
 
 #[test]
 fn non_consuming_fail_does_not_consume() {
-	let mut input = Input::new("jello".chars());
+	let mut input = Input::new_from_chars("jello".chars());
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
 	assert_eq!(output, Err(Error::UnexpectedToken(Position::new(1, 1))));
@@ -33,7 +33,7 @@ fn non_consuming_fail_does_not_consume() {
 
 #[test]
 fn consuming_fail_does_not_consume() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	let consuming_parser = |input: &mut Input<_>| {
 		let o1 = is('h')(input)?; // Success, consumes 'h'.
 		let o2 = is('x')(input)?; // Fails on  'x', consuming parser fails.
@@ -52,7 +52,7 @@ fn consuming_fail_does_not_consume() {
 
 #[test]
 fn attempt_twice() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	let parser = is('h');
 	let first = attempt(&parser)(&mut input);
 	assert_eq!(first, Ok('h'));
@@ -69,7 +69,7 @@ fn attempt_twice() {
 
 #[test]
 fn attempt_with_option_succeeds_consuming() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	let parser1 = is('h');
 	let parser2 = is('e');
 	let parser_attempt = attempt(&parser1);
@@ -86,7 +86,7 @@ fn attempt_with_option_succeeds_consuming() {
 
 #[test]
 fn attempt_with_option_fails_not_consuming() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	let parser1 = is('e');
 	let parser2 = is('l');
 	let parser_attempt_1 = attempt(&parser1);
@@ -104,7 +104,7 @@ fn attempt_with_option_fails_not_consuming() {
 
 #[test]
 fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	// Create two parsers that share a prefix.
 	let parser1 = is('h');
 	let parser2 = is('e');
@@ -134,7 +134,7 @@ fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
 
 #[test]
 fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
-	let mut input = Input::new("hello".chars());
+	let mut input = Input::new_from_chars("hello".chars());
 	// Create two parsers that share a prefix.
 	let parser1 = is('h');
 	let parser2 = is('e');

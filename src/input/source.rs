@@ -1,4 +1,4 @@
-use crate::input::InputToken;
+use crate::input::core::InputToken;
 
 pub trait InputSource {
 	type Token: InputToken;

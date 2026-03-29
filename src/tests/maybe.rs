@@ -4,7 +4,7 @@ use input::position::Position;
 #[test]
 fn empty() {
 	let parser = is('h');
-	let mut input = Input::new("".chars());
+	let mut input = Input::new_from_chars("".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -13,7 +13,7 @@ fn empty() {
 #[test]
 fn success() {
 	let parser = is('h');
-	let mut input = Input::new("h".chars());
+	let mut input = Input::new_from_chars("h".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(Some('h')));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -22,7 +22,7 @@ fn success() {
 #[test]
 fn fail_non_consuming() {
 	let parser = is('h');
-	let mut input = Input::new("j".chars());
+	let mut input = Input::new_from_chars("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(None));
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -30,17 +30,17 @@ fn fail_non_consuming() {
 
 #[test]
 fn fail_consuming() {
-	let parser = |input: &mut StringInput| match input.next_token() {
-		Some(token) => {
-			if token.token_owned() == 'h' {
+	let parser = |input: &mut StringInput| match any()(input) {
+		Ok(token) => {
+			if token == 'h' {
 				Ok(1)
 			} else {
 				Err(Error::UnexpectedToken(Position::new(1, 1)))
 			}
 		}
-		None => Err(Error::EndOfInput),
+		Err(e) => Err(e),
 	};
-	let mut input = Input::new("j".chars());
+	let mut input = Input::new_from_chars("j".chars());
 	let parser_maybe = maybe(&parser);
 	assert_eq!(
 		parser_maybe(&mut input),

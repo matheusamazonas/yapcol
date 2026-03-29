@@ -1,7 +1,8 @@
-use crate::input::{InputSource, InputToken};
+use crate::input::core::InputToken;
+use crate::input::source::InputSource;
 use std::iter::Peekable;
 
-pub struct TokenInputSource<I>
+pub(crate) struct TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
