@@ -17,7 +17,7 @@
 //!
 //! - **Arbitrary Lookahead**: Easily backtrack and try alternative parsers using [`attempt`] and
 //!   [`look_ahead`].
-//! - **Generic Input**: Works with any iterator whose items implement the [`Token`] trait.
+//! - **Generic Input**: Works with any iterator whose items implement the [`InputToken`] trait.
 //!
 //! # Quick Start
 //!
@@ -476,7 +476,10 @@ where
 		parsers
 			.into_iter()
 			.find_map(|p| p(input).ok())
-			.ok_or(Error::UnexpectedToken(input.source_name(), input.position()))
+			.ok_or(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+			))
 	}
 }
 
