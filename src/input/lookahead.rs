@@ -18,7 +18,7 @@ impl LookAheadFrame {
 ///   [`Input::start_look_ahead`].
 /// - That the right order of start/stop lookahead operations is performed.
 #[must_use]
-pub struct LookAheadHandler {
+pub(crate) struct LookAheadHandler {
 	id: usize,
 }
 
