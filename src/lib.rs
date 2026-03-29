@@ -345,12 +345,16 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input, mut output| match parser(input) {
-		Ok(token) => {
-			output.push(token);
-			many(parser)(input, output)
+	|input, mut output| {
+		loop {
+			match parser(input) {
+				Ok(token) => {
+					output.push(token);
+					continue;
+				}
+				Err(_) => return Ok(output),
+			}
 		}
-		Err(_) => Ok(output),
 	}
 }
 
