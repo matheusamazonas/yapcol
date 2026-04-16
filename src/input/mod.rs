@@ -23,6 +23,6 @@
 pub mod core;
 mod lookahead;
 pub mod position;
-pub mod source;
+mod source;
 pub mod string;
 mod token;
