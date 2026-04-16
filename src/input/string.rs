@@ -3,6 +3,13 @@ use crate::input::position::Position;
 use crate::input::source::InputSource;
 use std::iter::Peekable;
 
+/// A token produced when parsing a string (character stream) input.
+///
+/// `CharToken` wraps a single `char` together with its [`Position`] in the source, so that
+/// parsers can report accurate error position when a parsing error occurs.
+///
+/// `CharToken` is the [`InputToken`] implementation used by [`StringInput`], and is the token type
+/// for all string-based parsers.
 #[derive(Clone, PartialEq, Debug)]
 pub struct CharToken {
 	token: char,
@@ -31,6 +38,13 @@ impl CharToken {
 	}
 }
 
+/// The [`InputSource`] implementation that drives [`StringInput`].
+///
+/// `StringInputSource` wraps a peekable `char` iterator and tracks the current [`Position`]
+/// (line and column) as characters are consumed, producing [`CharToken`]s for each input character.
+///
+/// This struct is an internal implementation detail; use [`StringInput::new_from_chars`] to
+/// create a string-based input.
 struct StringInputSource<I>
 where
 	I: Iterator<Item = char>,
@@ -82,9 +96,35 @@ where
 	}
 }
 
+/// A type alias for [`Input`] specialized to character streams.
+///
+/// `StringInput` is the concrete input type used when parsing text. It is constructed via
+/// [`StringInput::new_from_chars`] and tracks the current [`Position`] (line and column) as
+/// characters are consumed.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::input::string::StringInput;
+/// let mut input = StringInput::new_from_chars("hello".chars(), Some("input.md".to_string()));
+/// ```
 pub type StringInput<'a> = Input<'a, CharToken>;
 
 impl<'a> StringInput<'a> {
+	/// Creates a new `StringInput` from any iterator of `char`s.
+	///
+	/// # Arguments
+	///
+	/// - `chars`: Any value that can be turned into a `char` iterator, such as [`str::chars`].
+	/// - `source_name`: An optional name for the source (e.g. a file path), to be included in
+	///   error messages.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::input::string::StringInput;
+	/// let mut input = StringInput::new_from_chars("hello".chars(), Some(String::from("in.txt")));
+	/// ```
 	pub fn new_from_chars<S>(chars: S, source_name: Option<String>) -> Input<'a, CharToken>
 	where
 		S: IntoIterator<Item = char, IntoIter: Iterator<Item = char> + 'a>,
