@@ -63,7 +63,7 @@ where
 						self.last_token_position = token.position();
 						let cloned = token.clone();
 						self.look_ahead_buffer.push_back(token);
-						frame.length += 1;
+						frame.increment();
 						Some(cloned)
 					}
 				}
@@ -82,9 +82,9 @@ where
 			}
 			TokenLocation::BufferTail => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
-				let token = self.look_ahead_buffer.get(frame.next_ix()).unwrap();
-				frame.length += 1;
-				self.next_location = if frame.next_ix() == self.look_ahead_buffer.len() {
+				let token = self.look_ahead_buffer.get(frame.next_token_ix()).unwrap();
+				frame.increment();
+				self.next_location = if frame.next_token_ix() == self.look_ahead_buffer.len() {
 					TokenLocation::StreamLookingAhead
 				} else {
 					TokenLocation::BufferTail
@@ -104,7 +104,7 @@ where
 			TokenLocation::BufferHead => self.look_ahead_buffer.front(),
 			TokenLocation::BufferTail => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
-				self.look_ahead_buffer.get(frame.next_ix())
+				self.look_ahead_buffer.get(frame.next_token_ix())
 			}
 		}
 	}
@@ -146,20 +146,11 @@ where
 	/// to enforce this rule.
 	pub(crate) fn start_look_ahead(&mut self) -> LookAheadHandler {
 		let new_frame = match self.look_ahead_frames.last() {
-			Some(previous) => {
-				let start_index = previous.start_index + previous.length;
-				LookAheadFrame {
-					start_index,
-					length: 0,
-				}
-			}
-			None => LookAheadFrame {
-				start_index: 0,
-				length: 0,
-			},
+			Some(previous) => LookAheadFrame::new(previous.next_token_ix()),
+			None => LookAheadFrame::new(0)
 		};
 		self.next_location = if self.look_ahead_buffer.is_empty()
-			|| new_frame.next_ix() == self.look_ahead_buffer.len()
+			|| new_frame.next_token_ix() == self.look_ahead_buffer.len()
 		{
 			TokenLocation::StreamLookingAhead
 		} else {
@@ -196,10 +187,10 @@ where
 		}
 
 		if !backtrack {
-			self.consumed_count += frame.length;
+			self.consumed_count += frame.length();
 			let buffer_length = self.look_ahead_buffer.len();
 			self.look_ahead_buffer
-				.truncate(buffer_length - frame.length);
+				.truncate(buffer_length - frame.length());
 		}
 
 		self.next_location = if self.look_ahead_frames.is_empty() {
@@ -210,7 +201,7 @@ where
 			}
 		} else {
 			let frame = self.look_ahead_frames.last_mut().unwrap();
-			if frame.next_ix() == self.look_ahead_buffer.len() {
+			if frame.next_token_ix() == self.look_ahead_buffer.len() {
 				TokenLocation::StreamLookingAhead
 			} else {
 				TokenLocation::BufferTail
