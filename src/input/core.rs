@@ -4,15 +4,51 @@ use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
 
+/// Represents a single token in the input stream.
+///
+/// Every item produced by an [`InputSource`] must implement this trait. The blanket
+/// implementation means that in practice you only need to implement `InputToken` manually when
+/// building a custom input source; for character-based parsing the built-in
+/// [`crate::input::string::CharToken`] is used automatically.
+///
+/// # Type Parameters
+///
+/// - `Token`: The underlying token value type.
 pub trait InputToken: Clone {
 	type Token: PartialEq + Clone;
+
+	/// Returns a reference to the underlying token value.
 	fn token(&self) -> &Self::Token;
+
+	/// Consumes `self` and returns the underlying token value.
 	fn token_owned(self) -> Self::Token;
+
+	/// Returns the [`Position`] of this token in the source.
 	fn position(&self) -> Position;
 }
 
-/// An input stream that can be used to fetch input tokens. It's the most important entity in this
-/// module, concentrating all input operations.
+/// An input stream that parsers read tokens from.
+///
+/// `Input` wraps any [`InputSource`] and adds buffering, arbitrary lookahead, and position
+/// tracking on top of it. It is the central type that every parser receives as its argument.
+///
+/// # Creating an `Input`
+///
+/// For character-based parsing use [`crate::input::string::StringInput::new_from_chars`].
+/// For a stream of pre-built tokens that already implement [`InputToken`], use
+/// [`Input::new_from_tokens`].
+///
+/// # Position tracking
+///
+/// `Input` tracks the [`Position`] of the most recently seen token. Call [`Input::position`]
+/// at any time to obtain the current position in the source, which is useful for building
+/// accurate error messages.
+///
+/// # Lookahead
+///
+/// `Input` supports arbitrary, nested lookahead. Tokens fetched during a lookahead operation
+/// are cached internally and can be replayed if the operation is rolled back. Lookahead is
+/// used internally by combinators such as [`crate::attempt`] and [`crate::look_ahead`].
 pub struct Input<'a, IT> {
 	source: Box<dyn InputSource<Token = IT> + 'a>,
 	consumed_count: usize,
@@ -37,6 +73,16 @@ where
 		}
 	}
 
+	/// Creates a new `Input` from an iterator of tokens that already implement [`InputToken`].
+	///
+	/// Use this constructor when you have performed lexical analysis beforehand and want to
+	/// parse a stream of structured tokens rather than raw characters.
+	///
+	/// # Arguments
+	///
+	/// - `source`: Any value that can be turned into an iterator of [`InputToken`] items.
+	/// - `source_name`: An optional name for the source (e.g. a file path), included in
+	///   error messages.
 	pub fn new_from_tokens<S, I>(source: S, source_name: Option<String>) -> Input<'a, IT>
 	where
 		S: IntoIterator<Item = IT, IntoIter = I>,
@@ -46,7 +92,7 @@ where
 		Input::new(Box::new(source))
 	}
 
-	/// Fetches the next token in the input stream, mutating the input stream.
+	/// Fetches the next token in the input stream, mutating it.
 	pub(crate) fn next_token(&mut self) -> Option<IT> {
 		match self.next_location {
 			TokenLocation::Stream => {
@@ -114,10 +160,15 @@ where
 		self.consumed_count
 	}
 
+	/// Returns the name of the underlying source, if one was provided at construction time.
 	pub fn source_name(&self) -> Option<String> {
 		self.source.source_name().map(|s| (*s).clone())
 	}
 
+	/// Returns the current position in the source.
+	///
+	/// If there is a next token available (a.k.a. the input hasn't reached its end), its position
+	/// is returned. Otherwise, the position of the last consumed token is returned.
 	pub fn position(&mut self) -> Position {
 		match self.peek() {
 			Some(token) => token.position(),
@@ -147,7 +198,7 @@ where
 	pub(crate) fn start_look_ahead(&mut self) -> LookAheadHandler {
 		let new_frame = match self.look_ahead_frames.last() {
 			Some(previous) => LookAheadFrame::new(previous.next_token_ix()),
-			None => LookAheadFrame::new(0)
+			None => LookAheadFrame::new(0),
 		};
 		self.next_location = if self.look_ahead_buffer.is_empty()
 			|| new_frame.next_token_ix() == self.look_ahead_buffer.len()
