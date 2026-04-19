@@ -31,16 +31,16 @@ powerful features like arbitrary lookahead and nested parsers.
 The most convenient approach to YAPCoL is to use the built-in combinators to create your parsers:
 
 ```rust
-use yapcol::input::Input;
+use yapcol::input::core::Input;
 use yapcol::{is, many0};
 
-let input = Input::new("aaab".chars());
+let mut input = Input::new_from_chars("aaab".chars(), None);
 
 // Combine 'is' and 'many0' to parse multiple 'a's
 let is_a = is('a');
-let mut parser = many0( & is_a);
+let parser = many0(&is_a);
 
-let result = parser( & mut input);
+let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 ```
 
@@ -49,21 +49,21 @@ assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 You might also define your own custom parsers as functions. Any function of the following `Fn` trait
 automatically implements the `Parser` trait:
 ```rust
-Fn(&mut Input<I>) -> Result<O, Error>
+Fn(&mut Input<IT>) -> Result<O, Error>
 ```
 For example:
 ```rust
-use yapcol::input::Input;
+use yapcol::input::string::StringInput;
 use yapcol::error::Error;
 use yapcol::is;
 
-fn my_custom_parser(input: &mut Input<std::str::Chars>) -> Result<String, Error> {
+fn my_custom_parser(input: &mut StringInput) -> Result<String, Error> {
 	let a = is('a')(input)?;
 	let b = is('b')(input)?;
 	Ok(format!("{}{}", a, b))
 }
 
-let mut input = Input::new("ab".chars());
+let mut input = StringInput::new_from_chars("ab".chars(), None);
 assert_eq!(my_custom_parser(&mut input), Ok("ab".to_string()));
 ```
 
@@ -73,7 +73,7 @@ Real-world examples are available in the `examples/` directory, including an ari
 two different implementations:
 
 - **String-based**: parses text directly from a stream of characters.
-- **Token-based**: sses a lexer to tokenize the input before parsing.
+- **Token-based**: uses a lexer to tokenize the input before parsing.
 
 For more details on how to run and understand these examples, check the [Examples README](examples/README.md).
 
