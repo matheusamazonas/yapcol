@@ -2,9 +2,8 @@ use crate::*;
 
 #[test]
 fn empty() {
-	let parser = is("hello");
-	let tokens: Vec<&str> = vec![];
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let mut input = Input::new_from_chars("".chars(), None);
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut input).unwrap();
 	assert_eq!(output.len(), 0);
@@ -13,9 +12,9 @@ fn empty() {
 #[test]
 fn no_match_not_empty() {
 	let token_count = 100;
-	let parser = is("hello");
-	let tokens = std::iter::repeat_n("hallo", token_count).collect::<Vec<_>>();
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let tokens = std::iter::repeat_n('j', token_count).collect::<Vec<_>>();
+	let mut input = Input::new_from_chars(tokens, None);
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut input).unwrap();
 	assert_eq!(output.len(), 0);
@@ -26,9 +25,9 @@ fn no_match_not_empty() {
 #[test]
 fn match_not_empty() {
 	let token_count = 100;
-	let parser = is("hello");
-	let tokens = std::iter::repeat_n("hello", token_count).collect::<Vec<_>>();
-	let mut input = Input::new(tokens);
+	let parser = is('h');
+	let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
+	let mut input = Input::new_from_chars(tokens, None);
 	let parser_many0 = many0(&parser);
 	let output = parser_many0(&mut input).unwrap();
 	assert_eq!(output.len(), token_count);

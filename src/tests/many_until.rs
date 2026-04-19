@@ -1,11 +1,11 @@
 use crate::*;
+use input::position::Position;
 
 #[test]
 fn empty() {
 	let any_parser = any();
-	let end_comment_parser = is("*/");
-	let tokens: Vec<&str> = vec![];
-	let mut input = Input::new(tokens);
+	let end_comment_parser = is('#');
+	let mut input = Input::new_from_chars("".chars(), None);
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input);
 	assert_eq!(output, Err(Error::EndOfInput));
@@ -14,33 +14,33 @@ fn empty() {
 #[test]
 fn success_none() {
 	let any_parser = any();
-	let end_comment_parser = is("*/");
-	let tokens: Vec<&str> = vec!["*/"];
-	let mut input = Input::new(tokens);
+	let end_comment_parser = is('#');
+	let mut input = Input::new_from_chars("#".chars(), None);
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input).unwrap();
-	assert_eq!(output, Vec::<String>::new());
+	assert_eq!(output, Vec::<char>::new());
 }
 
 #[test]
 fn success_multiple() {
 	let any_parser = any();
-	let end_comment_parser = is("*/");
-	let tokens: Vec<&str> = vec!["hello", "world", "*/"];
-	let mut input = Input::new(tokens);
+	let end_comment_parser = is('#');
+	let mut input = Input::new_from_chars("Hello world #".chars(), None);
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input).unwrap();
-	assert_eq!(output, vec!["hello", "world"]);
+	assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
 }
 
 #[test]
 fn fail() {
-	let any_parser = is("hello");
-	let end_comment_parser = is("*/");
-	let tokens: Vec<&str> = vec!["hello", "hello", "world"];
-	let mut input = Input::new(tokens);
+	let any_parser = is('x');
+	let end_comment_parser = is('#');
+	let mut input = Input::new_from_chars("xxxxxy".chars(), None);
 	let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 	let output = not_followed_parser(&mut input);
-	assert_eq!(output, Err(Error::UnexpectedToken));
-	assert_eq!(any()(&mut input), Ok("world")); // Input was consumed while looking for the end.
+	assert_eq!(
+		output,
+		Err(Error::UnexpectedToken(None, Position::new(1, 6)))
+	);
+	assert_eq!(any()(&mut input), Ok('y')); // Input was consumed while looking for the end.
 }

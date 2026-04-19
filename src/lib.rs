@@ -9,23 +9,27 @@
 //!
 //! - [`Parser`]: The central trait of the crate. Any function that takes a mutable reference
 //!   to an [`Input`] and returns a `Result<Output, Error>` is a parser.
-//! - [`Input`]: A wrapper around an iterator that provides buffering and lookahead capabilities.
-//! - **Combinators**: Functions that take one or more parsers and return a new, more complex
+//! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
+//!   tracking capabilities.
+//! - Combinators: Functions that take one or more parsers and return a new, more complex
 //!   parser. Examples: [`is`], [`many0`], [`option`], [`chain_left`].
 //!
 //! # Features
 //!
-//! - **Arbitrary Lookahead**: Easily backtrack and try alternative parsers using [`attempt`] and
+//! - Arbitrary Lookahead: backtrack and try alternative parsers using [`attempt`] and
 //!   [`look_ahead`].
-//! - **Generic Input**: Works with any iterator whose items implement the [`Token`] trait.
+//! - Generic Input: works with any iterator whose items implement the [`InputToken`] trait.
+//! - Position Tracking: every token carries a [`input::position::Position`] (line and column).
+//!   Parse errors include the position of the offending token, making it easy to produce
+//!   human-readable error messages.
 //!
 //! # Quick Start
 //!
 //! ```
-//! use yapcol::input::Input;
+//! use yapcol::input::core::{Input};
 //! use yapcol::{is, many0};
 //!
-//! let mut input = Input::new("aaab".chars());
+//! let mut input = Input::new_from_chars("aaab".chars(), None);
 //!
 //! // Combine `is` and `many0` to parse multiple 'a's
 //! let is_a = is('a');
@@ -35,23 +39,70 @@
 //! assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 //! ```
 //!
+//! # Error Handling
+//!
+//! Every parser returns a `Result<O, Error>`. When parsing fails, the `Err` variant contains
+//! one of two possible errors, defined in the [`Error`](Error) enum:
+//!
+//! - [`Error::UnexpectedToken`](Error::UnexpectedToken)`(Option<String>, Position)`: the
+//!   parser encountered a token that did not satisfy its requirements. The first field is an
+//!   optional source name (e.g., a file name), and the second is the
+//!   [`Position`](input::position::Position) (line and column) where the unexpected token was
+//!   found.
+//! - [`Error::EndOfInput`](Error::EndOfInput): the input stream was exhausted before the
+//!   parser could match.
+//!
+//! The code below showcases both error variants in a simple character-based parsing example:
+//!
+//! ```
+//! use yapcol::{is, any};
+//! use yapcol::error::Error;
+//! use yapcol::input::core::Input;
+//! use yapcol::input::position::Position;
+//!
+//! let source_name = Some(String::from("file.txt"));
+//! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
+//!
+//! // Fails with UnexpectedToken when the token does not match.
+//! assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1, 1))));
+//!
+//! // Consume the only token, then try to read more.
+//! is('a')(&mut input).unwrap();
+//! assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+//! ```
+//!
+//! The [`Error`](Error) type implements [`Display`](std::fmt::Display), so you can easily
+//! print human-readable error messages:
+//!
+//! ```
+//! use yapcol::error::Error;
+//! use yapcol::input::position::Position;
+//!
+//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12));
+//! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
+//!
+//! let error = Error::EndOfInput;
+//! assert_eq!(error.to_string(), "End of input reached.");
+//! ```
+//!
 //! # Examples
 //!
 //! YAPCoL has two crates in the `examples` directory that demonstrate the library's capabilities.
 //! Both of them implement the same application: a simple arithmetic expression parser and
 //! evaluator. Each example uses a slightly different implementation to achieve the task:
 //!   - `evaluate_expression_string` uses a parser that takes a stream of *characters* as input.
-//!     This example parsers the input string directly into the custom `Expression` type.
+//!     This example parses the input string directly into the custom `Expression` type.
 //!   - `evaluate_expression_token` uses a parser that takes a stream of user-defined *tokens* as
 //!     input. This example first performs lexical analysis (lexing) to turn the input string into
-//!     a vector of tokens, then parsers the token stream into the custom `Expression` type.
+//!     a vector of tokens, then parses the token stream into the custom `Expression` type.
 //!
 //! These two approaches reflect real-world usage of parsers, which might parse text directly or
 //! perform lexical analysis beforehand. Check the `README` file in the `examples` directory for
 //! more information.
 
 use crate::error::Error;
-use crate::input::{Input, Token};
+use crate::input::core::{Input, InputToken};
+use crate::input::string::{CharToken, StringInput};
 
 pub mod error;
 pub mod input;
@@ -69,7 +120,7 @@ mod tests;
 ///
 /// # Type Parameters
 ///
-/// - `I`: The parser's input. An iterator type whose items implement the [`Token`] trait.
+/// - `IT`: The parser's input token, which implements the [`InputToken`] trait.
 /// - `O`: The type of the value produced by the parser on success.
 ///
 /// # Examples
@@ -78,41 +129,51 @@ mod tests;
 ///
 /// ```
 /// use std::str::Chars;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
+/// use yapcol::input::string::StringInput;
 /// use yapcol::error::Error;
 /// use yapcol::is;
 ///
-/// fn my_uppercase_parser(input: &mut Input<Chars>) -> Result<char, Error> {
+/// fn my_uppercase_parser(input: &mut StringInput) -> Result<char, Error> {
 ///    // You can use existing parsers inside your custom parser
 ///    is('A')(input)
 /// }
 ///
-/// let mut input = Input::new("Abc".chars());
+/// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// assert_eq!(my_uppercase_parser(&mut input), Ok('A'));
 /// ```
 ///
 /// Most of the time, you will use the built-in combinators which return `impl Parser`:
 ///
 /// ```
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 /// use yapcol::is;
 ///
-/// let mut input = Input::new("Abc".chars());
+/// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// let mut parser = is('A');
 /// assert_eq!(parser(&mut input), Ok('A'));
 /// ```
-pub trait Parser<I, O>: Fn(&mut Input<I>) -> Result<O, Error>
+pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
-	I: Iterator<Item: Token>,
+	IT: InputToken,
 {
 }
 
-impl<I, O, T> Parser<I, O> for T
+impl<IT, O, X> Parser<IT, O> for X
 where
-	I: Iterator<Item: Token>,
-	T: Fn(&mut Input<I>) -> Result<O, Error>,
+	X: Fn(&mut Input<IT>) -> Result<O, Error>,
+	IT: InputToken,
 {
 }
+
+/// A convenience alias for [`Parser`] specialised to character-stream input.
+///
+/// `StringParser<O>` is equivalent to `Parser<CharToken, O>` and is automatically implemented
+/// for any function `Fn(&mut StringInput) -> Result<O, Error>`. It exists purely to reduce
+/// type-annotation noise when working with string-based parsers.
+pub trait StringParser<O>: Parser<CharToken, O> {}
+
+impl<O, X> StringParser<O> for X where X: Fn(&mut StringInput) -> Result<O, Error> {}
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///
@@ -127,75 +188,84 @@ where
 ///
 /// ```
 /// use yapcol::{is, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = is('h');
 /// assert!(parser(&mut input).is_ok());
 ///
 /// let mut wrong: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
-/// let mut input = Input::new(wrong);
+/// let mut input = Input::new_from_chars(wrong, None);
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
-pub fn is<I>(token: I::Item) -> impl Parser<I, I::Item>
+pub fn is<IT>(token: IT::Token) -> impl Parser<IT, IT::Token>
 where
-	I: Iterator<Item: Token>,
+	IT: InputToken,
 {
-	let f = move |t: &I::Item| match *t == token {
-		true => Ok((*t).clone()),
-		false => Err(Error::UnexpectedToken),
+	let f = move |t: &IT::Token| {
+		if *t == token {
+			Some((*t).clone())
+		} else {
+			None
+		}
 	};
 	satisfy(f)
 }
 
-/// Creates a parser that succeeds if the given predicate returns `Ok` for the next token.
+/// Creates a parser that succeeds if the given predicate returns `Some` for the next token.
 ///
 /// If the predicate succeeds, the token is consumed and the result is returned. If the predicate
 /// fails, the parser fails without consuming any input.
 ///
 /// # Arguments
 ///
-/// - `f`: A predicate that takes a reference to a token and returns `Ok` on success or
-///   `Err` on failure.
+/// - `f`: A predicate that takes a reference to a token and returns `Some` on success or
+///   `None` on failure.
 ///
 /// # Examples
 ///
 /// ```
 /// use yapcol::{satisfy, any};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = satisfy(|c: &char| {
-///     if c.is_ascii_digit() { Ok(*c) } else { Err(Error::UnexpectedToken) }
+///     if c.is_ascii_digit() { Some(*c) } else { None }
 /// });
 /// assert_eq!(parser(&mut input).unwrap(), '3');
 /// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
 ///
 /// let tokens: Vec<char> = vec!['a', 'b', 'c'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
-pub fn satisfy<F, I, O>(f: F) -> impl Parser<I, O>
+pub fn satisfy<F, IT, O>(f: F) -> impl Parser<IT, O>
 where
-	F: Fn(&I::Item) -> Result<O, Error>,
-	I: Iterator<Item: Token>,
+	F: Fn(&IT::Token) -> Option<O>,
+	IT: InputToken,
 {
-	move |input| match input.peek() {
-		Some(token) => {
-			match f(token) {
-				Ok(result) => {
-					input.next_token(); // Consume if successful.
-					Ok(result)
+	move |input| {
+		match input.peek() {
+			Some(input_token) => {
+				let token = input_token.token();
+				match f(token) {
+					Some(result) => {
+						input.next_token(); // Consume if successful.
+						Ok(result)
+					}
+					None => {
+						let position = input_token.position();
+						Err(Error::UnexpectedToken(input.source_name(), position))
+					}
 				}
-				Err(e) => Err(e),
 			}
+			None => Err(Error::EndOfInput),
 		}
-		None => Err(Error::EndOfInput),
 	}
 }
 
@@ -209,24 +279,27 @@ where
 /// ```
 /// use yapcol::{end_of_input, any};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// let tokens: Vec<char> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(end_of_input()(&mut input).is_ok());
 ///
 /// let tokens: Vec<char> = vec!['a', 'b'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// assert!(end_of_input()(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
-pub fn end_of_input<I>() -> impl Parser<I, ()>
+pub fn end_of_input<IT>() -> impl Parser<IT, ()>
 where
-	I: Iterator<Item: Token>,
+	IT: InputToken,
 {
 	|input| match input.peek() {
 		None => Ok(()),
-		_ => Err(Error::UnexpectedToken),
+		Some(t) => {
+			let position = t.position();
+			Err(Error::UnexpectedToken(input.source_name(), position))
+		}
 	}
 }
 
@@ -249,31 +322,28 @@ where
 ///
 /// ```
 /// use yapcol::{option, is, end_of_input, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// // parser1 succeeds: returns its result.
-/// let tokens: Vec<char> = vec!['a', 'b'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("ab".chars(), None);
 /// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'a');
 ///
 /// // parser1 fails without consuming input: parser2 is tried.
-/// let tokens: Vec<char> = vec!['b'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("b".chars(), None);
 /// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'b');
 ///
 /// // Both parsers fail: an error is returned and input is not consumed.
-/// let tokens: Vec<char> = vec!['c'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("c".chars(), None);
 /// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
-pub fn option<P1, P2, I, O>(parser1: &P1, parser2: &P2) -> impl Parser<I, O>
+pub fn option<P1, P2, IT, O>(parser1: &P1, parser2: &P2) -> impl Parser<IT, O>
 where
-	P1: Parser<I, O>,
-	P2: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P1: Parser<IT, O>,
+	P2: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -299,23 +369,21 @@ where
 ///
 /// ```
 /// use yapcol::{maybe, is, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
-/// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let ph = is('h');
 /// let parser = maybe(&ph);
 /// assert_eq!(parser(&mut input).unwrap(), Some('h'));
 ///
-/// let tokens: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("world".chars(), None);
 /// assert_eq!(parser(&mut input).unwrap(), None);
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
-pub fn maybe<P, I, O>(parser: &P) -> impl Parser<I, Option<O>>
+pub fn maybe<P, IT, O>(parser: &P) -> impl Parser<IT, Option<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let initial_length = input.consumed_count();
@@ -327,17 +395,21 @@ where
 	}
 }
 
-fn many<P, I, O>(parser: &P) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
+fn many<P, IT, O>(parser: &P) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
-	|input, mut output| match parser(input) {
-		Ok(token) => {
-			output.push(token);
-			many(parser)(input, output)
+	|input, mut output| {
+		loop {
+			match parser(input) {
+				Ok(token) => {
+					output.push(token);
+					continue;
+				}
+				Err(_) => return Ok(output),
+			}
 		}
-		Err(_) => Ok(output),
 	}
 }
 
@@ -352,28 +424,25 @@ where
 ///
 /// ```
 /// use yapcol::{many0, is};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// // Matches multiple elements
-/// let parser = is(1);
-/// let tokens = vec![1, 1, 2];
-/// let mut input = Input::new(tokens);
-/// assert_eq!(many0(&parser)(&mut input), Ok(vec![1, 1]));
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// assert_eq!(many0(&parser)(&mut input), Ok("11".chars().collect()));
 ///
 /// // Returns an empty vector when no matches are found (never fails)
-/// let tokens: Vec<i32> = vec![2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 ///
 /// // Returns an empty vector on empty input (never fails)
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert_eq!(many0(&parser)(&mut input), Ok(vec![]));
 /// ```
-pub fn many0<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
+pub fn many0<P, IT, O>(parser: &P) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
@@ -392,28 +461,25 @@ where
 ///
 /// ```
 /// use yapcol::{many1, is};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// // Matches multiple elements
-/// let parser = is(1);
-/// let tokens = vec![1, 1, 2];
-/// let mut input = Input::new(tokens);
-/// assert_eq!(many1(&parser)(&mut input), Ok(vec![1, 1]));
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// assert_eq!(many1(&parser)(&mut input), Ok("11".chars().collect()));
 ///
 /// // Fails when no matches are found
-/// let tokens: Vec<i32> = vec![2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(many1(&parser)(&mut input).is_err());
 ///
 /// // Fails on empty input
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(many1(&parser)(&mut input).is_err());
 /// ```
-pub fn many1<P, I, O>(parser: &P) -> impl Parser<I, Vec<O>>
+pub fn many1<P, IT, O>(parser: &P) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
@@ -438,37 +504,37 @@ where
 ///
 /// ```
 /// use yapcol::{choice, is};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// // Returns the result of the first matching parser
-/// let p1 = is(1);
-/// let p2 = is(2);
+/// let p1 = is('1');
+/// let p2 = is('2');
 /// let parsers = vec![p1, p2];
-/// let tokens = vec![2, 3];
-/// let mut input = Input::new(tokens);
-/// assert_eq!(choice(&parsers)(&mut input), Ok(2));
+/// let mut input = Input::new_from_chars("23".chars(), None);
+/// assert_eq!(choice(&parsers)(&mut input), Ok('2'));
 ///
 /// // Fails when no parser matches
-/// let tokens = vec![3, 4];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("34".chars(), None);
 /// assert!(choice(&parsers)(&mut input).is_err());
 ///
 /// // Fails on empty input
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(choice(&parsers)(&mut input).is_err());
 /// ```
-pub fn choice<'a, P, I, O, PI>(parsers: &'a PI) -> impl Parser<I, O>
+pub fn choice<'a, P, IT, O, PI>(parsers: &'a PI) -> impl Parser<IT, O>
 where
-	P: Parser<I, O> + 'a,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O> + 'a,
+	IT: InputToken,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
 	|input| {
 		parsers
 			.into_iter()
 			.find_map(|p| p(input).ok())
-			.ok_or(Error::UnexpectedToken)
+			.ok_or(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+			))
 	}
 }
 
@@ -487,41 +553,37 @@ where
 ///
 /// ```
 /// use yapcol::{count, is, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
 /// // Succeeds when the parser matches exactly `count` times
-/// let parser = is(1);
-/// let tokens = vec![1, 1, 1, 2];
-/// let mut input = Input::new(tokens);
-/// assert_eq!(count(&parser, 3)(&mut input), Ok(vec![1, 1, 1]));
-/// assert_eq!(any()(&mut input), Ok(2)); // Remaining input after consuming 3 tokens.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// assert_eq!(count(&parser, 3)(&mut input), Ok("111".chars().collect()));
+/// assert_eq!(any()(&mut input), Ok('2')); // Remaining input after consuming 3 tokens.
 ///
 /// // Fails when there are not enough matching tokens
-/// let tokens = vec![1, 2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// assert!(count(&parser, 3)(&mut input).is_err());
 ///
 /// // Succeeds with count = 0, returning an empty vector
-/// let tokens = vec![1, 2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// assert_eq!(count(&parser, 0)(&mut input), Ok(vec![]));
 ///
 /// // Fails on empty input when count > 0
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(count(&parser, 1)(&mut input).is_err());
 /// ```
-pub fn count<P, I, O>(parser: &P, count: usize) -> impl Parser<I, Vec<O>>
+pub fn count<P, IT, O>(parser: &P, count: usize) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	move |input| {
 		let mut output = Vec::with_capacity(count);
 		for _ in 0..count {
 			match parser(input) {
 				Ok(token) => output.push(token),
-				Err(_) => return Err(Error::UnexpectedToken),
+				Err(e) => return Err(e),
 			}
 		}
 		Ok(output)
@@ -541,45 +603,42 @@ where
 ///
 /// ```
 /// use yapcol::{look_ahead, is, end_of_input, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
+/// use yapcol::input::position::Position;
 /// use yapcol::error::Error;
 ///
 /// // Succeeds without consuming input.
-/// let tokens = vec![1, 2, 3];
-/// let mut input = Input::new(tokens);
-/// let parser1 = is(1);
-/// assert_eq!(look_ahead(&parser1)(&mut input), Ok(1));
-/// assert_eq!(any()(&mut input), Ok(1)); // Input was not consumed.
-/// assert_eq!(any()(&mut input), Ok(2)); // any()(&mut input)Input was not consumed.
-/// assert_eq!(any()(&mut input), Ok(3)); // Input was not consumed.
+/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let parser1 = is('1');
+/// assert_eq!(look_ahead(&parser1)(&mut input), Ok('1'));
+/// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input.
-/// let tokens = vec![2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
-/// assert_eq!(any()(&mut input), Ok(2)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 ///
 /// // Fails consuming input if the parser consumes.
-/// let tokens = vec![1, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("13".chars(), None);
 /// let consuming_parser = |input: &mut Input<_>| {
 ///     let o1 = parser1(input)?;
 ///     let o2 = parser1(input)?;
 ///     Ok((o1, o2))
 /// };
 /// let output = look_ahead(&consuming_parser)(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken));
-/// assert_eq!(any()(&mut input), Ok(3)); // Input was consumed.
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,2))));
+/// assert_eq!(any()(&mut input), Ok('3')); // Input was consumed.
 ///
 /// // Fails on empty input.
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// ```
-pub fn look_ahead<P, I, O>(parser: &P) -> impl Parser<I, O>
+pub fn look_ahead<P, IT, O>(parser: &P) -> impl Parser<IT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
@@ -616,44 +675,41 @@ where
 ///
 /// ```
 /// use yapcol::{attempt, is, end_of_input, any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
+/// use yapcol::input::position::Position;
 /// use yapcol::error::Error;
 ///
 /// // Succeeds consuming input.
-/// let tokens = vec![1, 2, 3];
-/// let mut input = Input::new(tokens);
-/// let parser1 = is(1);
-/// assert_eq!(attempt(&parser1)(&mut input), Ok(1));
-/// assert_eq!(any()(&mut input), Ok(2)); // Input was consumed.
+/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let parser1 = is('1');
+/// assert_eq!(attempt(&parser1)(&mut input), Ok('1'));
+/// assert_eq!(any()(&mut input), Ok('2')); // Input was consumed.
 ///
 /// // Fails without consuming input.
-/// let tokens = vec![2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert!(attempt(&parser1)(&mut input).is_err());
-/// assert_eq!(any()(&mut input), Ok(2)); // Input was not consumed.
-/// assert_eq!(any()(&mut input), Ok(3)); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input if the parser consumes.
-/// let tokens = vec![1, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("13".chars(), None);
 /// let consuming_parser = |input: &mut Input<_>| {
 ///     let o1 = parser1(input)?;
 ///     let o2 = parser1(input)?;
 ///     Ok((o1, o2))
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken));
-/// assert_eq!(any()(&mut input), Ok(1)); // Input was not consumed.
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,2))));
+/// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
 /// // Fails on empty input
-/// let tokens: Vec<i32> = vec![];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("".chars(), None);
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// ```
-pub fn attempt<P, I, O>(parser: &P) -> impl Parser<I, O>
+pub fn attempt<P, IT, O>(parser: &P) -> impl Parser<IT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
@@ -675,21 +731,20 @@ where
 ///
 /// ```
 /// use yapcol::{is, between};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::{Input};
 ///
-/// let tokens: Vec<i32> = vec![1, 2, 1];
-/// let mut input = Input::new(tokens);
-/// let parser1 = is(1);
-/// let parser2 = is(2);
+/// let mut input = Input::new_from_chars("121".chars(), None);
+/// let parser1 = is('1');
+/// let parser2 = is('2');
 /// let output = between(&parser1, &parser2, &parser1)(&mut input);
-/// assert_eq!(output, Ok(2));
+/// assert_eq!(output, Ok('2'));
 /// ```
-pub fn between<PO, PC, P, I, O, OO, OC>(open: &PO, parser: &P, close: &PC) -> impl Parser<I, O>
+pub fn between<PO, PC, P, IT, O, OO, OC>(open: &PO, parser: &P, close: &PC) -> impl Parser<IT, O>
 where
-	PO: Parser<I, OO>,
-	PC: Parser<I, OC>,
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	PO: Parser<IT, OO>,
+	PC: Parser<IT, OC>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	move |input| {
 		open(input)?;
@@ -705,32 +760,31 @@ where
 ///
 /// ```
 /// use yapcol::{any};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
 /// // An example input iterator
-/// let tokens: Vec<i32> = vec![1, 2, 3];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("123".chars(), None);
 /// let output = any()(&mut input);
-/// assert_eq!(output, Ok(1));
+/// assert_eq!(output, Ok('1'));
 /// ```
-pub fn any<I>() -> impl Parser<I, I::Item>
+pub fn any<IT>() -> impl Parser<IT, IT::Token>
 where
-	I: Iterator<Item: Token>,
+	IT: InputToken,
 {
 	|input| match input.next_token() {
-		Some(token) => Ok(token),
+		Some(input_token) => Ok(input_token.token_owned()),
 		None => Err(Error::EndOfInput),
 	}
 }
 
-fn separated_tail<P, S, I, O, SO>(
+fn separated_tail<P, S, IT, O, SO>(
 	parser: &P,
 	separator: &S,
-) -> impl Fn(&mut Input<I>, Vec<O>) -> Result<Vec<O>, Error>
+) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
 where
-	P: Parser<I, O>,
-	S: Parser<I, SO>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	S: Parser<IT, SO>,
+	IT: InputToken,
 {
 	move |input, mut output| {
 		while separator(input).is_ok() {
@@ -741,7 +795,7 @@ where
 	}
 }
 
-/// Creates a parser that parsers zero or more occurrences of `parser`, separated by `separator`.
+/// Creates a parser that parses zero or more occurrences of `parser`, separated by `separator`.
 ///
 /// # Arguments
 ///
@@ -752,21 +806,20 @@ where
 ///
 /// ```
 /// use yapcol::{is, separated_by0};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
-/// let parser1 = is(1);
-/// let parser2 = is(2);
-/// let tokens = vec![1, 2, 1];
-/// let mut input = Input::new(tokens);
+/// let parser1 = is('1');
+/// let parser2 = is('2');
+/// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser_separated_by0 = separated_by0(&parser1, &parser2);
 /// let output = parser_separated_by0(&mut input);
-/// assert_eq!(output, Ok(vec![1, 1]));
+/// assert_eq!(output, Ok("11".chars().collect()));
 /// ```
-pub fn separated_by0<P, S, I, O, OS>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
+pub fn separated_by0<P, S, IT, O, OS>(parser: &P, separator: &S) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	S: Parser<I, OS>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	S: Parser<IT, OS>,
+	IT: InputToken,
 {
 	move |input| match parser(input) {
 		Ok(token) => {
@@ -778,7 +831,7 @@ where
 	}
 }
 
-/// Creates a parser that parsers one or more occurrences of `parser`, separated by `separator`.
+/// Creates a parser that parses one or more occurrences of `parser`, separated by `separator`.
 ///
 /// # Arguments
 ///
@@ -789,21 +842,20 @@ where
 ///
 /// ```
 /// use yapcol::{is, separated_by1};
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
-/// let parser1 = is(1);
-/// let parser2 = is(2);
-/// let tokens = vec![1, 2, 1];
-/// let mut input = Input::new(tokens);
+/// let parser1 = is('1');
+/// let parser2 = is('2');
+/// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser_separated_by1 = separated_by1(&parser1, &parser2);
 /// let output = parser_separated_by1(&mut input);
-/// assert_eq!(output, Ok(vec![1, 1]));
+/// assert_eq!(output, Ok("11".chars().collect()));
 /// ```
-pub fn separated_by1<P, S, I, O, SO>(parser: &P, separator: &S) -> impl Parser<I, Vec<O>>
+pub fn separated_by1<P, S, IT, O, SO>(parser: &P, separator: &S) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	S: Parser<I, SO>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	S: Parser<IT, SO>,
+	IT: InputToken,
 {
 	move |input| {
 		let first = parser(input)?;
@@ -812,15 +864,15 @@ where
 	}
 }
 
-fn parse_chain_left_tail<P, I, O, OP, F>(
+fn parse_chain_left_tail<P, IT, O, OP, F>(
 	o1: O,
 	parser: &P,
 	operator_parser: &OP,
-) -> impl Parser<I, O>
+) -> impl Parser<IT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<IT, O>,
+	IT: InputToken,
+	OP: Parser<IT, F>,
 	F: FnOnce(O, O) -> O,
 	O: Clone,
 {
@@ -840,7 +892,7 @@ where
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parses operands that will be combined into a final value, in a
 ///   left-associative manner.
 /// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
@@ -851,29 +903,26 @@ where
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
 /// use yapcol::{satisfy, chain_left};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
-/// let operand = satisfy(|c: &char| match c.to_digit(10)  {
-///     Some(x) => Ok(x as i32),
-///     None => Err(Error::UnexpectedToken)
-/// });
+/// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
 /// let operator = satisfy(|c: &char| match c {
-///     '-' => Ok(|a, b| a - b),
-///     _ => Err(Error::UnexpectedToken),
+///     '-' => Some(|a, b| a - b),
+///     _ => None,
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = chain_left(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(1)); // (3 - 1) - 1 = 1, not 3 - (1 - 1) = 3
 /// ```
-pub fn chain_left<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+pub fn chain_left<P, IT, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<IT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<IT, O>,
+	IT: InputToken,
+	OP: Parser<IT, F>,
 	F: Fn(O, O) -> O,
 	O: Clone,
 {
@@ -889,7 +938,7 @@ where
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parses operands that will be combined into a final value, in a
 ///   right-associative manner.
 /// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
@@ -897,32 +946,29 @@ where
 /// # Examples
 ///
 /// ```
-/// // Implements evaluation of the subtraction ('-') operator as left-associative.
+/// // Implements evaluation of the subtraction ('-') operator as right-associative.
 /// use yapcol::{satisfy, chain_right};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
-/// let operand = satisfy(|c: &char| match c.to_digit(10)  {
-///     Some(x) => Ok(x as i32),
-///     None => Err(Error::UnexpectedToken)
-/// });
+/// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
 /// let operator = satisfy(|c: &char| match c {
-///     '-' => Ok(|a, b| a - b),
-///     _ => Err(Error::UnexpectedToken),
+///     '-' => Some(|a, b| a - b),
+///     _ => None,
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars(tokens, None);
 /// let parser = chain_right(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(3)); // 3 - (1 - 1) = 3, not (3 - 1) - 1 = 1
 /// ```
-pub fn chain_right<P, I, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<I, O>
+pub fn chain_right<P, IT, O, OP, F>(operand_parser: &P, operator_parser: &OP) -> impl Parser<IT, O>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
-	OP: Parser<I, F>,
+	P: Parser<IT, O>,
+	IT: InputToken,
+	OP: Parser<IT, F>,
 	F: Fn(O, O) -> O,
 {
 	move |input| {
@@ -949,39 +995,41 @@ where
 /// ```
 /// use yapcol::{is, not_followed_by};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
+/// use yapcol::input::position::Position;
 ///
-/// let parser = is("hello");
-/// let tokens: Vec<&str> = vec!["world"];
-/// let mut input = Input::new(tokens);
+/// let parser = is('j');
+/// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let not_followed_parser = not_followed_by(&parser);
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(output, Ok(()));
 ///
-/// let tokens: Vec<&str> = vec!["hello"];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("jello".chars(), None);
 /// let output = not_followed_parser(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken));
+/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,1))));
 ///
 /// ```
-pub fn not_followed_by<P, I, O>(parser: &P) -> impl Parser<I, ()>
+pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>
 where
-	P: Parser<I, O>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	IT: InputToken,
 {
 	|input| {
 		let handler = input.start_look_ahead();
-		let output = match parser(input) {
-			Ok(_) => Err(Error::UnexpectedToken),
+		let output = parser(input);
+		input.stop_look_ahead(handler, true);
+		match output {
+			Ok(_) => Err(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+			)),
 			Err(Error::EndOfInput) => Err(Error::EndOfInput),
 			Err(_) => Ok(()),
-		};
-		input.stop_look_ahead(handler, true);
-		output
+		}
 	}
 }
 
-/// Parsers one or more instances of `parser`, until `end` succeeds.
+/// Parses one or more instances of `parser`, until `end` succeeds.
 ///
 /// # Arguments
 ///
@@ -993,25 +1041,24 @@ where
 /// ```
 /// use yapcol::{any, is, many_until};
 /// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::core::Input;
 ///
 /// let comments_parser = |input: &mut Input<_>| {
-///     let open = is("/*");
-///     let close = is("*/");
+///     let open = is('#');
+///     let close = is('$');
 ///     let any = any();
 ///     open(input)?;
 ///     many_until(&any, &close)(input)
 /// };
-/// let tokens: Vec<&str> = vec!["/*", "this", "is", "a", "comment", "*/"];
-/// let mut input = Input::new(tokens);
+/// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
 /// let output = comments_parser(&mut input);
-/// assert_eq!(output, Ok(vec!["this", "is", "a", "comment"]));
+/// assert_eq!(output, Ok("this is a comment".chars().collect()));
 /// ```
-pub fn many_until<P, PE, I, O, OE>(parser: &P, end: &PE) -> impl Parser<I, Vec<O>>
+pub fn many_until<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
 where
-	P: Parser<I, O>,
-	PE: Parser<I, OE>,
-	I: Iterator<Item: Token>,
+	P: Parser<IT, O>,
+	PE: Parser<IT, OE>,
+	IT: InputToken,
 {
 	|input| {
 		let mut matches = Vec::new();

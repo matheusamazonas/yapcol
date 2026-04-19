@@ -1,23 +1,25 @@
 use crate::*;
+use input::position::Position;
 
 #[test]
-fn even_number() {
-	let is_even_length = satisfy(|token: &&str| {
-		if token.len().is_multiple_of(2) {
-			Ok(<&str>::clone(token))
+fn digits() {
+	let parser = satisfy(|token: &char| {
+		if token.is_ascii_digit() {
+			Some(*token)
 		} else {
-			Err(Error::UnexpectedToken)
+			None
 		}
 	});
-	// Even succeeds.
-	let tokens = vec!["hello!"];
-	let mut input = Input::new(tokens);
-	assert_eq!(is_even_length(&mut input), Ok("hello!"));
+	// Digits.
+	let mut input = Input::new_from_chars("1".chars(), None);
+	assert_eq!(parser(&mut input), Ok('1'));
 	assert!(end_of_input()(&mut input).is_ok());
-	// Odd number fails and does not consume.
-	let tokens = vec!["hello", "hallo"];
-	let mut input = Input::new(tokens);
-	assert_eq!(is_even_length(&mut input), Err(Error::UnexpectedToken));
-	assert_eq!(input.next_token(), Some("hello"));
-	assert_eq!(input.next_token(), Some("hallo"));
+	// Words fails and does not consume.
+	let mut input = Input::new_from_chars("hello".chars(), None);
+	assert_eq!(
+		parser(&mut input),
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
+	assert_eq!(any()(&mut input), Ok('h'));
+	assert_eq!(any()(&mut input), Ok('e'));
 }
