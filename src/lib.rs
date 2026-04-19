@@ -9,15 +9,19 @@
 //!
 //! - [`Parser`]: The central trait of the crate. Any function that takes a mutable reference
 //!   to an [`Input`] and returns a `Result<Output, Error>` is a parser.
-//! - [`Input`]: A wrapper around an iterator that provides buffering and lookahead capabilities.
-//! - **Combinators**: Functions that take one or more parsers and return a new, more complex
+//! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
+//!   tracking capabilities.
+//! - Combinators: Functions that take one or more parsers and return a new, more complex
 //!   parser. Examples: [`is`], [`many0`], [`option`], [`chain_left`].
 //!
 //! # Features
 //!
-//! - **Arbitrary Lookahead**: Easily backtrack and try alternative parsers using [`attempt`] and
+//! - Arbitrary Lookahead: backtrack and try alternative parsers using [`attempt`] and
 //!   [`look_ahead`].
-//! - **Generic Input**: Works with any iterator whose items implement the [`InputToken`] trait.
+//! - Generic Input: works with any iterator whose items implement the [`InputToken`] trait.
+//! - Position Tracking: every token carries a [`input::position::Position`] (line and column).
+//!   Parse errors include the position of the offending token, making it easy to produce
+//!   human-readable error messages.
 //!
 //! # Quick Start
 //!
@@ -41,10 +45,10 @@
 //! Both of them implement the same application: a simple arithmetic expression parser and
 //! evaluator. Each example uses a slightly different implementation to achieve the task:
 //!   - `evaluate_expression_string` uses a parser that takes a stream of *characters* as input.
-//!     This example parsers the input string directly into the custom `Expression` type.
+//!     This example parses the input string directly into the custom `Expression` type.
 //!   - `evaluate_expression_token` uses a parser that takes a stream of user-defined *tokens* as
 //!     input. This example first performs lexical analysis (lexing) to turn the input string into
-//!     a vector of tokens, then parsers the token stream into the custom `Expression` type.
+//!     a vector of tokens, then parses the token stream into the custom `Expression` type.
 //!
 //! These two approaches reflect real-world usage of parsers, which might parse text directly or
 //! perform lexical analysis beforehand. Check the `README` file in the `examples` directory for
@@ -116,6 +120,11 @@ where
 {
 }
 
+/// A convenience alias for [`Parser`] specialised to character-stream input.
+///
+/// `StringParser<O>` is equivalent to `Parser<CharToken, O>` and is automatically implemented
+/// for any function `Fn(&mut StringInput) -> Result<O, Error>`. It exists purely to reduce
+/// type-annotation noise when working with string-based parsers.
 pub trait StringParser<O>: Parser<CharToken, O> {}
 
 impl<O, X> StringParser<O> for X where X: Fn(&mut StringInput) -> Result<O, Error> {}
@@ -557,7 +566,7 @@ where
 /// let parser1 = is('1');
 /// assert_eq!(look_ahead(&parser1)(&mut input), Ok('1'));
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
-/// assert_eq!(any()(&mut input), Ok('2')); // any()(&mut input)Input was not consumed.
+/// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input.
@@ -740,7 +749,7 @@ where
 	}
 }
 
-/// Creates a parser that parsers zero or more occurrences of `parser`, separated by `separator`.
+/// Creates a parser that parses zero or more occurrences of `parser`, separated by `separator`.
 ///
 /// # Arguments
 ///
@@ -776,7 +785,7 @@ where
 	}
 }
 
-/// Creates a parser that parsers one or more occurrences of `parser`, separated by `separator`.
+/// Creates a parser that parses one or more occurrences of `parser`, separated by `separator`.
 ///
 /// # Arguments
 ///
@@ -837,7 +846,7 @@ where
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parses operands that will be combined into a final value, in a
 ///   left-associative manner.
 /// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
@@ -883,7 +892,7 @@ where
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parsers operands that will be combined into a final value, in a
+/// - `operand_parser`: Parses operands that will be combined into a final value, in a
 ///   right-associative manner.
 /// - `operator_parser`: Operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
@@ -891,7 +900,7 @@ where
 /// # Examples
 ///
 /// ```
-/// // Implements evaluation of the subtraction ('-') operator as left-associative.
+/// // Implements evaluation of the subtraction ('-') operator as right-associative.
 /// use yapcol::{satisfy, chain_right};
 /// use yapcol::error::Error;
 /// use yapcol::input::core::Input;
@@ -974,7 +983,7 @@ where
 	}
 }
 
-/// Parsers one or more instances of `parser`, until `end` succeeds.
+/// Parses one or more instances of `parser`, until `end` succeeds.
 ///
 /// # Arguments
 ///
