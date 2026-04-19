@@ -9,9 +9,9 @@ powerful features like arbitrary lookahead and nested parsers.
 
 ## Features
 
-- **Arbitrary Lookahead**: easily backtrack and try alternative parsers using `attempt` and `look_ahead`.
-- **Generic Input**: works with any iterator whose items implement the `Token` trait.
-- **Zero Dependencies**: `yapcol` has no dependencies besides Rust's standard library.
+- Arbitrary Lookahead: easily backtrack and try alternative parsers using `attempt` and `look_ahead`.
+- Generic Input: works with any iterator whose items implement the `Token` trait.
+- Zero Dependencies: `yapcol` has no dependencies besides Rust's standard library.
 
 ## Installation
 Add YAPCoL to your `Cargo.toml`:
@@ -29,12 +29,12 @@ cargo add yapcol
 
 `yapcol` provides a wide range of built-in combinators:
 
-- **Basic**: `is`, `satisfy`, `any`, `end_of_input`.
-- **Choice and Optional**: `choice`, `option`, `maybe`.
-- **Repetition**: `many0`, `many1`, `count`, `many_until`, `separated_by0`, `separated_by1`.
-- **Lookahead and Backtracking**: `attempt`, `look_ahead`, `not_followed_by`.
-- **Grouping**: `between`.
-- **Associativity**: `chain_left`, `chain_right`.
+- Basic: `is`, `satisfy`, `any`, `end_of_input`.
+- Choice and Optional: `choice`, `option`, `maybe`.
+- Repetition: `many0`, `many1`, `count`, `many_until`, `separated_by0`, `separated_by1`.
+- Lookahead and Backtracking: `attempt`, `look_ahead`, `not_followed_by`.
+- Grouping: `between`.
+- Associativity: `chain_left`, `chain_right`.
 
 ## Usage
 
