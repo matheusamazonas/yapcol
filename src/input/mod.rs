@@ -7,7 +7,7 @@
 //! [`core::InputToken`] describes a single element in that stream. For character-based parsing,
 //! there is no need to implement the trait yourself: the library supplies an implementation via
 //! [`string::CharToken`].
-//! You can also define streams of custom tokens (e.g., from a lexer) by implementing 
+//! You can also define streams of custom tokens (e.g., from a lexer) by implementing
 //! [`core::InputToken`] on the custom token type.
 //!
 //! # Tokens

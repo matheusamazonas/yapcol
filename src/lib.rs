@@ -221,7 +221,7 @@ where
 ///
 /// # Arguments
 ///
-/// - `f`: A predicate that takes a reference to a token and returns `Sone` on success or
+/// - `f`: A predicate that takes a reference to a token and returns `Some` on success or
 ///   `None` on failure.
 ///
 /// # Examples
