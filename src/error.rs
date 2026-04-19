@@ -35,6 +35,9 @@ use std::fmt::Display;
 #[derive(Clone, PartialEq, Debug)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
+	///
+	/// The first field is the optional source name (e.g. a file name), and the second is the
+	/// position where the unexpected token was found.
 	UnexpectedToken(Option<String>, Position),
 	/// The input stream was exhausted before the parser could match.
 	EndOfInput,
