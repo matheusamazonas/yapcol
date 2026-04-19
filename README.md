@@ -13,6 +13,18 @@ powerful features like arbitrary lookahead and nested parsers.
 - **Generic Input**: works with any iterator whose items implement the `Token` trait.
 - **Zero Dependencies**: `yapcol` has no dependencies besides Rust's standard library.
 
+## Installation
+Add YAPCoL to your `Cargo.toml`:
+```toml
+[dependencies]
+yapcol = "0.2.0"
+```
+
+Or use `cargo add`:
+```shell
+cargo add yapcol
+```
+
 ## Supported Combinators
 
 `yapcol` provides a wide range of built-in combinators:
@@ -72,8 +84,8 @@ assert_eq!(my_custom_parser(&mut input), Ok("ab".to_string()));
 Real-world examples are available in the `examples/` directory, including an arithmetic expression evaluator. There are
 two different implementations:
 
-- **String-based**: parses text directly from a stream of characters.
-- **Token-based**: uses a lexer to tokenize the input before parsing.
+- String-based: parses text directly from a stream of characters.
+- Token-based: uses a lexer to tokenize the input before parsing.
 
 For more details on how to run and understand these examples, check the [Examples README](examples/README.md).
 
