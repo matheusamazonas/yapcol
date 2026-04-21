@@ -43,7 +43,7 @@ impl CharToken {
 /// `StringInputSource` wraps a peekable `char` iterator and tracks the current [`Position`]
 /// (line and column) as characters are consumed, producing [`CharToken`]s for each input character.
 ///
-/// This struct is an internal implementation detail; use [`StringInput::new_from_chars`] to
+/// This struct is an internal implementation detail; use [`Input::new_from_chars`] to
 /// create a string-based input.
 struct StringInputSource<I>
 where
@@ -122,8 +122,8 @@ impl<'a> StringInput<'a> {
 	/// # Examples
 	///
 	/// ```
-	/// use yapcol::input::string::StringInput;
-	/// let mut input = StringInput::new_from_chars("hello".chars(), Some(String::from("in.txt")));
+	/// use yapcol::input::core::Input;
+	/// let mut input = Input::new_from_chars("hello".chars(), Some(String::from("in.txt")));
 	/// ```
 	pub fn new_from_chars<S>(chars: S, source_name: Option<String>) -> Input<'a, CharToken>
 	where

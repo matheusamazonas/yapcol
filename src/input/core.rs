@@ -34,7 +34,7 @@ pub trait InputToken: Clone {
 ///
 /// # Creating an `Input`
 ///
-/// For character-based parsing use [`crate::input::string::StringInput::new_from_chars`].
+/// For character-based parsing use [`Input::new_from_chars`].
 /// For a stream of pre-built tokens that already implement [`InputToken`], use
 /// [`Input::new_from_tokens`].
 ///
