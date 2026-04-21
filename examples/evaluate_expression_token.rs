@@ -121,13 +121,8 @@ fn parse_factor() -> impl TokenExpressionParser {
 
 fn parse_exponentiation() -> impl TokenExpressionParser {
 	|input| {
-		let parse_operator = |input: &mut Input<SourceToken>| match is(Token::Operator(
-			Operator::Exponentiation,
-		))(input)
-		{
-			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-			Err(e) => Err(e),
-		};
+		let parse_operator = is(Token::Operator(Operator::Exponentiation))
+			.map(|_| build_operation(Operator::Exponentiation));
 		chain_right(&parse_bottom(), &parse_operator)(input)
 	}
 }

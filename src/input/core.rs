@@ -6,10 +6,10 @@ use std::collections::VecDeque;
 
 /// Represents a single token in the input stream.
 ///
-/// Every item produced by an [`InputSource`] must implement this trait. The blanket
-/// implementation means that in practice you only need to implement `InputToken` manually when
-/// building a custom input source; for character-based parsing the built-in
-/// [`crate::input::string::CharToken`] is used automatically.
+/// Every item produced by an input source must implement this trait. The blanket implementation
+/// means that in practice you only need to implement `InputToken` manually when building a custom
+/// input source; for character-based parsing the built-in [`crate::input::string::CharToken`] is
+/// used automatically.
 ///
 /// # Type Parameters
 ///
@@ -29,12 +29,12 @@ pub trait InputToken: Clone {
 
 /// An input stream that parsers read tokens from.
 ///
-/// `Input` wraps any [`InputSource`] and adds buffering, arbitrary lookahead, and position
+/// `Input` wraps any input source and adds buffering, arbitrary lookahead, and position
 /// tracking on top of it. It is the central type that every parser receives as its argument.
 ///
 /// # Creating an `Input`
 ///
-/// For character-based parsing use [`crate::input::string::StringInput::new_from_chars`].
+/// For character-based parsing use [`Input::new_from_chars`].
 /// For a stream of pre-built tokens that already implement [`InputToken`], use
 /// [`Input::new_from_tokens`].
 ///

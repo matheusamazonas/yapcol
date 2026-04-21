@@ -42,15 +42,13 @@
 //! # Error Handling
 //!
 //! Every parser returns a `Result<O, Error>`. When parsing fails, the `Err` variant contains
-//! one of two possible errors, defined in the [`Error`](Error) enum:
+//! one of two possible errors, defined in the [`Error`] enum:
 //!
-//! - [`Error::UnexpectedToken`](Error::UnexpectedToken)`(Option<String>, Position)`: the
+//! - [`Error::UnexpectedToken`]`(Option<String>, Position)`: the
 //!   parser encountered a token that did not satisfy its requirements. The first field is an
-//!   optional source name (e.g., a file name), and the second is the
-//!   [`Position`](input::position::Position) (line and column) where the unexpected token was
-//!   found.
-//! - [`Error::EndOfInput`](Error::EndOfInput): the input stream was exhausted before the
-//!   parser could match.
+//!   optional source name (e.g., a file name), and the second is the [`input::position::Position`]
+//!   (line and column) where the unexpected token was found.
+//! - [`Error::EndOfInput`]: the input stream was exhausted before the parser could match.
 //!
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
@@ -71,8 +69,8 @@
 //! assert_eq!(any()(&mut input), Err(Error::EndOfInput));
 //! ```
 //!
-//! The [`Error`](Error) type implements [`Display`](std::fmt::Display), so you can easily
-//! print human-readable error messages:
+//! The [`Error`] type implements [`std::fmt::Display`], so you can easily print human-readable error
+//! messages.
 //!
 //! ```
 //! use yapcol::error::Error;
@@ -157,6 +155,43 @@ pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
 	IT: InputToken,
 {
+	/// Transforms the output of the current parser using the provided function.
+	///
+	/// # Parameters
+	/// - `self`: The current parser.
+	/// - `f`: A closure or function that maps the previous output of the parser to a new output
+	///   type.
+	///
+	/// # Returns
+	/// A new parser that applies the mapping function `f` to the output of the current parser.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Parser, satisfy, any};
+	/// use yapcol::input::core::{Input};
+	///
+	///
+	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None } ;
+	/// let parser = satisfy(is_digit).map(|c| c.to_digit(10));
+	///
+	/// let mut input = Input::new_from_chars("1".chars(), None);
+	/// let result = parser(&mut input);
+	/// assert_eq!(result, Ok(Some(1)));
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, the error is returned as is without invoking the mapping
+	/// function `f`.
+	fn map<F, MO>(self, f: F) -> impl Parser<IT, MO>
+	where
+		F: Fn(O) -> MO,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(value) => Ok(f(value)),
+			Err(e) => Err(e),
+		}
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X

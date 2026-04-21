@@ -22,13 +22,13 @@
 //!
 //! ## Character-based parsing
 //!
-//! Use [`string::StringInput::new_from_chars`], which wraps a `char` iterator and automatically
+//! Use [`core::Input::new_from_chars`], which wraps a `char` iterator and automatically
 //! tracks source positions:
 //!
 //! ```
-//! use yapcol::input::string::StringInput;
+//! use yapcol::input::core::Input;
 //!
-//! let mut input = StringInput::new_from_chars("hello".chars(), None);
+//! let mut input = Input::new_from_chars("hello".chars(), None);
 //! ```
 //!
 //! ## Token-based parsing

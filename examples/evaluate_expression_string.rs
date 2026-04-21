@@ -2,7 +2,9 @@ use expression::{Expression, Operator, evaluate};
 use std::io;
 use yapcol::error::Error;
 use yapcol::input::core::Input;
-use yapcol::{StringParser, attempt, between, chain_left, chain_right, is, many0, option, satisfy};
+use yapcol::{
+	Parser, StringParser, attempt, between, chain_left, chain_right, is, many0, option, satisfy,
+};
 mod expression;
 
 trait StringExpressionParser: StringParser<Expression> {}
@@ -31,8 +33,16 @@ fn parse_number() -> impl StringExpressionParser {
 	}
 }
 
-fn build_operation(op: Operator) -> impl Fn(Expression, Expression) -> Expression {
-	move |o1, o2| Expression::Operation(Box::new(o1), op.clone(), Box::new(o2))
+fn build_operation(op: char) -> impl Fn(Expression, Expression) -> Expression {
+	let operator = match op {
+		'+' => Operator::Addition,
+		'-' => Operator::Subtraction,
+		'*' => Operator::Multiplication,
+		'/' => Operator::Division,
+		'^' => Operator::Exponentiation,
+		_ => panic!("Unexpected operator char: {}", op),
+	};
+	move |o1, o2| Expression::Operation(Box::new(o1), operator.clone(), Box::new(o2))
 }
 
 fn parse_expression() -> impl StringExpressionParser {
@@ -41,15 +51,7 @@ fn parse_expression() -> impl StringExpressionParser {
 			let parse_plus = is('+');
 			let parse_minus = is('-');
 			let parse_attempt_plus = attempt(&parse_plus);
-			let operator = option(&parse_attempt_plus, &parse_minus)(input)?;
-			match operator {
-				'+' => Ok(build_operation(Operator::Addition)),
-				'-' => Ok(build_operation(Operator::Subtraction)),
-				_ => Err(Error::UnexpectedToken(
-					input.source_name(),
-					input.position(),
-				)),
-			}
+			option(&parse_attempt_plus, &parse_minus).map(build_operation)(input)
 		};
 		chain_left(&parse_factor(), &parse_operator)(input)
 	}
@@ -61,15 +63,7 @@ fn parse_factor() -> impl StringExpressionParser {
 			let parse_multiplication = is('*');
 			let parse_division = is('/');
 			let parse_attempt_multiplication = attempt(&parse_multiplication);
-			let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
-			match operator {
-				'*' => Ok(build_operation(Operator::Multiplication)),
-				'/' => Ok(build_operation(Operator::Division)),
-				_ => Err(Error::UnexpectedToken(
-					input.source_name(),
-					input.position(),
-				)),
-			}
+			option(&parse_attempt_multiplication, &parse_division).map(build_operation)(input)
 		};
 		chain_left(&parse_exponentiation(), &parse_operator)(input)
 	}
@@ -77,13 +71,7 @@ fn parse_factor() -> impl StringExpressionParser {
 
 fn parse_exponentiation() -> impl StringExpressionParser {
 	|input| {
-		let parse_operator = |input: &mut Input<_>| match is('^')(input) {
-			Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-			Err(_) => Err(Error::UnexpectedToken(
-				input.source_name(),
-				input.position(),
-			)),
-		};
+		let parse_operator = is('^').map(build_operation);
 		chain_right(&parse_bottom(), &parse_operator)(input)
 	}
 }
