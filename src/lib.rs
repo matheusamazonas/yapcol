@@ -157,6 +157,43 @@ pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
 	IT: InputToken,
 {
+	/// Transforms the output of the current parser using the provided function.
+	///
+	/// # Parameters
+	/// - `self`: The current parser.
+	/// - `f`: A closure or function that maps the previous output of the parser to a new output
+	///   type.
+	///
+	/// # Returns
+	/// A new parser that applies the mapping function `f` to the output of the current parser.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Parser, satisfy, any};
+	/// use yapcol::input::core::{Input};
+	///
+	///
+	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None } ;
+	/// let parser = satisfy(is_digit).map(|c| c.to_digit(10));
+	///
+	/// let mut input = Input::new_from_chars("1".chars(), None);
+	/// let result = parser(&mut input);
+	/// assert_eq!(result, Ok(Some(1)));
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, the error is returned as is without invoking the mapping
+	/// function `f`.
+	fn map<F, MO>(self, f: F) -> impl Parser<IT, MO>
+	where
+		F: Fn(O) -> MO,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(value) => Ok(f(value)),
+			Err(e) => Err(e),
+		}
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X
