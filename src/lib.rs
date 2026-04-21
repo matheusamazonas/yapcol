@@ -42,15 +42,13 @@
 //! # Error Handling
 //!
 //! Every parser returns a `Result<O, Error>`. When parsing fails, the `Err` variant contains
-//! one of two possible errors, defined in the [`Error`](Error) enum:
+//! one of two possible errors, defined in the [`Error`] enum:
 //!
-//! - [`Error::UnexpectedToken`](Error::UnexpectedToken)`(Option<String>, Position)`: the
+//! - [`Error::UnexpectedToken`]`(Option<String>, Position)`: the
 //!   parser encountered a token that did not satisfy its requirements. The first field is an
-//!   optional source name (e.g., a file name), and the second is the
-//!   [`Position`](input::position::Position) (line and column) where the unexpected token was
-//!   found.
-//! - [`Error::EndOfInput`](Error::EndOfInput): the input stream was exhausted before the
-//!   parser could match.
+//!   optional source name (e.g., a file name), and the second is the [`input::position::Position`]
+//!   (line and column) where the unexpected token was found.
+//! - [`Error::EndOfInput`]: the input stream was exhausted before the parser could match.
 //!
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
@@ -71,8 +69,8 @@
 //! assert_eq!(any()(&mut input), Err(Error::EndOfInput));
 //! ```
 //!
-//! The [`Error`](Error) type implements [`Display`](std::fmt::Display), so you can easily
-//! print human-readable error messages:
+//! The [`Error`] type implements [`std::fmt::Display`], so you can easily print human-readable error
+//! messages.
 //!
 //! ```
 //! use yapcol::error::Error;
