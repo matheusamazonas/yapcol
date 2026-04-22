@@ -92,7 +92,6 @@ where
 #[cfg(test)]
 mod tests {
 	mod separated_by0 {
-		use crate::input::position::Position;
 		use crate::*;
 
 		#[test]
@@ -184,7 +183,6 @@ mod tests {
 	}
 
 	mod separated_by1 {
-		use crate::input::position::Position;
 		use crate::*;
 
 		#[test]

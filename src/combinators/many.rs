@@ -174,7 +174,6 @@ mod tests {
 	}
 
 	mod many1 {
-		use crate::input::position::Position;
 		use crate::*;
 
 		#[test]

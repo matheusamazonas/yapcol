@@ -43,7 +43,6 @@ where
 
 #[cfg(test)]
 mod tests {
-	use crate::input::position::Position;
 	use crate::input::string::StringInput;
 	use crate::*;
 
