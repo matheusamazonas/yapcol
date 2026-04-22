@@ -2,6 +2,13 @@ use crate::*;
 use input::position::Position;
 
 #[test]
+fn empty() {
+	let parser = is('2').map(|c: char| c.to_digit(10));
+	let mut input = Input::new_from_chars("".chars(), None);
+	assert_eq!(parser(&mut input), Err(Error::EndOfInput));
+}
+
+#[test]
 fn success_simple() {
 	let parser = is('2').map(|c: char| c.to_digit(10));
 	let mut input = Input::new_from_chars("2".chars(), None);

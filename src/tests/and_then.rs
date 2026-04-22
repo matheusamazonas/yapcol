@@ -2,6 +2,13 @@ use crate::input::position::Position;
 use crate::*;
 
 #[test]
+fn empty() {
+	let double_parser = is('2').and_then(is);
+	let mut input = Input::new_from_chars("".chars(), None);
+	assert_eq!(double_parser(&mut input), Err(Error::EndOfInput));
+}
+
+#[test]
 fn success_simple() {
 	let double_parser = is('2').and_then(is);
 	let mut input = Input::new_from_chars("22".chars(), None);
