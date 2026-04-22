@@ -11,11 +11,27 @@ fn empty() {
 }
 
 #[test]
+fn empty_shortcut() {
+	let parser = is('h').maybe();
+	let mut input = Input::new_from_chars("".chars(), None);
+	assert_eq!(parser(&mut input), Ok(None));
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+}
+
+#[test]
 fn success() {
 	let parser = is('h');
 	let mut input = Input::new_from_chars("h".chars(), None);
 	let parser_maybe = maybe(&parser);
 	assert_eq!(parser_maybe(&mut input), Ok(Some('h')));
+	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+}
+
+#[test]
+fn success_shortcut() {
+	let parser = is('h').maybe();
+	let mut input = Input::new_from_chars("h".chars(), None);
+	assert_eq!(parser(&mut input), Ok(Some('h')));
 	assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 }
 

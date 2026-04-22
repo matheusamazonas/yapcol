@@ -279,6 +279,38 @@ where
 			Err(e) => Err(e),
 		}
 	}
+
+	/// A shortcut for the [`attempt`] combinator.
+	fn attempt(self) -> impl Parser<IT, O>
+	where
+		Self: Sized,
+	{
+		move |input| attempt(&self)(input)
+	}
+
+	/// A shortcut for the [`maybe`] combinator.
+	fn maybe(self) -> impl Parser<IT, Option<O>>
+	where
+		Self: Sized,
+	{
+		move |input| maybe(&self)(input)
+	}
+
+	/// A shortcut for the [`many0`] combinator.
+	fn many0(self) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many0(&self)(input)
+	}
+
+	/// A shortcut for the [`many1`] combinator.
+	fn many1(self) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many1(&self)(input)
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X

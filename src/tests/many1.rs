@@ -10,6 +10,13 @@ fn empty() {
 }
 
 #[test]
+fn empty_shortcut() {
+	let parser = is('h').many1();
+	let mut input = Input::new_from_chars("".chars(), None);
+	assert_eq!(parser(&mut input), Err(Error::EndOfInput));
+}
+
+#[test]
 fn no_match() {
 	let parser = is('h');
 	let mut input = Input::new_from_chars("jklmno".chars(), None);
@@ -22,11 +29,32 @@ fn no_match() {
 }
 
 #[test]
+fn no_match_shortcut() {
+	let parser = is('h').many1();
+	let mut input = Input::new_from_chars("jklmno".chars(), None);
+	assert_eq!(
+		parser(&mut input),
+		Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+	);
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+}
+
+#[test]
 fn one_match() {
 	let parser = is('h');
 	let mut input = Input::new_from_chars("hallo".chars(), None);
 	let parser_many1 = many1(&parser);
 	let output = parser_many1(&mut input).unwrap();
+	assert_eq!(output.len(), 1);
+	assert_eq!(input.consumed_count(), 1);
+	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+}
+
+#[test]
+fn one_match_shortcut() {
+	let parser = is('h').many1();
+	let mut input = Input::new_from_chars("hallo".chars(), None);
+	let output = parser(&mut input).unwrap();
 	assert_eq!(output.len(), 1);
 	assert_eq!(input.consumed_count(), 1);
 	assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.

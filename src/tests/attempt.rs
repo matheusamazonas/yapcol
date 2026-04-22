@@ -10,10 +10,30 @@ fn empty() {
 }
 
 #[test]
+fn empty_shortcut() {
+	let mut input = Input::new_from_chars("".chars(), None);
+	let parser = is('h').attempt();
+	let output = parser(&mut input);
+	assert_eq!(output, Err(Error::EndOfInput));
+}
+
+#[test]
 fn success_consumes() {
 	let mut input = Input::new_from_chars("hel".chars(), None);
 	let parser = is('h');
 	let output = attempt(&parser)(&mut input);
+	assert_eq!(output, Ok('h'));
+	// After attempt succeeds, input should be consumed.
+	assert_eq!(is('e')(&mut input), Ok('e'));
+	assert_eq!(is('l')(&mut input), Ok('l'));
+	assert!(end_of_input()(&mut input).is_ok());
+}
+
+#[test]
+fn success_consumes_shortcut() {
+	let mut input = Input::new_from_chars("hel".chars(), None);
+	let parser = is('h').attempt();
+	let output = parser(&mut input);
 	assert_eq!(output, Ok('h'));
 	// After attempt succeeds, input should be consumed.
 	assert_eq!(is('e')(&mut input), Ok('e'));
