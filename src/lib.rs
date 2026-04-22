@@ -236,6 +236,49 @@ where
 			Err(e) => Err(e),
 		}
 	}
+
+	/// Runs the current parser, discards its output, then runs `other` on the same input and
+	/// returns its result.
+	///
+	/// This is useful when you want to assert that a certain token or pattern is present without
+	/// caring about its value, and then continue parsing with a second parser.
+	///
+	/// # Parameters
+	/// - `self`: The current parser whose output is discarded on success.
+	/// - `other`: The parser to run after `self` succeeds.
+	///
+	/// # Returns
+	/// A new parser that first runs `self`, discards its output, then runs `other` on the same
+	/// input and returns its result.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Parser, is, any};
+	/// use yapcol::input::core::Input;
+	///
+	/// // Skip 'a', then parse any character.
+	/// let parser = is('a').and(any());
+	/// let mut input = Input::new_from_chars("ab".chars(), None);
+	/// assert_eq!(parser(&mut input), Ok('b'));
+	///
+	/// // Fails if the first parser fails.
+	/// let parser = is('a').and(any());
+	/// let mut input = Input::new_from_chars("xb".chars(), None);
+	/// assert!(parser(&mut input).is_err());
+	/// ```
+	///
+	/// # Errors
+	/// If `self` fails, its error is returned and `other` is never run.
+	fn and<P, NO>(self, other: P) -> impl Parser<IT, NO>
+	where
+		P: Parser<IT, NO>,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(_) => other(input),
+			Err(e) => Err(e),
+		}
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X

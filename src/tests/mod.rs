@@ -1,3 +1,4 @@
+mod and;
 mod and_then;
 mod any;
 mod attempt;
