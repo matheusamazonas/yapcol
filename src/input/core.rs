@@ -48,7 +48,7 @@ pub trait InputToken: Clone {
 ///
 /// `Input` supports arbitrary, nested lookahead. Tokens fetched during a lookahead operation
 /// are cached internally and can be replayed if the operation is rolled back. Lookahead is
-/// used internally by combinators such as [`crate::attempt`] and [`crate::look_ahead`].
+/// used internally by combinators such as [`crate::attempt()] and [`crate::look_ahead()`].
 pub struct Input<'a, IT> {
 	source: Box<dyn InputSource<Token = IT> + 'a>,
 	consumed_count: usize,
