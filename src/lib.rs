@@ -192,6 +192,50 @@ where
 			Err(e) => Err(e),
 		}
 	}
+
+	/// Applies a function to the output of the current parser to produce a new parser, then runs
+	/// that new parser on the same input.
+	///
+	/// This is useful for chaining parsers where the next parser depends on the result of the
+	/// previous one.
+	///
+	/// # Parameters
+	/// - `self`: The current parser.
+	/// - `f`: A closure or function that takes the output of the current parser and returns a new
+	///   parser.
+	///
+	/// # Returns
+	/// A new parser that first runs the current parser, then passes its output to `f` to obtain
+	/// a second parser, and finally runs that second parser on the same input.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Parser, is};
+	/// use yapcol::input::core::Input;
+	///
+	/// // Parse 'a' twice.
+	/// let twice_parser = is('a').and_then(is);
+	/// let mut input = Input::new_from_chars("aa".chars(), None);
+	/// assert_eq!(twice_parser(&mut input), Ok('a'));
+	///
+	/// let mut input = Input::new_from_chars("ac".chars(), None);
+	/// assert!(twice_parser(&mut input).is_err());
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, the error is returned as is without invoking `f`. If the
+	/// parser returned by `f` fails, its error is returned.
+	fn and_then<F, P, NO>(self, f: F) -> impl Parser<IT, NO>
+	where
+		F: Fn(O) -> P,
+		P: Parser<IT, NO>,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(value) => f(value)(input),
+			Err(e) => Err(e),
+		}
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X
