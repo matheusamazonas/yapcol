@@ -12,8 +12,7 @@ use crate::{InputToken, Parser, satisfy};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, any};
-/// use yapcol::Input;
+/// use yapcol::{Input, any, is};
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
 /// let mut input = Input::new_from_chars(tokens, None);

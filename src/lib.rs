@@ -26,7 +26,7 @@
 //! # Quick Start
 //!
 //! ```
-//! use yapcol::{is, many0, Input};
+//! use yapcol::{Input, is, many0};
 //!
 //! let mut input = Input::new_from_chars("aaab".chars(), None);
 //!
@@ -52,14 +52,17 @@
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
 //! ```
-//! use yapcol::{is, any, Input, Error};
 //! use yapcol::input::Position;
+//! use yapcol::{Error, Input, any, is};
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
 //!
 //! // Fails with UnexpectedToken when the token does not match.
-//! assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1, 1))));
+//! assert_eq!(
+//! 	is('b')(&mut input),
+//! 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+//! );
 //!
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();

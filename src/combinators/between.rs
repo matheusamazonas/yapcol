@@ -11,8 +11,7 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, between};
-/// use yapcol::input::{Input};
+/// use yapcol::{Input, between, is};
 ///
 /// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser1 = is('1');

@@ -13,13 +13,11 @@ use crate::{Error, InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{satisfy, any, Error, Input};
+/// use yapcol::{Error, Input, any, satisfy};
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
 /// let mut input = Input::new_from_chars(tokens, None);
-/// let parser = satisfy(|c: &char| {
-///     if c.is_ascii_digit() { Some(*c) } else { None }
-/// });
+/// let parser = satisfy(|c: &char| if c.is_ascii_digit() { Some(*c) } else { None });
 /// assert_eq!(parser(&mut input).unwrap(), '3');
 /// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
 ///

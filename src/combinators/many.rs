@@ -10,7 +10,7 @@ use crate::{Error, Input, InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{many0, is, Input};
+/// use yapcol::{Input, is, many0};
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
@@ -46,7 +46,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{many1, is, Input};
+/// use yapcol::{Input, is, many1};
 ///
 /// // Matches multiple elements
 /// let parser = is('1');

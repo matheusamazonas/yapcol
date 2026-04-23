@@ -14,8 +14,7 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{count, is, any};
-/// use yapcol::input::{Input};
+/// use yapcol::{Input, any, count, is};
 ///
 /// // Succeeds when the parser matches exactly `count` times.
 /// let parser = is('1');

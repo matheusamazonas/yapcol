@@ -10,15 +10,14 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{any, is, many_until};
-/// use yapcol::{Error, Input};
+/// use yapcol::{Error, Input, any, is, many_until};
 ///
 /// let comments_parser = |input: &mut Input<_>| {
-///     let open = is('#');
-///     let close = is('$');
-///     let any = any();
-///     open(input)?;
-///     many_until(&any, &close)(input)
+/// 	let open = is('#');
+/// 	let close = is('$');
+/// 	let any = any();
+/// 	open(input)?;
+/// 	many_until(&any, &close)(input)
 /// };
 /// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
 /// let output = comments_parser(&mut input);

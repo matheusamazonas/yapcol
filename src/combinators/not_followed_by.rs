@@ -9,9 +9,8 @@ use crate::{Error, InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, not_followed_by};
-/// use yapcol::{Error, Input};
 /// use yapcol::input::Position;
+/// use yapcol::{Error, Input, is, not_followed_by};
 ///
 /// let parser = is('j');
 /// let mut input = Input::new_from_chars("hello".chars(), None);
@@ -21,8 +20,10 @@ use crate::{Error, InputToken, Parser};
 ///
 /// let mut input = Input::new_from_chars("jello".chars(), None);
 /// let output = not_followed_parser(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,1))));
-///
+/// assert_eq!(
+/// 	output,
+/// 	Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+/// );
 /// ```
 pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>
 where

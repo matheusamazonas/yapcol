@@ -18,8 +18,7 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{option, is, end_of_input, any};
-/// use yapcol::Input;
+/// use yapcol::{Input, any, end_of_input, is, option};
 ///
 /// // parser1 succeeds: returns its result.
 /// let mut input = Input::new_from_chars("ab".chars(), None);

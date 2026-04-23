@@ -10,8 +10,7 @@ use crate::{Error, InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{choice, is};
-/// use yapcol::input::{Input};
+/// use yapcol::{Input, choice, is};
 ///
 /// // Returns the result of the first matching parser
 /// let p1 = is('1');

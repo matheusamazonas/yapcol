@@ -15,14 +15,13 @@ use crate::{InputToken, Parser};
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
-/// use yapcol::{satisfy, chain_left};
-/// use yapcol::{Error, Input};
+/// use yapcol::{Error, Input, chain_left, satisfy};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
 /// let operator = satisfy(|c: &char| match c {
-///     '-' => Some(|a, b| a - b),
-///     _ => None,
+/// 	'-' => Some(|a, b| a - b),
+/// 	_ => None,
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
@@ -82,14 +81,13 @@ where
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as right-associative.
-/// use yapcol::{satisfy, chain_right};
-/// use yapcol::{Error, Input};
+/// use yapcol::{Error, Input, chain_right, satisfy};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
 /// let operator = satisfy(|c: &char| match c {
-///     '-' => Some(|a, b| a - b),
-///     _ => None,
+/// 	'-' => Some(|a, b| a - b),
+/// 	_ => None,
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();

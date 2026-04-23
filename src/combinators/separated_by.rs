@@ -28,7 +28,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, separated_by0, Input};
+/// use yapcol::{Input, is, separated_by0};
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');
@@ -63,7 +63,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, separated_by1, Input};
+/// use yapcol::{Input, is, separated_by1};
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');

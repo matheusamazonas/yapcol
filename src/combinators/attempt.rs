@@ -27,8 +27,8 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{attempt, is, end_of_input, any, Input, Error};
 /// use yapcol::input::Position;
+/// use yapcol::{Error, Input, any, attempt, end_of_input, is};
 ///
 /// // Succeeds consuming input.
 /// let mut input = Input::new_from_chars("123".chars(), None);
@@ -45,12 +45,15 @@ use crate::{InputToken, Parser};
 /// // Fails without consuming input if the parser consumes.
 /// let mut input = Input::new_from_chars("13".chars(), None);
 /// let consuming_parser = |input: &mut Input<_>| {
-///     let o1 = parser1(input)?;
-///     let o2 = parser1(input)?;
-///     Ok((o1, o2))
+/// 	let o1 = parser1(input)?;
+/// 	let o2 = parser1(input)?;
+/// 	Ok((o1, o2))
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
-/// assert_eq!(output, Err(Error::UnexpectedToken(None, Position::new(1,2))));
+/// assert_eq!(
+/// 	output,
+/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+/// );
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
 /// // Fails on empty input

@@ -6,7 +6,7 @@ use crate::{Error, InputToken};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{any};
+/// use yapcol::any;
 /// use yapcol::input::Input;
 ///
 /// // An example input iterator

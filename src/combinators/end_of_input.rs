@@ -8,8 +8,7 @@ use crate::{Error, InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{end_of_input, any};
-/// use yapcol::{Error, Input};
+/// use yapcol::{Error, Input, any, end_of_input};
 ///
 /// let tokens: Vec<char> = vec![];
 /// let mut input = Input::new_from_chars(tokens, None);

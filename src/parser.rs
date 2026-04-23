@@ -49,11 +49,11 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 ///
 /// ```
 /// use std::str::Chars;
-/// use yapcol::{Input, Error, is, StringInput};
+/// use yapcol::{Error, Input, StringInput, is};
 ///
 /// fn my_uppercase_parser(input: &mut StringInput) -> Result<char, Error> {
-///    // You can use existing parsers inside your custom parser
-///    is('A')(input)
+/// 	// You can use existing parsers inside your custom parser
+/// 	is('A')(input)
 /// }
 ///
 /// let mut input = Input::new_from_chars("Abc".chars(), None);
@@ -63,7 +63,7 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 /// Most of the time, you will use the built-in combinators which return `impl Parser`:
 ///
 /// ```
-/// use yapcol::{is, Input};
+/// use yapcol::{Input, is};
 ///
 /// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// let mut parser = is('A');
@@ -85,10 +85,9 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, satisfy, any, Input};
+	/// use yapcol::{Input, Parser, any, satisfy};
 	///
-	///
-	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None } ;
+	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None };
 	/// let parser = satisfy(is_digit).map(|c| c.to_digit(10));
 	///
 	/// let mut input = Input::new_from_chars("1".chars(), None);
@@ -127,7 +126,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, is, Input};
+	/// use yapcol::{Input, Parser, is};
 	///
 	/// // Parse 'a' twice.
 	/// let twice_parser = is('a').and_then(is);
@@ -169,7 +168,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, is, any, Input};
+	/// use yapcol::{Input, Parser, any, is};
 	///
 	/// // Skip 'a', then parse any character.
 	/// let parser = is('a').and(any());

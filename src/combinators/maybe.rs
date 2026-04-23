@@ -13,8 +13,7 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{maybe, is, any};
-/// use yapcol::Input;
+/// use yapcol::{Input, any, is, maybe};
 ///
 /// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let ph = is('h');

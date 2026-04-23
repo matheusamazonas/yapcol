@@ -16,15 +16,18 @@ use std::fmt::Display;
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, any, Error, Input};
 /// use yapcol::input::Position;
+/// use yapcol::{Error, Input, any, is};
 ///
 /// let tokens = vec!['a'];
 /// let source_name = Some(String::from("file.txt"));
 /// let mut input = Input::new_from_chars(tokens, source_name.clone());
 ///
 /// // Fails with UnexpectedToken when the token does not match.
-/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1,1))));
+/// assert_eq!(
+/// 	is('b')(&mut input),
+/// 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+/// );
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
