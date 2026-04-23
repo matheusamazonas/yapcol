@@ -12,7 +12,7 @@ use std::fmt::Display;
 /// # Examples
 ///
 /// ```
-/// use yapcol::input::position::Position;
+/// use yapcol::input::Position;
 ///
 /// let pos = Position::new(1, 1);
 /// assert_eq!(pos.to_string(), "1:1");

@@ -1,10 +1,10 @@
 //! Error types returned by parsers when they fail to match input.
 //!
 //! This module defines [`Error`], the single error type used throughout the crate. Every parser
-//! returns `Result<O, Error>`, so understanding the variants is enough to handle all failure
+//! returns `Result<Output, Error>`, so understanding the variants is enough to handle all failure
 //! cases.
 
-use crate::input::position::Position;
+use crate::input::Position;
 use std::fmt::Display;
 
 /// The error type returned by all parsers in this crate.
@@ -16,17 +16,18 @@ use std::fmt::Display;
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, any};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::Input;
-/// use yapcol::input::position::Position;
+/// use yapcol::input::Position;
+/// use yapcol::{Error, Input, any, is};
 ///
 /// let tokens = vec!['a'];
 /// let source_name = Some(String::from("file.txt"));
 /// let mut input = Input::new_from_chars(tokens, source_name.clone());
 ///
 /// // Fails with UnexpectedToken when the token does not match.
-/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1,1))));
+/// assert_eq!(
+/// 	is('b')(&mut input),
+/// 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+/// );
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
@@ -37,7 +38,7 @@ pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
 	///
 	/// The first field is the optional source name (e.g. a file name), and the second is the
-	/// position where the unexpected token was found.
+	/// position (in the input source) where the unexpected token was found.
 	UnexpectedToken(Option<String>, Position),
 	/// The input stream was exhausted before the parser could match.
 	EndOfInput,
