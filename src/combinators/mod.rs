@@ -1,21 +1,21 @@
 //! Parser combinators that can be used to build complex parsers from simpler ones.
 
-pub mod any;
-pub mod attempt;
-pub mod between;
-pub mod chain;
-pub mod choice;
-pub mod count;
-pub mod end_of_input;
-pub mod is;
-pub mod look_ahead;
-pub mod many;
-pub mod many_until;
-pub mod maybe;
-pub mod not_followed_by;
-pub mod option;
-pub mod satisfy;
-pub mod separated_by;
+mod any;
+mod attempt;
+mod between;
+mod chain;
+mod choice;
+mod count;
+mod end_of_input;
+mod is;
+mod look_ahead;
+mod many;
+mod many_until;
+mod maybe;
+mod not_followed_by;
+mod option;
+mod satisfy;
+mod separated_by;
 
 pub use any::any;
 pub use attempt::attempt;
