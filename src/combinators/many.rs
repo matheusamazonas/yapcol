@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::{Input, InputToken};
+use crate::{Error, Input, InputToken, Parser};
 
 /// Applies `parser` zero or more times, returning a vector of matches.
 /// This parser never fails: if no matches are found, it returns an empty vector.
@@ -12,8 +10,7 @@ use crate::input::core::{Input, InputToken};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{many0, is};
-/// use yapcol::input::core::{Input};
+/// use yapcol::{many0, is, Input};
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
@@ -49,8 +46,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{many1, is};
-/// use yapcol::input::core::{Input};
+/// use yapcol::{many1, is, Input};
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
@@ -174,6 +170,7 @@ mod tests {
 	}
 
 	mod many1 {
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]

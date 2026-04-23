@@ -1,5 +1,5 @@
+use crate::input::Position;
 use crate::input::lookahead::{LookAheadFrame, LookAheadHandler, TokenLocation};
-use crate::input::position::Position;
 use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;

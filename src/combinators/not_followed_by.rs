@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::InputToken;
+use crate::{Error, InputToken, Parser};
 
 /// Succeeds if `parser` fails. This combinator does not consume input, even if `parser` does.
 ///
@@ -12,9 +10,8 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{is, not_followed_by};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::Input;
-/// use yapcol::input::position::Position;
+/// use yapcol::{Error, Input};
+/// use yapcol::input::Position;
 ///
 /// let parser = is('j');
 /// let mut input = Input::new_from_chars("hello".chars(), None);
@@ -49,6 +46,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

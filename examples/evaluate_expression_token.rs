@@ -1,9 +1,10 @@
 use expression::{Expression, Operator, evaluate};
 use std::io;
-use yapcol::error::Error;
-use yapcol::input::core::{Input, InputToken};
-use yapcol::input::position::Position;
-use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
+use yapcol::input::Position;
+use yapcol::{
+	Error, Input, InputToken, Parser, attempt, between, chain_left, chain_right, is, option,
+	satisfy,
+};
 mod expression;
 
 #[derive(Debug, PartialEq, Clone)]

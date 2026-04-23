@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::InputToken;
+use crate::{Error, InputToken, Parser};
 
 /// Creates a parser that succeeds if the given predicate returns `Some` for the next token.
 ///
@@ -15,9 +13,7 @@ use crate::input::core::InputToken;
 /// # Examples
 ///
 /// ```
-/// use yapcol::{satisfy, any};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::{Input};
+/// use yapcol::{satisfy, any, Error, Input};
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
 /// let mut input = Input::new_from_chars(tokens, None);
@@ -59,6 +55,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

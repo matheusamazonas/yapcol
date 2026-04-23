@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Creates a parser that makes another parser optional.
 ///
@@ -15,7 +14,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{maybe, is, any};
-/// use yapcol::input::core::{Input};
+/// use yapcol::Input;
 ///
 /// let mut input = Input::new_from_chars("hello".chars(), None);
 /// let ph = is('h');
@@ -43,7 +42,8 @@ where
 
 #[cfg(test)]
 mod tests {
-	use crate::input::string::StringInput;
+	use crate::input::Position;
+	use crate::input::StringInput;
 	use crate::*;
 
 	#[test]

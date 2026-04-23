@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Creates a parser that applies the given parser exactly `count` times.
 ///
@@ -16,7 +15,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{count, is, any};
-/// use yapcol::input::core::{Input};
+/// use yapcol::input::{Input};
 ///
 /// // Succeeds when the parser matches exactly `count` times.
 /// let parser = is('1');
@@ -55,6 +54,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

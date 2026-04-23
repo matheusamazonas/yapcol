@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
-use crate::satisfy;
+use crate::{InputToken, Parser, satisfy};
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///
@@ -15,7 +13,7 @@ use crate::satisfy;
 ///
 /// ```
 /// use yapcol::{is, any};
-/// use yapcol::input::core::{Input};
+/// use yapcol::Input;
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
 /// let mut input = Input::new_from_chars(tokens, None);
@@ -43,6 +41,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

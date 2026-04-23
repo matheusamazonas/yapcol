@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::InputToken;
+use crate::{Error, InputToken, Parser};
 
 /// Creates a parser that succeeds only if the input stream is empty.
 ///
@@ -11,8 +9,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{end_of_input, any};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::{Input};
+/// use yapcol::{Error, Input};
 ///
 /// let tokens: Vec<char> = vec![];
 /// let mut input = Input::new_from_chars(tokens, None);

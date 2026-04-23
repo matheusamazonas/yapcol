@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::InputToken;
+use crate::{Error, InputToken, Parser};
 
 /// Applies each parser in `parsers` in order, returning the result of the first one that succeeds.
 /// Fails if all parsers fail.
@@ -13,7 +11,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{choice, is};
-/// use yapcol::input::core::{Input};
+/// use yapcol::input::{Input};
 ///
 /// // Returns the result of the first matching parser
 /// let p1 = is('1');
@@ -49,6 +47,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

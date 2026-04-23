@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Parses one or more instances of `parser`, until `end` succeeds.
 ///
@@ -12,8 +11,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{any, is, many_until};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::Input;
+/// use yapcol::{Error, Input};
 ///
 /// let comments_parser = |input: &mut Input<_>| {
 ///     let open = is('#');
@@ -44,6 +42,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

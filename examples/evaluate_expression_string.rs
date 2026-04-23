@@ -1,9 +1,8 @@
 use expression::{Expression, Operator, evaluate};
 use std::io;
-use yapcol::error::Error;
-use yapcol::input::core::Input;
 use yapcol::{
-	Parser, StringParser, attempt, between, chain_left, chain_right, is, many0, option, satisfy,
+	Error, Input, Parser, StringParser, attempt, between, chain_left, chain_right, is, many0,
+	option, satisfy,
 };
 mod expression;
 

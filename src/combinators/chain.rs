@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`. It combines
 /// all values parsed by `operand_parser` into a final one using functions returned by
@@ -17,8 +16,7 @@ use crate::input::core::InputToken;
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
 /// use yapcol::{satisfy, chain_left};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::Input;
+/// use yapcol::{Error, Input};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
@@ -85,8 +83,7 @@ where
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as right-associative.
 /// use yapcol::{satisfy, chain_right};
-/// use yapcol::error::Error;
-/// use yapcol::input::core::Input;
+/// use yapcol::{Error, Input};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
@@ -124,7 +121,7 @@ where
 #[cfg(test)]
 mod tests {
 	mod chain_left {
-		use crate::input::string::CharToken;
+		use crate::input::CharToken;
 		use crate::*;
 
 		/// Implements a left-associative parser for subtraction operation and evaluates it.
@@ -171,7 +168,7 @@ mod tests {
 	}
 
 	mod chain_right {
-		use crate::input::string::CharToken;
+		use crate::input::CharToken;
 		use crate::*;
 
 		/// Implements a right-associative parser for subtraction operation and evaluates it.

@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Applies parsers `open` and `close` around `parser`. Often used for parenthesis, brackets, etc.
 ///
@@ -13,7 +12,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{is, between};
-/// use yapcol::input::core::{Input};
+/// use yapcol::input::{Input};
 ///
 /// let mut input = Input::new_from_chars("121".chars(), None);
 /// let parser1 = is('1');
@@ -38,6 +37,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

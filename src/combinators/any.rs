@@ -1,6 +1,5 @@
 use crate::Parser;
-use crate::error::Error;
-use crate::input::core::InputToken;
+use crate::{Error, InputToken};
 
 /// A simple combinator that returns the next token in the input, if any.
 ///
@@ -8,7 +7,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{any};
-/// use yapcol::input::core::Input;
+/// use yapcol::input::Input;
 ///
 /// // An example input iterator
 /// let mut input = Input::new_from_chars("123".chars(), None);

@@ -1,6 +1,4 @@
-use crate::Parser;
-use crate::error::Error;
-use crate::input::core::{Input, InputToken};
+use crate::{Error, Input, InputToken, Parser};
 
 fn separated_tail<P, S, IT, O, SO>(
 	parser: &P,
@@ -30,8 +28,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, separated_by0};
-/// use yapcol::input::core::Input;
+/// use yapcol::{is, separated_by0, Input};
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');
@@ -66,8 +63,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, separated_by1};
-/// use yapcol::input::core::Input;
+/// use yapcol::{is, separated_by1, Input};
 ///
 /// let parser1 = is('1');
 /// let parser2 = is('2');
@@ -92,6 +88,7 @@ where
 #[cfg(test)]
 mod tests {
 	mod separated_by0 {
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]
@@ -183,6 +180,7 @@ mod tests {
 	}
 
 	mod separated_by1 {
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]

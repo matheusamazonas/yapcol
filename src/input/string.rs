@@ -105,7 +105,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use yapcol::input::string::StringInput;
+/// use yapcol::StringInput;
 /// let mut input = StringInput::new_from_chars("hello".chars(), Some("input.md".to_string()));
 /// ```
 pub type StringInput<'a> = Input<'a, CharToken>;
@@ -122,7 +122,7 @@ impl<'a> StringInput<'a> {
 	/// # Examples
 	///
 	/// ```
-	/// use yapcol::input::core::Input;
+	/// use yapcol::Input;
 	/// let mut input = Input::new_from_chars("hello".chars(), Some(String::from("in.txt")));
 	/// ```
 	pub fn new_from_chars<S>(chars: S, source_name: Option<String>) -> Input<'a, CharToken>

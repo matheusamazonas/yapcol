@@ -12,22 +12,21 @@
 //! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
 //!   tracking capabilities.
 //! - Combinators: Functions that take one or more parsers and return a new, more complex
-//!   parser. Examples: [`is()`], [`many0`], [`option()`], [`chain_left`].
+//!   parser. Examples: [`is()`], [`many0()`], [`option()`], [`chain_left()`].
 //!
 //! # Features
 //!
 //! - Arbitrary Lookahead: backtrack and try alternative parsers using [`attempt()`] and
 //!   [`look_ahead()`].
-//! - Generic Input: works with any iterator whose items implement the [`InputToken`] trait.
-//! - Position Tracking: every token carries a [`Position`] (line and column).
+//! - Generic Input: works with any iterator whose elements implement the [`InputToken`] trait.
+//! - Position Tracking: every token carries a [`input::Position`] (line and column).
 //!   Parse errors include the position of the offending token, making it easy to produce
 //!   human-readable error messages.
 //!
 //! # Quick Start
 //!
 //! ```
-//! use yapcol::input::core::{Input};
-//! use yapcol::{is, many0};
+//! use yapcol::{is, many0, Input};
 //!
 //! let mut input = Input::new_from_chars("aaab".chars(), None);
 //!
@@ -41,22 +40,20 @@
 //!
 //! # Error Handling
 //!
-//! Every parser returns a `Result<O, Error>`. When parsing fails, the `Err` variant contains
+//! Every parser returns a `Result<Output, Error>`. When parsing fails, the `Err` variant contains
 //! one of two possible errors, defined in the [`Error`] enum:
 //!
 //! - [`Error::UnexpectedToken`]`(Option<String>, Position)`: the
 //!   parser encountered a token that did not satisfy its requirements. The first field is an
-//!   optional source name (e.g., a file name), and the second is the [`Position`] (line and
+//!   optional source name (e.g., a file name), and the second is the [`input::Position`] (line and
 //!   column) where the unexpected token was found.
 //! - [`Error::EndOfInput`]: the input stream was exhausted before the parser could match.
 //!
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
 //! ```
-//! use yapcol::{is, any};
-//! use yapcol::error::Error;
-//! use yapcol::input::core::Input;
-//! use yapcol::input::position::Position;
+//! use yapcol::{is, any, Input, Error};
+//! use yapcol::input::Position;
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
@@ -73,8 +70,8 @@
 //! error messages.
 //!
 //! ```
-//! use yapcol::error::Error;
-//! use yapcol::input::position::Position;
+//! use yapcol::Error;
+//! use yapcol::input::Position;
 //!
 //! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12));
 //! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
@@ -99,12 +96,11 @@
 //! more information.
 
 mod combinators;
-pub mod error;
+mod error;
 pub mod input;
-pub mod parser;
+mod parser;
 
 pub use combinators::*;
 pub use error::Error;
-pub use input::core::{Input, InputToken};
-pub use input::position::Position;
+pub use input::{CharToken, Input, InputToken, StringInput};
 pub use parser::{Parser, StringParser};

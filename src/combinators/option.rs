@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Creates a parser based on two input parsers. It tries the first parser and falls back to the
 /// second if the first fails without consuming input.
@@ -20,7 +19,7 @@ use crate::input::core::InputToken;
 ///
 /// ```
 /// use yapcol::{option, is, end_of_input, any};
-/// use yapcol::input::core::{Input};
+/// use yapcol::Input;
 ///
 /// // parser1 succeeds: returns its result.
 /// let mut input = Input::new_from_chars("ab".chars(), None);
@@ -55,6 +54,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

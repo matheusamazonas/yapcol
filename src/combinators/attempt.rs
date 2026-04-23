@@ -1,5 +1,4 @@
-use crate::Parser;
-use crate::input::core::InputToken;
+use crate::{InputToken, Parser};
 
 /// Creates a parser that does not consume input in case the given parser fails.
 ///
@@ -28,10 +27,8 @@ use crate::input::core::InputToken;
 /// # Examples
 ///
 /// ```
-/// use yapcol::{attempt, is, end_of_input, any};
-/// use yapcol::input::core::{Input};
-/// use yapcol::input::position::Position;
-/// use yapcol::error::Error;
+/// use yapcol::{attempt, is, end_of_input, any, Input, Error};
+/// use yapcol::input::Position;
 ///
 /// // Succeeds consuming input.
 /// let mut input = Input::new_from_chars("123".chars(), None);
@@ -75,6 +72,7 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::input::Position;
 	use crate::*;
 
 	#[test]

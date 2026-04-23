@@ -6,7 +6,7 @@
 //! [`Error`].
 //!
 //! The trait is automatically implemented for any function with the signature
-//! `Fn(&mut Input<IT>) -> Result<O, Error>`, so you can use plain functions or closures as
+//! `Fn(&mut Input<IT>) -> Result<Output, Error>`, so you can use plain functions or closures as
 //! parsers without any boilerplate.
 //!
 //! # Combinators
@@ -23,12 +23,11 @@
 //!
 //! For the common case of parsing character streams, this module also provides the [`StringParser`]
 //! convenience trait, which is a specialization of [`Parser`] for char-based input. It is
-//! automatically implemented for any function `Fn(&mut StringInput) -> Result<O, Error>`.
+//! automatically implemented for any function `Fn(&mut StringInput) -> Result<Output, Error>`.
 
 use crate::combinators::*;
 use crate::error::Error;
-use crate::input::core::{Input, InputToken};
-use crate::input::string::{CharToken, StringInput};
+use crate::input::{CharToken, Input, InputToken, StringInput};
 
 /// The core trait of the `yapcol` crate, representing a parser.
 ///
@@ -37,7 +36,7 @@ use crate::input::string::{CharToken, StringInput};
 /// of type `O` or an [`Error`].
 ///
 /// This trait is automatically implemented for any function with the signature
-/// `Fn(&mut Input<I>) -> Result<O, Error>`.
+/// `Fn(&mut Input<I>) -> Result<Output, Error>`.
 ///
 /// # Type Parameters
 ///
@@ -50,10 +49,7 @@ use crate::input::string::{CharToken, StringInput};
 ///
 /// ```
 /// use std::str::Chars;
-/// use yapcol::input::core::{Input};
-/// use yapcol::input::string::StringInput;
-/// use yapcol::error::Error;
-/// use yapcol::is;
+/// use yapcol::{Input, Error, is, StringInput};
 ///
 /// fn my_uppercase_parser(input: &mut StringInput) -> Result<char, Error> {
 ///    // You can use existing parsers inside your custom parser
@@ -67,8 +63,7 @@ use crate::input::string::{CharToken, StringInput};
 /// Most of the time, you will use the built-in combinators which return `impl Parser`:
 ///
 /// ```
-/// use yapcol::input::core::Input;
-/// use yapcol::is;
+/// use yapcol::{is, Input};
 ///
 /// let mut input = Input::new_from_chars("Abc".chars(), None);
 /// let mut parser = is('A');
@@ -90,8 +85,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, satisfy, any};
-	/// use yapcol::input::core::{Input};
+	/// use yapcol::{Parser, satisfy, any, Input};
 	///
 	///
 	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None } ;
@@ -133,8 +127,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, is};
-	/// use yapcol::input::core::Input;
+	/// use yapcol::{Parser, is, Input};
 	///
 	/// // Parse 'a' twice.
 	/// let twice_parser = is('a').and_then(is);
@@ -176,8 +169,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Parser, is, any};
-	/// use yapcol::input::core::Input;
+	/// use yapcol::{Parser, is, any, Input};
 	///
 	/// // Skip 'a', then parse any character.
 	/// let parser = is('a').and(any());
@@ -203,7 +195,7 @@ where
 		}
 	}
 
-	/// A shortcut for the [`attempt::attempt`] combinator.
+	/// A shortcut for the [`attempt`] combinator.
 	fn attempt(self) -> impl Parser<IT, O>
 	where
 		Self: Sized,
@@ -211,7 +203,7 @@ where
 		move |input| attempt(&self)(input)
 	}
 
-	/// A shortcut for the [`maybe::maybe`] combinator.
+	/// A shortcut for the [`maybe`] combinator.
 	fn maybe(self) -> impl Parser<IT, Option<O>>
 	where
 		Self: Sized,
@@ -246,7 +238,7 @@ where
 /// A convenience alias for [`Parser`] specialised to character-stream input.
 ///
 /// `StringParser<O>` is equivalent to `Parser<CharToken, O>` and is automatically implemented
-/// for any function `Fn(&mut StringInput) -> Result<O, Error>`. It exists purely to reduce
+/// for any function `Fn(&mut StringInput) -> Result<Output, Error>`. It exists purely to reduce
 /// type-annotation noise when working with string-based parsers.
 pub trait StringParser<O>: Parser<CharToken, O> {}
 
@@ -255,8 +247,7 @@ impl<O, X> StringParser<O> for X where X: Fn(&mut StringInput) -> Result<O, Erro
 #[cfg(test)]
 mod tests {
 	mod map {
-		use crate::Parser;
-		use crate::input::position::Position;
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]
@@ -312,8 +303,7 @@ mod tests {
 	}
 
 	mod and_then {
-		use crate::Parser;
-		use crate::input::position::Position;
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]
@@ -363,11 +353,8 @@ mod tests {
 	}
 
 	mod and {
-		use crate::combinators::*;
-		use crate::error::Error;
-		use crate::input::core::Input;
-		use crate::input::position::Position;
-		use crate::parser::Parser;
+		use crate::input::Position;
+		use crate::*;
 
 		#[test]
 		fn empty() {
