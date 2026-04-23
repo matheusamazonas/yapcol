@@ -12,3 +12,6 @@ categories = ["parsing"]
 keywords = ["parser", "combinator", "parsec"]
 
 [dependencies]
+
+[lints.clippy]
+tabs_in_doc_comments = "allow"
