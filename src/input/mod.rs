@@ -37,7 +37,7 @@
 //! tokens, implement [`core::InputToken`] on your token type and use
 //! [`core::Input::new_from_tokens`]:
 //!
-//! ```ignore
+//! ```rust,ignore
 //! use yapcol::input::core::Input;
 //!
 //! let tokens: Vec<MyToken> = lexer.tokenize(source);
