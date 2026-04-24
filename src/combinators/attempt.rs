@@ -52,7 +52,7 @@ use crate::{InputToken, Parser};
 /// let output = attempt(&consuming_parser)(&mut input);
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 /// );
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
@@ -125,7 +125,7 @@ mod tests {
 		let output = attempt(&parser)(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		// Input should still be intact.
 		assert_eq!(any()(&mut input), Ok('j'));
@@ -142,7 +142,7 @@ mod tests {
 		let output = attempt(&consuming_parser)(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 		// Input should be rewound even though the inner parser consumed.
 		assert_eq!(any()(&mut input), Ok('h'));
@@ -163,7 +163,7 @@ mod tests {
 		let second = attempt(&parser)(&mut input);
 		assert_eq!(
 			second,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 		// Input should still have "ello".
 		assert_eq!(any()(&mut input), Ok('e'));
@@ -200,7 +200,7 @@ mod tests {
 		let output = attempt(&parser)(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		// No input was consumed thanks to `attempt`.
 		assert_eq!(any()(&mut input), Ok('h'));
@@ -265,7 +265,7 @@ mod tests {
 		// consumed, and `option`'s second operand failed.
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 		assert_eq!(any()(&mut input), Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));

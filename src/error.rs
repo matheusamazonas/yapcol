@@ -5,7 +5,30 @@
 //! cases.
 
 use crate::input::Position;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
+
+pub struct Mismatch {
+	expected: Box<dyn Display>,
+	found: Box<dyn Display>,
+}
+
+impl Mismatch {
+	pub fn new(expected: Box<dyn Display>, found: Box<dyn Display>) -> Mismatch {
+		Mismatch { expected, found }
+	}
+}
+
+impl Display for Mismatch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		write!(f, "Expected: {}, found: {}", self.expected, self.found)
+	}
+}
+
+impl Debug for Mismatch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		Display::fmt(&self, f)
+	}
+}
 
 /// The error type returned by all parsers in this crate.
 ///
@@ -26,31 +49,56 @@ use std::fmt::Display;
 /// // Fails with UnexpectedToken when the token does not match.
 /// assert_eq!(
 /// 	is('b')(&mut input),
-/// 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+/// 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1), None))
 /// );
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
 /// assert_eq!(any()(&mut input), Err(Error::EndOfInput));
 /// ```
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Debug)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
 	///
 	/// The first field is the optional source name (e.g. a file name), and the second is the
 	/// position (in the input source) where the unexpected token was found.
-	UnexpectedToken(Option<String>, Position),
+	UnexpectedToken(Option<String>, Position, Option<Mismatch>),
 	/// The input stream was exhausted before the parser could match.
 	EndOfInput,
+}
+
+impl PartialEq for Error {
+	fn eq(&self, other: &Self) -> bool {
+		match (self, other) {
+			(Error::EndOfInput, Error::EndOfInput) => true,
+			(Error::UnexpectedToken(s1, p1, e1), Error::UnexpectedToken(s2, p2, e2)) => {
+				match (e1, e2) {
+					(Some(e1), Some(e2)) => {
+						s1 == s2 && p1 == p2 && e1.to_string() == e2.to_string()
+					}
+					(None, None) => true,
+					_ => false,
+				}
+			}
+			_ => false,
+		}
+	}
 }
 
 impl Display for Error {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Error::UnexpectedToken(Some(source_name), pos) => {
+			Error::UnexpectedToken(Some(source_name), pos, None) => {
 				write!(f, "Unexpected token at {}:{}.", source_name, pos)
 			}
-			Error::UnexpectedToken(None, pos) => write!(f, "Unexpected token at {}.", pos),
+			Error::UnexpectedToken(Some(source_name), pos, Some(expectation)) => {
+				write!(
+					f,
+					"Unexpected token at {}:{}. Expected: {}, found: {}",
+					source_name, pos, expectation.expected, expectation.found
+				)
+			}
+			Error::UnexpectedToken(None, pos, _) => write!(f, "Unexpected token at {}.", pos),
 			Error::EndOfInput => write!(f, "End of input reached."),
 		}
 	}

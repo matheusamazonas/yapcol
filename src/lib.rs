@@ -61,7 +61,7 @@
 //! // Fails with UnexpectedToken when the token does not match.
 //! assert_eq!(
 //! 	is('b')(&mut input),
-//! 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+//! 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1), None))
 //! );
 //!
 //! // Consume the only token, then try to read more.
@@ -76,7 +76,7 @@
 //! use yapcol::Error;
 //! use yapcol::input::Position;
 //!
-//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12));
+//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12), None);
 //! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 //!
 //! let error = Error::EndOfInput;

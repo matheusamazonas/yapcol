@@ -135,7 +135,7 @@ mod tests {
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
 			assert_eq!(
 				output,
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
 			);
 		}
 
@@ -174,7 +174,7 @@ mod tests {
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
 			assert_eq!(
 				output,
-				Err(Error::UnexpectedToken(None, Position::new(1, 21)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 21), None))
 			);
 		}
 	}
@@ -227,7 +227,7 @@ mod tests {
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 			assert_eq!(
 				output,
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
 			);
 		}
 
@@ -266,7 +266,7 @@ mod tests {
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
 			assert_eq!(
 				output,
-				Err(Error::UnexpectedToken(None, Position::new(1, 21)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 21), None))
 			);
 		}
 	}

@@ -60,7 +60,7 @@ mod tests {
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
 		);
 	}
 
@@ -70,7 +70,7 @@ mod tests {
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 	}
 
@@ -80,7 +80,7 @@ mod tests {
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 	}
 }

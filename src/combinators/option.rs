@@ -86,7 +86,7 @@ mod tests {
 		let parse_option = option(&parser1, &parser2);
 		assert_eq!(
 			parse_option(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		assert_eq!(any()(&mut input), Ok('k')); // Ensure that the input was NOT consumed.
 	}
@@ -104,7 +104,7 @@ mod tests {
 		let output = parse_option(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 		assert_eq!(any()(&mut input), Ok('e')); // Ensure that the input was consumed.
 	}

@@ -42,7 +42,7 @@ where
 					}
 					None => {
 						let position = input_token.position();
-						Err(Error::UnexpectedToken(input.source_name(), position))
+						Err(Error::UnexpectedToken(input.source_name(), position, None))
 					}
 				}
 			}
@@ -73,7 +73,7 @@ mod tests {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		assert_eq!(
 			parser(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		assert_eq!(any()(&mut input), Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));

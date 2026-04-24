@@ -83,7 +83,7 @@ mod tests {
 		let output = not_followed_parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 6)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 6), None))
 		);
 		assert_eq!(any()(&mut input), Ok('y')); // Input was consumed while looking for the end.
 	}

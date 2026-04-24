@@ -114,7 +114,7 @@ mod tests {
 		let output = parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 4)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 4), None))
 		);
 	}
 }

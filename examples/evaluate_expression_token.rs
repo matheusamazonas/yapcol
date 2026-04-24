@@ -101,6 +101,7 @@ fn parse_operations(
 			_ => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
+				None,
 			)),
 		}
 	}

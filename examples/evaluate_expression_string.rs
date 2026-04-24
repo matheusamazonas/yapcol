@@ -27,6 +27,7 @@ fn parse_number() -> impl StringExpressionParser {
 			Err(_) => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
+				None,
 			)),
 		}
 	}

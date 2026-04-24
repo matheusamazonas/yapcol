@@ -27,7 +27,7 @@ where
 		None => Ok(()),
 		Some(t) => {
 			let position = t.position();
-			Err(Error::UnexpectedToken(input.source_name(), position))
+			Err(Error::UnexpectedToken(input.source_name(), position, None))
 		}
 	}
 }

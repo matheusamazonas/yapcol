@@ -195,7 +195,7 @@ mod tests {
 			let parser_many1 = many1(&parser);
 			assert_eq!(
 				parser_many1(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -206,7 +206,7 @@ mod tests {
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}

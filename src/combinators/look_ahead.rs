@@ -38,7 +38,7 @@ use crate::{InputToken, Parser};
 /// let output = look_ahead(&consuming_parser)(&mut input);
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 /// );
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was consumed.
 ///
@@ -94,7 +94,7 @@ mod tests {
 		let output = look_ahead(&parser)(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		// Input should still be intact.
 		assert_eq!(any()(&mut input), Ok('j'));
@@ -112,7 +112,7 @@ mod tests {
 		let output = look_ahead(&parser)(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 		);
 		// Input was consumed.
 		assert_eq!(any()(&mut input), Ok('e'));
@@ -126,7 +126,7 @@ mod tests {
 		let result = look_ahead(&parser)(&mut input);
 		assert_eq!(
 			result,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		// Input should still be intact
 		assert_eq!(is('j')(&mut input), Ok('j'));

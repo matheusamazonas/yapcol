@@ -281,7 +281,7 @@ mod tests {
 			let mut input = Input::new_from_chars("3".chars(), None);
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -295,7 +295,7 @@ mod tests {
 			let mut input = Input::new_from_chars("3".chars(), None);
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -334,7 +334,7 @@ mod tests {
 			let mut input = Input::new_from_chars("23".chars(), None);
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -345,7 +345,7 @@ mod tests {
 			let mut input = Input::new_from_chars("223".chars(), None);
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -384,7 +384,7 @@ mod tests {
 			let mut input = Input::new_from_chars("22".chars(), None);
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -395,7 +395,7 @@ mod tests {
 			let mut input = Input::new_from_chars("233".chars(), None);
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
