@@ -88,7 +88,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
 	}
 
 	#[test]
@@ -96,7 +96,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let parser = is('h').attempt();
 		let output = parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
 	}
 
 	#[test]

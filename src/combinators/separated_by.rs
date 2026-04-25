@@ -48,7 +48,7 @@ where
 			let output = vec![token];
 			separated_tail(&parser, &separator)(input, output)
 		}
-		Err(Error::EndOfInput) => Ok(vec![]),
+		Err(Error::EndOfInput(_)) => Ok(vec![]),
 		Err(_) => Ok(vec![]),
 	}
 }
@@ -115,7 +115,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,".chars(), None);
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('1')))));
 		}
 
 		#[test]
@@ -168,7 +168,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,".chars(), None);
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('1')))));
 		}
 
 		#[test]
@@ -199,7 +199,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("".chars(), None);
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('1')))));
 		}
 
 		#[test]
@@ -217,7 +217,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,".chars(), None);
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('1')))));
 		}
 
 		#[test]
@@ -270,7 +270,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,".chars(), None);
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('1')))));
 		}
 
 		#[test]

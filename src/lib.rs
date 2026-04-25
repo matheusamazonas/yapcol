@@ -72,7 +72,7 @@
 //!
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();
-//! assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+//! assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 //! ```
 //!
 //! The [`Error`] type implements [`std::fmt::Display`], so you can easily print human-readable
@@ -85,7 +85,7 @@
 //! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12), None);
 //! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 //!
-//! let error = Error::EndOfInput;
+//! let error = Error::EndOfInput(None);
 //! assert_eq!(error.to_string(), "End of input reached.");
 //! ```
 //!

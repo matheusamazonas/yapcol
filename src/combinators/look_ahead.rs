@@ -74,7 +74,10 @@ mod tests {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("".chars(), None);
 		let parse_look_ahead = look_ahead(&parser)(&mut input);
-		assert_eq!(parse_look_ahead, Err(Error::EndOfInput));
+		assert_eq!(
+			parse_look_ahead,
+			Err(Error::EndOfInput(Some(Box::new('h'))))
+		);
 	}
 
 	#[test]

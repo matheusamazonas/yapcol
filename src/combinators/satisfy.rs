@@ -46,7 +46,7 @@ where
 					}
 				}
 			}
-			None => Err(Error::EndOfInput),
+			None => Err(Error::EndOfInput(None)),
 		}
 	}
 }

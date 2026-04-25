@@ -51,7 +51,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(None)));
 	}
 
 	#[test]

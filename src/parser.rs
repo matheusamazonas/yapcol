@@ -253,7 +253,10 @@ mod tests {
 		fn empty() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]
@@ -319,7 +322,10 @@ mod tests {
 		fn empty() {
 			let double_parser = is('2').and_then(is);
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(double_parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				double_parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]
@@ -379,7 +385,10 @@ mod tests {
 		fn empty() {
 			let double_parser = is('2').and(is('3'));
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(double_parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				double_parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]

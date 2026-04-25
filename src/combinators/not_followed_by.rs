@@ -40,7 +40,7 @@ where
 				input.position(),
 				None,
 			)),
-			Err(Error::EndOfInput) => Err(Error::EndOfInput),
+			Err(Error::EndOfInput(oe)) => Err(Error::EndOfInput(oe)),
 			Err(_) => Ok(()),
 		}
 	}
@@ -57,7 +57,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
 	}
 
 	#[test]

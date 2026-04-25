@@ -3,7 +3,7 @@ use crate::input::lookahead::{LookAheadFrame, LookAheadHandler, TokenLocation};
 use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 /// Represents a single token in the input stream.
 ///
@@ -16,7 +16,7 @@ use std::fmt::Display;
 ///
 /// - `Token`: The underlying token value type.
 pub trait InputToken: Clone {
-	type Token: PartialEq + Clone + Display;
+	type Token: PartialEq + Clone + Display + Debug;
 
 	/// Returns a reference to the underlying token value.
 	fn token(&self) -> &Self::Token;

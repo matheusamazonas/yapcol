@@ -43,7 +43,7 @@ mod tests {
 	fn empty() {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let output = between(&is('('), &is('h'), &is(')'))(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('(')))));
 	}
 
 	#[test]
@@ -51,7 +51,7 @@ mod tests {
 		let mut input = Input::new_from_chars("(x)".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(output, Ok('x'));
-		assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 	}
 
 	#[test]

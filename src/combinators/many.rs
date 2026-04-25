@@ -178,14 +178,20 @@ mod tests {
 			let parser = is('h');
 			let mut input = Input::new_from_chars("".chars(), None);
 			let parser_many1 = many1(&parser);
-			assert_eq!(parser_many1(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				parser_many1(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
 		}
 
 		#[test]
 		fn empty_shortcut() {
 			let parser = is('h').many1();
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
 		}
 
 		#[test]
