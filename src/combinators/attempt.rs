@@ -28,7 +28,7 @@ use crate::{InputToken, Parser};
 ///
 /// ```
 /// use yapcol::input::Position;
-/// use yapcol::{Error, Input, any, attempt, end_of_input, is};
+/// use yapcol::{Error, Input, Mismatch, any, attempt, end_of_input, is};
 ///
 /// // Succeeds consuming input.
 /// let mut input = Input::new_from_chars("123".chars(), None);
@@ -50,9 +50,14 @@ use crate::{InputToken, Parser};
 /// 	Ok((o1, o2))
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
+/// let mismatch = Mismatch::new('1', '3');
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+/// 	Err(Error::UnexpectedToken(
+/// 		None,
+/// 		Position::new(1, 2),
+/// 		Some(mismatch)
+/// 	))
 /// );
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
@@ -123,9 +128,14 @@ mod tests {
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
+		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		// Input should still be intact.
 		assert_eq!(any()(&mut input), Ok('j'));
@@ -140,9 +150,14 @@ mod tests {
 			Ok((o1, o2))
 		};
 		let output = attempt(&consuming_parser)(&mut input);
+		let mismatch = Mismatch::new('x', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		// Input should be rewound even though the inner parser consumed.
 		assert_eq!(any()(&mut input), Ok('h'));
@@ -161,9 +176,14 @@ mod tests {
 		assert_eq!(first, Ok('h'));
 		// First attempt consumed 'h'.
 		let second = attempt(&parser)(&mut input);
+		let mismatch = Mismatch::new('h', 'e');
 		assert_eq!(
 			second,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		// Input should still have "ello".
 		assert_eq!(any()(&mut input), Ok('e'));
@@ -198,9 +218,14 @@ mod tests {
 		let parser_attempt_1 = attempt(&parser1);
 		let parser = option(&parser_attempt_1, &parser2);
 		let output = attempt(&parser)(&mut input);
+		let mismatch = Mismatch::new('l', 'h');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		// No input was consumed thanks to `attempt`.
 		assert_eq!(any()(&mut input), Ok('h'));
@@ -263,9 +288,14 @@ mod tests {
 		let output = attempt(&parser)(&mut input);
 		// The first parser failed consuming input and `attempt` was not used, so the input was
 		// consumed, and `option`'s second operand failed.
+		let mismatch = Mismatch::new('h', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));

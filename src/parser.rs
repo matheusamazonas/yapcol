@@ -279,9 +279,14 @@ mod tests {
 		fn fail_simple() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
 			let mut input = Input::new_from_chars("3".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -293,9 +298,14 @@ mod tests {
 				.map(|o| o.unwrap())
 				.map(|x| x * 7);
 			let mut input = Input::new_from_chars("3".chars(), None);
+			let mismatch = Mismatch::new('5', '3');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -332,9 +342,14 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and_then(is);
 			let mut input = Input::new_from_chars("23".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 2),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -343,9 +358,14 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and_then(is).and_then(is);
 			let mut input = Input::new_from_chars("223".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 3),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -382,9 +402,14 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and(is('3'));
 			let mut input = Input::new_from_chars("22".chars(), None);
+			let mismatch = Mismatch::new('3', '2');
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 2),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -393,9 +418,14 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and(is('3')).and(is('4'));
 			let mut input = Input::new_from_chars("233".chars(), None);
+			let mismatch = Mismatch::new('4', '3');
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 3),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}

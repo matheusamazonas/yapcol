@@ -53,15 +53,21 @@
 //!
 //! ```
 //! use yapcol::input::Position;
-//! use yapcol::{Error, Input, any, is};
+//! use yapcol::{Error, Input, Mismatch, any, is};
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
 //!
 //! // Fails with UnexpectedToken when the token does not match.
+//! let output = is('b')(&mut input);
+//! let mismatch = Mismatch::new('b', 'a');
 //! assert_eq!(
-//! 	is('b')(&mut input),
-//! 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1), None))
+//! 	output,
+//! 	Err(Error::UnexpectedToken(
+//! 		source_name,
+//! 		Position::new(1, 1),
+//! 		Some(mismatch)
+//! 	))
 //! );
 //!
 //! // Consume the only token, then try to read more.
@@ -104,6 +110,6 @@ pub mod input;
 mod parser;
 
 pub use combinators::*;
-pub use error::Error;
+pub use error::{Error, Mismatch};
 pub use input::{CharToken, Input, InputToken, StringInput};
 pub use parser::{Parser, StringParser};

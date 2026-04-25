@@ -1,4 +1,5 @@
 use expression::{Expression, Operator, evaluate};
+use std::fmt::Display;
 use std::io;
 use yapcol::input::Position;
 use yapcol::{
@@ -13,6 +14,17 @@ enum Token {
 	Operator(Operator),
 	OpenParenthesis,
 	CloseParenthesis,
+}
+
+impl Display for Token {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Token::Number(n) => write!(f, "{n}"),
+			Token::Operator(op) => write!(f, "{op}"),
+			Token::OpenParenthesis => write!(f, "("),
+			Token::CloseParenthesis => write!(f, ")"),
+		}
+	}
 }
 
 #[derive(Debug, Clone)]

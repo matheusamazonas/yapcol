@@ -13,7 +13,12 @@ pub struct Mismatch {
 }
 
 impl Mismatch {
-	pub fn new(expected: Box<dyn Display>, found: Box<dyn Display>) -> Mismatch {
+	pub fn new<T>(expected: T, found: T) -> Mismatch
+	where
+		T: Display + Clone + 'static,
+	{
+		let expected = Box::new(expected.clone());
+		let found = Box::new(found.clone());
 		Mismatch { expected, found }
 	}
 }
@@ -26,7 +31,7 @@ impl Display for Mismatch {
 
 impl Debug for Mismatch {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		Display::fmt(&self, f)
+		Display::fmt(self, f)
 	}
 }
 
@@ -40,16 +45,22 @@ impl Debug for Mismatch {
 ///
 /// ```
 /// use yapcol::input::Position;
-/// use yapcol::{Error, Input, any, is};
+/// use yapcol::{Error, Input, Mismatch, any, is};
 ///
 /// let tokens = vec!['a'];
 /// let source_name = Some(String::from("file.txt"));
 /// let mut input = Input::new_from_chars(tokens, source_name.clone());
 ///
 /// // Fails with UnexpectedToken when the token does not match.
+/// let output = is('b')(&mut input);
+/// let mismatch = Mismatch::new('b', 'a');
 /// assert_eq!(
-/// 	is('b')(&mut input),
-/// 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1), None))
+/// 	output,
+/// 	Err(Error::UnexpectedToken(
+/// 		source_name,
+/// 		Position::new(1, 1),
+/// 		Some(mismatch)
+/// 	))
 /// );
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
@@ -94,8 +105,8 @@ impl Display for Error {
 			Error::UnexpectedToken(Some(source_name), pos, Some(expectation)) => {
 				write!(
 					f,
-					"Unexpected token at {}:{}. Expected: {}, found: {}",
-					source_name, pos, expectation.expected, expectation.found
+					"Unexpected token at {source_name}:{pos}. Expected: {}, found: {}",
+					expectation.expected, expectation.found
 				)
 			}
 			Error::UnexpectedToken(None, pos, _) => write!(f, "Unexpected token at {}.", pos),

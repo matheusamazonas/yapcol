@@ -13,7 +13,7 @@ use crate::{InputToken, Parser};
 ///
 /// ```
 /// use yapcol::input::Position;
-/// use yapcol::{Error, Input, any, end_of_input, is, look_ahead};
+/// use yapcol::{Error, Input, Mismatch, any, end_of_input, is, look_ahead};
 ///
 /// // Succeeds without consuming input.
 /// let mut input = Input::new_from_chars("123".chars(), None);
@@ -36,9 +36,14 @@ use crate::{InputToken, Parser};
 /// 	Ok((o1, o2))
 /// };
 /// let output = look_ahead(&consuming_parser)(&mut input);
+/// let mismatch = Mismatch::new('1', '3');
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+/// 	Err(Error::UnexpectedToken(
+/// 		None,
+/// 		Position::new(1, 2),
+/// 		Some(mismatch)
+/// 	))
 /// );
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was consumed.
 ///
@@ -92,9 +97,14 @@ mod tests {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("j".chars(), None);
 		let output = look_ahead(&parser)(&mut input);
+		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		// Input should still be intact.
 		assert_eq!(any()(&mut input), Ok('j'));
@@ -110,9 +120,14 @@ mod tests {
 			Ok((output1, output2))
 		};
 		let output = look_ahead(&parser)(&mut input);
+		let mismatch = Mismatch::new('a', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		// Input was consumed.
 		assert_eq!(any()(&mut input), Ok('e'));
@@ -124,9 +139,14 @@ mod tests {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let result = look_ahead(&parser)(&mut input);
+		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			result,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		// Input should still be intact
 		assert_eq!(is('j')(&mut input), Ok('j'));

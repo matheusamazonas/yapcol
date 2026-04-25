@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
 	Addition,
@@ -5,6 +7,18 @@ pub enum Operator {
 	Multiplication,
 	Division,
 	Exponentiation,
+}
+
+impl Display for Operator {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Operator::Addition => write!(f, "+"),
+			Operator::Subtraction => write!(f, "-"),
+			Operator::Multiplication => write!(f, "*"),
+			Operator::Division => write!(f, "/"),
+			Operator::Exponentiation => write!(f, "^"),
+		}
+	}
 }
 
 #[derive(Debug, PartialEq, Clone)]

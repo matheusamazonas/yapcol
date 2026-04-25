@@ -84,9 +84,14 @@ mod tests {
 		let parser2 = is('j');
 		let mut input = Input::new_from_chars("kello".chars(), None);
 		let parse_option = option(&parser1, &parser2);
+		let mismatch = Mismatch::new('j', 'k');
 		assert_eq!(
 			parse_option(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('k')); // Ensure that the input was NOT consumed.
 	}
@@ -102,9 +107,14 @@ mod tests {
 		};
 		let parse_option = option(&consuming_parser, &parser2);
 		let output = parse_option(&mut input);
+		let mismatch = Mismatch::new('j', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('e')); // Ensure that the input was consumed.
 	}

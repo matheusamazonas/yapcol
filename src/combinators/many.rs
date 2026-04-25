@@ -193,9 +193,14 @@ mod tests {
 			let parser = is('h');
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
 			let parser_many1 = many1(&parser);
+			let mismatch = Mismatch::new('h', 'j');
 			assert_eq!(
 				parser_many1(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -204,9 +209,14 @@ mod tests {
 		fn no_match_shortcut() {
 			let parser = is('h').many1();
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let mismatch = Mismatch::new('h', 'j');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
