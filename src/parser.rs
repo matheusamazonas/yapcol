@@ -26,7 +26,7 @@
 //! automatically implemented for any function `Fn(&mut StringInput) -> Result<Output, Error>`.
 
 use crate::combinators::*;
-use crate::error::Error;
+use crate::error::{Error, MismatchElement};
 use crate::input::{CharToken, Input, InputToken, StringInput};
 
 /// The core trait of the `yapcol` crate, representing a parser.
@@ -73,6 +73,21 @@ pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
 	IT: InputToken,
 {
+	fn with_expectation<E>(self, expectation: E) -> impl Parser<IT, O>
+	where
+		E: MismatchElement + Clone + 'static,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(result) => Ok(result),
+			Err(Error::EndOfInput(Some(e))) => Err(Error::EndOfInput(Some(e))),
+			Err(Error::EndOfInput(None)) => {
+				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
+			}
+			Err(e) => Err(e),
+		}
+	}
+
 	/// Transforms the output of the current parser using the provided function.
 	///
 	/// # Parameters
