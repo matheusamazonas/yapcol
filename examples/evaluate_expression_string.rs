@@ -1,8 +1,8 @@
 use expression::{Expression, Operator, evaluate};
 use std::io;
 use yapcol::{
-	Error, Input, Parser, StringParser, attempt, between, chain_left, chain_right, is, many0,
-	option, satisfy,
+	Error, Input, Mismatch, Parser, StringParser, attempt, between, chain_left, chain_right, is,
+	many1, option, satisfy,
 };
 mod expression;
 
@@ -27,7 +27,7 @@ fn parse_number() -> impl StringExpressionParser {
 			Err(_) => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
-				None,
+				Some(Mismatch::with_expectation("number", digits)),
 			)),
 		}
 	}
@@ -53,7 +53,7 @@ fn parse_expression() -> impl StringExpressionParser {
 			let parse_attempt_plus = attempt(&parse_plus);
 			option(&parse_attempt_plus, &parse_minus).map(build_operation)(input)
 		};
-		chain_left(&parse_factor(), &parse_operator)(input)
+		chain_left(&parse_factor(), &parse_operator).with_expectation("expression")(input)
 	}
 }
 
@@ -65,14 +65,14 @@ fn parse_factor() -> impl StringExpressionParser {
 			let parse_attempt_multiplication = attempt(&parse_multiplication);
 			option(&parse_attempt_multiplication, &parse_division).map(build_operation)(input)
 		};
-		chain_left(&parse_exponentiation(), &parse_operator)(input)
+		chain_left(&parse_exponentiation(), &parse_operator).with_expectation("factor")(input)
 	}
 }
 
 fn parse_exponentiation() -> impl StringExpressionParser {
 	|input| {
 		let parse_operator = is('^').map(build_operation);
-		chain_right(&parse_bottom(), &parse_operator)(input)
+		chain_right(&parse_bottom(), &parse_operator).with_expectation("exponentiation")(input)
 	}
 }
 

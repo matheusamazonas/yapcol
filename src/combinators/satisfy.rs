@@ -1,4 +1,4 @@
-use crate::{Error, InputToken, Parser};
+use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Creates a parser that succeeds if the given predicate returns `Some` for the next token.
 ///
@@ -42,7 +42,12 @@ where
 					}
 					None => {
 						let position = input_token.position();
-						Err(Error::UnexpectedToken(input.source_name(), position, None))
+						let mismatch = Mismatch::without_expectation(token.to_string());
+						Err(Error::UnexpectedToken(
+							input.source_name(),
+							position,
+							Some(mismatch),
+						))
 					}
 				}
 			}
@@ -71,9 +76,14 @@ mod tests {
 		assert!(end_of_input()(&mut input).is_ok());
 		// Words fails and does not consume.
 		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mismatch = Mismatch::without_expectation('h');
 		assert_eq!(
 			parser(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));

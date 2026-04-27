@@ -74,7 +74,7 @@ fn tokenize(input: String) -> Result<Vec<SourceToken>, Error> {
 			}
 			unsupported => {
 				let position = Position::new(1, i + 1);
-				let mismatch = Mismatch::new("valid token", unsupported);
+				let mismatch = Mismatch::without_expectation(unsupported);
 				return Err(Error::UnexpectedToken(None, position, Some(mismatch)));
 			}
 		};
@@ -117,7 +117,10 @@ fn parse_operations(
 			t => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
-				Some(Mismatch::new(Box::new("operator"), Box::new(t))),
+				Some(Mismatch::with_expectation(
+					Box::new("operator"),
+					Box::new(t),
+				)),
 			)),
 		}
 	}

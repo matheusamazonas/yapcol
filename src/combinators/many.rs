@@ -199,7 +199,7 @@ mod tests {
 			let parser = is('h');
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
 			let parser_many1 = many1(&parser);
-			let mismatch = Mismatch::new('h', 'j');
+			let mismatch = Mismatch::with_expectation('h', 'j');
 			assert_eq!(
 				parser_many1(&mut input),
 				Err(Error::UnexpectedToken(
@@ -215,7 +215,7 @@ mod tests {
 		fn no_match_shortcut() {
 			let parser = is('h').many1();
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
-			let mismatch = Mismatch::new('h', 'j');
+			let mismatch = Mismatch::with_expectation('h', 'j');
 			assert_eq!(
 				parser(&mut input),
 				Err(Error::UnexpectedToken(

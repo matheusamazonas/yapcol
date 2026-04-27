@@ -58,7 +58,7 @@ mod tests {
 	fn fail_repeated() {
 		let mut input = Input::new_from_chars("(xx)".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-		let mismatch = Mismatch::new(')', 'x');
+		let mismatch = Mismatch::with_expectation(')', 'x');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -73,7 +73,7 @@ mod tests {
 	fn fail_no_middle() {
 		let mut input = Input::new_from_chars("()".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-		let mismatch = Mismatch::new('x', ')');
+		let mismatch = Mismatch::with_expectation('x', ')');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -88,7 +88,7 @@ mod tests {
 	fn fail_swap() {
 		let mut input = Input::new_from_chars(")xx(".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
-		let mismatch = Mismatch::new('(', ')');
+		let mismatch = Mismatch::with_expectation('(', ')');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(

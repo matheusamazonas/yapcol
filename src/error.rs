@@ -11,40 +11,87 @@ pub trait MismatchElement: Display + Debug {}
 
 impl<T> MismatchElement for T where T: Display + Debug {}
 
+impl PartialEq for dyn MismatchElement {
+	fn eq(&self, other: &Self) -> bool {
+		self.to_string() == other.to_string()
+	}
+}
+
 pub struct Mismatch {
-	expected: Box<dyn MismatchElement>,
+	expected: Option<Box<dyn MismatchElement>>,
 	found: Box<dyn MismatchElement>,
 }
 
 impl Mismatch {
-	pub fn new<E1, E2>(expected: E1, found: E2) -> Mismatch
+	pub fn with_expectation<E1, E2>(expected: E1, found: E2) -> Mismatch
 	where
-		E1: MismatchElement + Clone + 'static,
-		E2: MismatchElement + Clone + 'static,
+		E1: MismatchElement + 'static,
+		E2: MismatchElement + 'static,
 	{
-		let expected = Box::new(expected.clone());
-		let found = Box::new(found.clone());
-		Mismatch { expected, found }
+		let expected = Box::new(expected);
+		let found = Box::new(found);
+		Mismatch {
+			expected: Some(expected),
+			found,
+		}
 	}
 
-	pub fn same(om1: &Option<Mismatch>, om2: &Option<Mismatch>) -> bool {
-		match (om1, om2) {
-			(None, None) => true,
-			(Some(m1), Some(m2)) => m1.expected.to_string() == m2.expected.to_string(),
-			_ => false,
+	pub fn without_expectation<E>(found: E) -> Mismatch
+	where
+		E: MismatchElement + 'static,
+	{
+		let found = Box::new(found);
+		Mismatch {
+			expected: None,
+			found,
 		}
+	}
+
+	pub fn replace_expectation<E>(&mut self, expected: E)
+	where
+		E: MismatchElement + 'static,
+	{
+		self.expected.replace(Box::new(expected));
 	}
 }
 
 impl Display for Mismatch {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(f, "Expected: {}, found: {}", self.expected, self.found)
+		match self.expected {
+			Some(ref expected) => {
+				write!(f, "Expected: {}, found: {}", expected, self.found)
+			}
+			None => write!(f, "Found: {}", self.found),
+		}
+	}
+}
+
+impl PartialEq for Mismatch {
+	fn eq(&self, other: &Self) -> bool {
+		if *self.found == *other.found {
+			match self.expected {
+				Some(ref expected) => match other.expected {
+					Some(ref other_expected) => expected == other_expected,
+					None => false,
+				},
+				None => other.expected.is_none(),
+			}
+		} else {
+			false
+		}
 	}
 }
 
 impl Debug for Mismatch {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		Display::fmt(self, f)
+		match self.expected {
+			Some(ref expected) => write!(
+				f,
+				"Mismatch {{ expected: {}, found: {} }}",
+				expected, self.found
+			),
+			None => write!(f, "Mismatch {{ found: {} }}", self.found),
+		}
 	}
 }
 
@@ -66,7 +113,7 @@ impl Debug for Mismatch {
 ///
 /// // Fails with UnexpectedToken when the token does not match.
 /// let output = is('b')(&mut input);
-/// let mismatch = Mismatch::new('b', 'a');
+/// let mismatch = Mismatch::with_expectation('b', 'a');
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
@@ -80,31 +127,18 @@ impl Debug for Mismatch {
 /// is('a')(&mut input).unwrap(); // Consume the only token
 /// assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 /// ```
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
 	///
-	/// The first field is the optional source name (e.g. a file name), and the second is the
-	/// position (in the input source) where the unexpected token was found.
+	/// The first field is the optional source name (e.g., a file name). The second is the
+	/// position (in the input source) where the unexpected token was found. The third field is an
+	/// optional mismatch, detailing what was found and what was expected.
 	UnexpectedToken(Option<String>, Position, Option<Mismatch>),
 	/// The input stream was exhausted before the parser could match.
+	///
+	/// It contains an optional mismatch element, describing what was expected.
 	EndOfInput(Option<Box<dyn MismatchElement>>),
-}
-
-impl PartialEq for Error {
-	fn eq(&self, other: &Self) -> bool {
-		match (self, other) {
-			(Error::EndOfInput(om1), Error::EndOfInput(om2)) => match (om1, om2) {
-				(None, None) => true,
-				(Some(e1), Some(e2)) => e1.to_string() == e2.to_string(),
-				_ => false,
-			},
-			(Error::UnexpectedToken(s1, p1, om1), Error::UnexpectedToken(s2, p2, om2)) => {
-				s1 == s2 && p1 == p2 && Mismatch::same(om1, om2)
-			}
-			_ => false,
-		}
-	}
 }
 
 impl Display for Error {
@@ -114,24 +148,59 @@ impl Display for Error {
 				write!(f, "Unexpected token at {}:{}.", source_name, pos)
 			}
 			Error::UnexpectedToken(Some(source_name), pos, Some(mismatch)) => {
-				write!(
-					f,
-					"Unexpected token at {source_name}:{pos}. Expected: {}, found: {}",
-					mismatch.expected, mismatch.found
-				)
+				write!(f, "Unexpected token at {source_name}:{pos}. {mismatch}")
 			}
 			Error::UnexpectedToken(None, pos, None) => write!(f, "Unexpected token at {pos}."),
 			Error::UnexpectedToken(None, pos, Some(mismatch)) => {
-				write!(
-					f,
-					"Unexpected token at {pos}. Expected: {}, found: {}",
-					mismatch.expected, mismatch.found
-				)
+				write!(f, "Unexpected token at {pos}. {mismatch}")
 			}
 			Error::EndOfInput(Some(expected)) => {
 				write!(f, "End of input reached when expected {}.", expected)
 			}
 			Error::EndOfInput(None) => write!(f, "End of input reached."),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+
+	mod mismatch {
+		use crate::Mismatch;
+
+		#[test]
+		fn same_with_expectation_equal() {
+			let m1 = Mismatch::with_expectation("h", "p");
+			let m2 = Mismatch::with_expectation("h", "p");
+			assert_eq!(m1, m2);
+		}
+
+		#[test]
+		fn same_without_expectation_equal() {
+			let m1 = Mismatch::without_expectation("hello");
+			let m2 = Mismatch::without_expectation("hello");
+			assert_eq!(m1, m2);
+		}
+
+		#[test]
+		fn different_expectation_presence() {
+			let m1 = Mismatch::with_expectation("hello", "p");
+			let m2 = Mismatch::without_expectation("hello");
+			assert_ne!(m1, m2);
+		}
+
+		#[test]
+		fn different_expectation() {
+			let m1 = Mismatch::with_expectation("hello", "p");
+			let m2 = Mismatch::with_expectation("hallo", "p");
+			assert_ne!(m1, m2);
+		}
+
+		#[test]
+		fn different_found() {
+			let m1 = Mismatch::with_expectation("hello", "p");
+			let m2 = Mismatch::with_expectation("hello", "x");
+			assert_ne!(m1, m2);
 		}
 	}
 }

@@ -84,6 +84,10 @@ where
 			Err(Error::EndOfInput(None)) => {
 				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
 			}
+			Err(Error::UnexpectedToken(s, p, Some(mut mismatch))) => {
+				mismatch.replace_expectation(expectation.clone());
+				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
+			}
 			Err(e) => Err(e),
 		}
 	}
@@ -297,7 +301,7 @@ mod tests {
 		fn fail_simple() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
 			let mut input = Input::new_from_chars("3".chars(), None);
-			let mismatch = Mismatch::new('2', '3');
+			let mismatch = Mismatch::with_expectation('2', '3');
 			assert_eq!(
 				parser(&mut input),
 				Err(Error::UnexpectedToken(
@@ -316,7 +320,7 @@ mod tests {
 				.map(|o| o.unwrap())
 				.map(|x| x * 7);
 			let mut input = Input::new_from_chars("3".chars(), None);
-			let mismatch = Mismatch::new('5', '3');
+			let mismatch = Mismatch::with_expectation('5', '3');
 			assert_eq!(
 				parser(&mut input),
 				Err(Error::UnexpectedToken(
@@ -363,7 +367,7 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and_then(is);
 			let mut input = Input::new_from_chars("23".chars(), None);
-			let mismatch = Mismatch::new('2', '3');
+			let mismatch = Mismatch::with_expectation('2', '3');
 			assert_eq!(
 				double_parser(&mut input),
 				Err(Error::UnexpectedToken(
@@ -379,7 +383,7 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and_then(is).and_then(is);
 			let mut input = Input::new_from_chars("223".chars(), None);
-			let mismatch = Mismatch::new('2', '3');
+			let mismatch = Mismatch::with_expectation('2', '3');
 			assert_eq!(
 				triple_parser(&mut input),
 				Err(Error::UnexpectedToken(
@@ -426,7 +430,7 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and(is('3'));
 			let mut input = Input::new_from_chars("22".chars(), None);
-			let mismatch = Mismatch::new('3', '2');
+			let mismatch = Mismatch::with_expectation('3', '2');
 			assert_eq!(
 				double_parser(&mut input),
 				Err(Error::UnexpectedToken(
@@ -442,7 +446,7 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and(is('3')).and(is('4'));
 			let mut input = Input::new_from_chars("233".chars(), None);
-			let mismatch = Mismatch::new('4', '3');
+			let mismatch = Mismatch::with_expectation('4', '3');
 			assert_eq!(
 				triple_parser(&mut input),
 				Err(Error::UnexpectedToken(

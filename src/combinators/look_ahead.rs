@@ -36,7 +36,7 @@ use crate::{InputToken, Parser};
 /// 	Ok((o1, o2))
 /// };
 /// let output = look_ahead(&consuming_parser)(&mut input);
-/// let mismatch = Mismatch::new('1', '3');
+/// let mismatch = Mismatch::with_expectation('1', '3');
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
@@ -100,7 +100,7 @@ mod tests {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("j".chars(), None);
 		let output = look_ahead(&parser)(&mut input);
-		let mismatch = Mismatch::new('h', 'j');
+		let mismatch = Mismatch::with_expectation('h', 'j');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -123,7 +123,7 @@ mod tests {
 			Ok((output1, output2))
 		};
 		let output = look_ahead(&parser)(&mut input);
-		let mismatch = Mismatch::new('a', 'e');
+		let mismatch = Mismatch::with_expectation('a', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -142,7 +142,7 @@ mod tests {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let result = look_ahead(&parser)(&mut input);
-		let mismatch = Mismatch::new('h', 'j');
+		let mismatch = Mismatch::with_expectation('h', 'j');
 		assert_eq!(
 			result,
 			Err(Error::UnexpectedToken(
