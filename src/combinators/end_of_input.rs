@@ -1,4 +1,4 @@
-use crate::{Error, InputToken, Parser};
+use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Creates a parser that succeeds only if the input stream is empty.
 ///
@@ -25,9 +25,14 @@ where
 {
 	|input| match input.peek() {
 		None => Ok(()),
-		Some(t) => {
-			let position = t.position();
-			Err(Error::UnexpectedToken(input.source_name(), position, None))
+		Some(token) => {
+			let position = token.position();
+			let mismatch = Mismatch::new("end of input", token.token().clone().to_string());
+			Err(Error::UnexpectedToken(
+				input.source_name(),
+				position,
+				Some(mismatch),
+			))
 		}
 	}
 }

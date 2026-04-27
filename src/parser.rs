@@ -212,7 +212,7 @@ where
 	/// returns its result.
 	///
 	/// This is useful when you want to assert that a certain token or pattern is present without
-	/// caring about its value, and then continue parsing with a second parser.
+	/// caring about its value and then continue parsing with a second parser.
 	///
 	/// # Parameters
 	/// - `self`: The current parser whose output is discarded on success.
@@ -247,6 +247,33 @@ where
 		move |input| match self(input) {
 			Ok(_) => other(input),
 			Err(e) => Err(e),
+		}
+	}
+
+	/// A shortcut for the [`end_of_input`] combinator applied after this parser.
+	///
+	/// Runs this parser and then asserts that the entire input has been consumed. Fails if any
+	/// tokens remain in the input after this parser succeeds.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::{Error, Input, Parser, any};
+	///
+	/// let mut input = Input::new_from_chars("a".chars(), None);
+	/// assert!(any().exhaustive()(&mut input).is_ok());
+	///
+	/// let mut input = Input::new_from_chars("ab".chars(), None);
+	/// assert!(any().exhaustive()(&mut input).is_err()); // 'b' was not consumed.
+	/// ```
+	fn exhaustive(self) -> impl Parser<IT, O>
+	where
+		Self: Sized,
+	{
+		move |input| {
+			let output = self(input)?;
+			end_of_input()(input)?;
+			Ok(output)
 		}
 	}
 
@@ -290,7 +317,7 @@ where
 {
 }
 
-/// A convenience alias for [`Parser`] specialised to character-stream input.
+/// A convenience alias for [`Parser`] specialized to character-stream input.
 ///
 /// `StringParser<O>` is equivalent to `Parser<CharToken, O>` and is automatically implemented
 /// for any function `Fn(&mut StringInput) -> Result<Output, Error>`. It exists purely to reduce
@@ -493,6 +520,65 @@ mod tests {
 				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+	}
+
+	mod exhaustive {
+		use crate::input::Position;
+		use crate::*;
+
+		#[test]
+		fn empty() {
+			let parser = is('a').exhaustive();
+			let mut input = Input::new_from_chars("".chars(), None);
+			let expected = Box::new("a");
+			assert_eq!(parser(&mut input), Err(Error::EndOfInput(Some(expected))));
+		}
+
+		#[test]
+		fn leftover() {
+			let parser = is('a').exhaustive();
+			let mut input = Input::new_from_chars("aa".chars(), None);
+			let position = Position::new(1, 2);
+			let mismatch = Mismatch::new("end of input", "a");
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::UnexpectedToken(None, position, Some(mismatch)))
+			);
+		}
+
+		#[test]
+		fn success_simple() {
+			let parser = is('a').exhaustive();
+			let mut input = Input::new_from_chars("a".chars(), None);
+			assert_eq!(parser(&mut input), Ok('a'));
+		}
+
+		#[test]
+		fn success_separated_by_1() {
+			let is_digit = |c: &char| c.to_digit(10);
+			let parse_number = satisfy(is_digit);
+			let parse_comma = is(',');
+			let parser = separated_by1(&parse_number, &parse_comma);
+			let parser = parser.exhaustive();
+			let mut input = Input::new_from_chars("1,1,1,1,1".chars(), None);
+			assert_eq!(parser(&mut input), Ok(vec![1, 1, 1, 1, 1]));
+		}
+
+		#[test]
+		fn fail_separated_by_1() {
+			let is_digit = |c: &char| c.to_digit(10);
+			let parse_number = satisfy(is_digit);
+			let parse_comma = is(',');
+			let parser = separated_by1(&parse_number, &parse_comma);
+			let parser = parser.exhaustive();
+			let mut input = Input::new_from_chars("1,1,1,1,1#".chars(), None);
+			let position = Position::new(1, 10);
+			let mismatch = Mismatch::new("end of input", '#');
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::UnexpectedToken(None, position, Some(mismatch)))
+			);
 		}
 	}
 }
