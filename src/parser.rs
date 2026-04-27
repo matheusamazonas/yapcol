@@ -250,6 +250,33 @@ where
 		}
 	}
 
+	/// A shortcut for the [`end_of_input`] combinator applied after this parser.
+	///
+	/// Runs this parser and then asserts that the entire input has been consumed. Fails if any
+	/// tokens remain in the input after this parser succeeds.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::{Error, Input, Parser, any};
+	///
+	/// let mut input = Input::new_from_chars("a".chars(), None);
+	/// assert!(any().exhaustive()(&mut input).is_ok());
+	///
+	/// let mut input = Input::new_from_chars("ab".chars(), None);
+	/// assert!(any().exhaustive()(&mut input).is_err()); // 'b' was not consumed.
+	/// ```
+	fn exhaustive(self) -> impl Parser<IT, O>
+	where
+		Self: Sized,
+	{
+		move |input| {
+			let output = self(input)?;
+			end_of_input()(input)?;
+			Ok(output)
+		}
+	}
+
 	/// A shortcut for the [`attempt`] combinator.
 	fn attempt(self) -> impl Parser<IT, O>
 	where
