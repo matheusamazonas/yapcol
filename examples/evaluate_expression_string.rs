@@ -20,7 +20,7 @@ fn parse_digit() -> impl StringParser<char> {
 fn parse_number() -> impl StringExpressionParser {
 	|input| {
 		let parse_digit = parse_digit();
-		let digits = many0(&parse_digit)(input)?;
+		let digits = many1(&parse_digit)(input)?;
 		let digits: String = digits.iter().collect();
 		match digits.parse::<i32>() {
 			Ok(number) => Ok(Expression::Number(number)),
