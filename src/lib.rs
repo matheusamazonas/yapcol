@@ -43,43 +43,49 @@
 //! Every parser returns a `Result<Output, Error>`. When parsing fails, the `Err` variant contains
 //! one of two possible errors, defined in the [`Error`] enum:
 //!
-//! - [`Error::UnexpectedToken`]`(Option<String>, Position)`: the
+//! - [`Error::UnexpectedToken`]`(Option<String>, Position, Option<Mismatch>)`: the
 //!   parser encountered a token that did not satisfy its requirements. The first field is an
-//!   optional source name (e.g., a file name), and the second is the [`input::Position`] (line and
-//!   column) where the unexpected token was found.
+//!   optional source name (e.g., a file name). The second is the [`input::Position`] (line and
+//!   column) where the unexpected token was found. The third field is an optional [`Mismatch`]
+//!   describing what was expected versus what was found.
 //! - [`Error::EndOfInput`]: the input stream was exhausted before the parser could match.
 //!
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
 //! ```
 //! use yapcol::input::Position;
-//! use yapcol::{Error, Input, any, is};
+//! use yapcol::{Error, Input, Mismatch, any, is};
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
 //!
 //! // Fails with UnexpectedToken when the token does not match.
+//! let output = is('b')(&mut input);
+//! let mismatch = Mismatch::new('b', 'a');
 //! assert_eq!(
-//! 	is('b')(&mut input),
-//! 	Err(Error::UnexpectedToken(source_name, Position::new(1, 1)))
+//! 	output,
+//! 	Err(Error::UnexpectedToken(
+//! 		source_name,
+//! 		Position::new(1, 1),
+//! 		Some(mismatch)
+//! 	))
 //! );
 //!
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();
-//! assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+//! assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 //! ```
 //!
-//! The [`Error`] type implements [`std::fmt::Display`], so you can easily print human-readable
-//! error messages.
+//! The [`Error`] type implements [`std::fmt::Display`], so you can print human-readable error messages.
 //!
 //! ```
 //! use yapcol::Error;
 //! use yapcol::input::Position;
 //!
-//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12));
+//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12), None);
 //! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 //!
-//! let error = Error::EndOfInput;
+//! let error = Error::EndOfInput(None);
 //! assert_eq!(error.to_string(), "End of input reached.");
 //! ```
 //!
@@ -104,6 +110,6 @@ pub mod input;
 mod parser;
 
 pub use combinators::*;
-pub use error::Error;
+pub use error::{Error, Mismatch};
 pub use input::{CharToken, Input, InputToken, StringInput};
 pub use parser::{Parser, StringParser};

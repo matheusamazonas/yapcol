@@ -51,7 +51,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(None)));
 	}
 
 	#[test]
@@ -81,9 +81,14 @@ mod tests {
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
+		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 6)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 6),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('y')); // Input was consumed while looking for the end.
 	}

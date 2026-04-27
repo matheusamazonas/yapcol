@@ -95,7 +95,7 @@ mod tests {
 				if token == 'h' {
 					Ok(1)
 				} else {
-					Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+					Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 				}
 			}
 			Err(e) => Err(e),
@@ -104,7 +104,7 @@ mod tests {
 		let parser_maybe = maybe(&parser);
 		assert_eq!(
 			parser_maybe(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}

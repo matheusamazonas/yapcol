@@ -112,9 +112,14 @@ mod tests {
 		let mut input = Input::new_from_chars(tokens, None);
 		let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
 		let output = parser(&mut input);
+		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 4)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 4),
+				Some(mismatch)
+			))
 		);
 	}
 }

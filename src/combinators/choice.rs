@@ -40,6 +40,7 @@ where
 			.ok_or(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
+				None,
 			))
 	}
 }
@@ -76,7 +77,7 @@ mod tests {
 		let mut input = Input::new_from_chars("u".chars(), None);
 		assert_eq!(
 			parser_choice(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}
@@ -94,7 +95,7 @@ mod tests {
 		let output = parser_choice(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}

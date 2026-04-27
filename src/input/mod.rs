@@ -22,7 +22,7 @@
 //!
 //! ## Character-based parsing
 //!
-//! Use [`core::Input::new_from_chars`], which wraps a `char` iterator and automatically
+//! Use [`Input::new_from_chars`], which wraps a `char` iterator and automatically
 //! tracks source positions:
 //!
 //! ```
@@ -37,7 +37,7 @@
 //! tokens, implement [`InputToken`] on your token type and use [`Input::new_from_tokens`]:
 //!
 //! ```rust,ignore
-//! use yapcol::input::core::Input;
+//! use yapcol::Input;
 //!
 //! let tokens: Vec<MyToken> = lexer.tokenize(source);
 //! let mut input = Input::new_from_tokens(tokens, None);

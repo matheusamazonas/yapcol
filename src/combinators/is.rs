@@ -1,4 +1,4 @@
-use crate::{InputToken, Parser, satisfy};
+use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///
@@ -26,16 +26,29 @@ use crate::{InputToken, Parser, satisfy};
 /// ```
 pub fn is<IT>(token: IT::Token) -> impl Parser<IT, IT::Token>
 where
-	IT: InputToken,
+	IT: InputToken + 'static,
 {
-	let f = move |t: &IT::Token| {
-		if *t == token {
-			Some((*t).clone())
-		} else {
-			None
+	move |input| {
+		match input.peek() {
+			Some(input_token) => {
+				if token == *input_token.token() {
+					input.next_token(); // Consume if successful.
+					Ok(token.clone())
+				} else {
+					let position = input_token.position();
+					let expected = token.clone();
+					let found = (*input_token.token()).clone();
+					let mismatch = Mismatch::new(expected, found);
+					Err(Error::UnexpectedToken(
+						input.source_name(),
+						position,
+						Some(mismatch),
+					))
+				}
+			}
+			None => Err(Error::EndOfInput(Some(Box::new(token.clone())))),
 		}
-	};
-	satisfy(f)
+	}
 }
 
 #[cfg(test)]
@@ -55,9 +68,14 @@ mod tests {
 	fn fail() {
 		let parser = is('j');
 		let mut input = Input::new_from_chars("h".chars(), None);
+		let mismatch = Mismatch::new('j', 'h');
 		assert_eq!(
 			parser(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}

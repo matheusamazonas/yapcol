@@ -20,7 +20,7 @@ where
 {
 	|input| match input.next_token() {
 		Some(input_token) => Ok(input_token.token_owned()),
-		None => Err(Error::EndOfInput),
+		None => Err(Error::EndOfInput(None)),
 	}
 }
 
@@ -32,7 +32,7 @@ mod tests {
 	fn empty() {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let output = any()(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(None)));
 	}
 
 	#[test]

@@ -25,8 +25,9 @@
 //! convenience trait, which is a specialization of [`Parser`] for char-based input. It is
 //! automatically implemented for any function `Fn(&mut StringInput) -> Result<Output, Error>`.
 
+use crate::Mismatch;
 use crate::combinators::*;
-use crate::error::Error;
+use crate::error::{Error, MismatchElement};
 use crate::input::{CharToken, Input, InputToken, StringInput};
 
 /// The core trait of the `yapcol` crate, representing a parser.
@@ -73,6 +74,61 @@ pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
 	IT: InputToken,
 {
+	/// Overrides the expectation in the potential error returned by the current parser in the case
+	/// of failure.
+	///
+	/// When a parser fails, the error may contain information about what was expected. This method
+	/// replaces that expectation with the provided value, which is useful for producing clearer
+	/// error messages.
+	///
+	/// # Parameters
+	/// - `self`: The current parser.
+	/// - `expectation`: The value to use as the new expectation in any error produced by the
+	///   current parser.
+	///
+	/// # Returns
+	/// A new parser that behaves identically to the current one on success, but replaces the
+	/// expectation in any error with `expectation`.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Input, Parser, is};
+	///
+	/// let parser = is('A').with_expectation("uppercase A");
+	///
+	/// let mut input = Input::new_from_chars("B".chars(), None);
+	/// let error = parser(&mut input).unwrap_err();
+	/// assert!(error.to_string().contains("uppercase A"));
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, the error is returned with its expectation replaced by
+	/// `expectation`.
+	fn with_expectation<E>(self, expectation: E) -> impl Parser<IT, O>
+	where
+		E: MismatchElement + Clone + 'static,
+		Self: Sized,
+	{
+		move |input| match self(input) {
+			Ok(result) => Ok(result),
+			Err(Error::EndOfInput(Some(_))) => {
+				// Replace the expectation.
+				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
+			}
+			Err(Error::EndOfInput(None)) => {
+				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
+			}
+			Err(Error::UnexpectedToken(s, p, Some(mut mismatch))) => {
+				mismatch.replace_expectation(expectation.clone());
+				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
+			}
+			Err(Error::UnexpectedToken(s, p, None)) => {
+				let mismatch = Mismatch::without_found(expectation.clone());
+				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
+			}
+		}
+	}
+
 	/// Transforms the output of the current parser using the provided function.
 	///
 	/// # Parameters
@@ -253,7 +309,10 @@ mod tests {
 		fn empty() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]
@@ -279,9 +338,14 @@ mod tests {
 		fn fail_simple() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
 			let mut input = Input::new_from_chars("3".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -293,9 +357,14 @@ mod tests {
 				.map(|o| o.unwrap())
 				.map(|x| x * 7);
 			let mut input = Input::new_from_chars("3".chars(), None);
+			let mismatch = Mismatch::new('5', '3');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -309,7 +378,10 @@ mod tests {
 		fn empty() {
 			let double_parser = is('2').and_then(is);
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(double_parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				double_parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]
@@ -332,9 +404,14 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and_then(is);
 			let mut input = Input::new_from_chars("23".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 2),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -343,9 +420,14 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and_then(is).and_then(is);
 			let mut input = Input::new_from_chars("223".chars(), None);
+			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 3),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -359,7 +441,10 @@ mod tests {
 		fn empty() {
 			let double_parser = is('2').and(is('3'));
 			let mut input = Input::new_from_chars("".chars(), None);
-			assert_eq!(double_parser(&mut input), Err(Error::EndOfInput));
+			assert_eq!(
+				double_parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('2'))))
+			);
 		}
 
 		#[test]
@@ -382,9 +467,14 @@ mod tests {
 		fn fail_simple() {
 			let double_parser = is('2').and(is('3'));
 			let mut input = Input::new_from_chars("22".chars(), None);
+			let mismatch = Mismatch::new('3', '2');
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 2),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -393,9 +483,14 @@ mod tests {
 		fn fail_chained() {
 			let triple_parser = is('2').and(is('3')).and(is('4'));
 			let mut input = Input::new_from_chars("233".chars(), None);
+			let mismatch = Mismatch::new('4', '3');
 			assert_eq!(
 				triple_parser(&mut input),
-				Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 3),
+					Some(mismatch)
+				))
 			);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}

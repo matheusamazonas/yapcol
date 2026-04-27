@@ -139,7 +139,7 @@ mod tests {
 		fn empty() {
 			let mut input = Input::new_from_chars("".chars(), None);
 			let output = parse_evaluate_left_subtraction()(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(None)));
 		}
 
 		#[test]
@@ -186,7 +186,7 @@ mod tests {
 		fn empty() {
 			let mut input = Input::new_from_chars("".chars(), None);
 			let output = parse_evaluate_right_subtraction()(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput));
+			assert_eq!(output, Err(Error::EndOfInput(None)));
 		}
 
 		#[test]

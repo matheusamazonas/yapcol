@@ -22,7 +22,7 @@ use crate::{Error, InputToken, Parser};
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+/// 	Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 /// );
 /// ```
 pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>
@@ -38,8 +38,9 @@ where
 			Ok(_) => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
+				None,
 			)),
-			Err(Error::EndOfInput) => Err(Error::EndOfInput),
+			Err(Error::EndOfInput(oe)) => Err(Error::EndOfInput(oe)),
 			Err(_) => Ok(()),
 		}
 	}
@@ -56,7 +57,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
 	}
 
 	#[test]
@@ -67,7 +68,7 @@ mod tests {
 		let output = not_followed_parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 	}
 
@@ -95,7 +96,7 @@ mod tests {
 		let output = not_followed_parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
 		);
 	}
 }

@@ -43,7 +43,7 @@ mod tests {
 	fn empty() {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let output = between(&is('('), &is('h'), &is(')'))(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput));
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('(')))));
 	}
 
 	#[test]
@@ -51,16 +51,21 @@ mod tests {
 		let mut input = Input::new_from_chars("(x)".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(output, Ok('x'));
-		assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 	}
 
 	#[test]
 	fn fail_repeated() {
 		let mut input = Input::new_from_chars("(xx)".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
+		let mismatch = Mismatch::new(')', 'x');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 3)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 3),
+				Some(mismatch)
+			))
 		);
 	}
 
@@ -68,9 +73,14 @@ mod tests {
 	fn fail_no_middle() {
 		let mut input = Input::new_from_chars("()".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
+		let mismatch = Mismatch::new('x', ')');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 	}
 
@@ -78,9 +88,14 @@ mod tests {
 	fn fail_swap() {
 		let mut input = Input::new_from_chars(")xx(".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
+		let mismatch = Mismatch::new('(', ')');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1)))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 	}
 }
