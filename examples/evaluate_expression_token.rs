@@ -171,7 +171,7 @@ fn main() {
 				match tokenize(input.clone()) {
 					Ok(tokens) => {
 						let mut input = Input::new_from_tokens(tokens, Some("stdin".to_string()));
-						match parse_expression()(&mut input) {
+						match parse_expression().exhaustive()(&mut input) {
 							Ok(e) => println!("Success: {:?}", evaluate(e)),
 							Err(e) => println!("Failed to parse expression: {e}"),
 						}
@@ -252,6 +252,27 @@ mod tokenize_tests {
 				Token::Number(3),
 			],
 		);
+	}
+}
+
+#[cfg(test)]
+mod parsing_tests {
+	use super::*;
+
+	#[test]
+	fn exhaustive() {
+		let tokens = tokenize(String::from("12345(")).unwrap();
+		let mut input = Input::new_from_tokens(tokens, None);
+		let output = parse_expression().exhaustive()(&mut input);
+		let mismatch = Mismatch::new("end of input", "(");
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 6),
+				Some(mismatch)
+			))
+		)
 	}
 }
 
