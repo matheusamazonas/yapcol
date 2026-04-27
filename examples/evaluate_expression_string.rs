@@ -99,7 +99,7 @@ fn main() {
 			Ok(_) if input.len() == 2 && input.starts_with('q') => break,
 			Ok(_) => {
 				let mut input = Input::new_from_chars(input.chars(), Some("stdin".to_string()));
-				match parse_expression()(&mut input) {
+				match parse_expression().exhaustive()(&mut input) {
 					Ok(e) => println!("Success: {:?}", evaluate(e)),
 					Err(e) => println!("Failed to parse expression: {e}"),
 				}
@@ -113,6 +113,7 @@ fn main() {
 mod parsing_tests {
 	use super::*;
 	use yapcol::end_of_input;
+	use yapcol::input::Position;
 
 	fn build_operation(x: i32, operator: Operator, y: i32) -> Expression {
 		let operand1 = Box::new(Expression::Number(x));
@@ -314,6 +315,21 @@ mod parsing_tests {
 		);
 
 		assert_eq!(parser(&mut input), Ok(expression2));
+	}
+
+	#[test]
+	fn exhaustive() {
+		let mut input = Input::new_from_chars("12345(".chars(), None);
+		let output = parse_expression().exhaustive()(&mut input);
+		let mismatch = Mismatch::new("end of input", "(");
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 6),
+				Some(mismatch)
+			))
+		)
 	}
 }
 
