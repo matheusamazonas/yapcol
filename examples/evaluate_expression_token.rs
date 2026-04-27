@@ -108,10 +108,10 @@ fn parse_operations(
 	operator2: Operator,
 ) -> impl Parser<SourceToken, Box<dyn Fn(Expression, Expression) -> Expression>> {
 	move |input| {
-		let parse_multiplication = is(Token::Operator(operator1.clone()));
-		let parse_division = is(Token::Operator(operator2.clone()));
-		let parse_attempt_multiplication = attempt(&parse_multiplication);
-		let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
+		let parse_op1 = is(Token::Operator(operator1.clone()));
+		let parse_op2 = is(Token::Operator(operator2.clone()));
+		let parse_attempt_op1 = attempt(&parse_op1);
+		let operator = option(&parse_attempt_op1, &parse_op2)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
 			t => Err(Error::UnexpectedToken(
