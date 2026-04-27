@@ -7,6 +7,9 @@
 use crate::input::Position;
 use std::fmt::{Debug, Display};
 
+/// A trait for types that can be used as elements in a [`Mismatch`].
+///
+/// Any type that implements both [`Display`] and [`Debug`] automatically implements this trait.
 pub trait MismatchElement: Display + Debug {}
 
 impl<T> MismatchElement for T where T: Display + Debug {}
@@ -17,6 +20,12 @@ impl PartialEq for dyn MismatchElement {
 	}
 }
 
+/// Describes a mismatch between what was expected and what was found during parsing.
+///
+/// A `Mismatch` is carried by [`Error::UnexpectedToken`] and [`Error::EndOfInput`] to provide
+/// human-readable context about why a parser failed. Both the `expected` and `found` fields are
+/// optional: use [`Mismatch::new`] when both are known, [`Mismatch::without_found`] when only the
+/// expectation is known, and [`Mismatch::without_expectation`] when only the found value is known.
 #[derive(PartialEq, Debug)]
 pub struct Mismatch {
 	expected: Option<Box<dyn MismatchElement>>,
@@ -24,6 +33,7 @@ pub struct Mismatch {
 }
 
 impl Mismatch {
+	/// Creates a `Mismatch` with both an expected value and a found value.
 	pub fn new<E1, E2>(expected: E1, found: E2) -> Mismatch
 	where
 		E1: MismatchElement + 'static,
@@ -37,6 +47,7 @@ impl Mismatch {
 		}
 	}
 
+	/// Creates a `Mismatch` with only an expected value, when no token was found (e.g., end of input).
 	pub fn without_found<E>(expected: E) -> Mismatch
 	where
 		E: MismatchElement + 'static,
@@ -48,6 +59,7 @@ impl Mismatch {
 		}
 	}
 
+	/// Creates a `Mismatch` with only a found value, when no expectation is available.
 	pub fn without_expectation<E>(found: E) -> Mismatch
 	where
 		E: MismatchElement + 'static,
@@ -59,6 +71,7 @@ impl Mismatch {
 		}
 	}
 
+	/// Replaces the expected value of this `Mismatch`, overwriting any previously set expectation.
 	pub fn replace_expectation<E>(&mut self, expected: E)
 	where
 		E: MismatchElement + 'static,

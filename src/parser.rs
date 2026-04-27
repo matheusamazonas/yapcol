@@ -74,6 +74,36 @@ pub trait Parser<IT, O>: Fn(&mut Input<IT>) -> Result<O, Error>
 where
 	IT: InputToken,
 {
+	/// Overrides the expectation in the potential error returned by the current parser in the case
+	/// of failure.
+	///
+	/// When a parser fails, the error may contain information about what was expected. This method
+	/// replaces that expectation with the provided value, which is useful for producing clearer
+	/// error messages.
+	///
+	/// # Parameters
+	/// - `self`: The current parser.
+	/// - `expectation`: The value to use as the new expectation in any error produced by the
+	///   current parser.
+	///
+	/// # Returns
+	/// A new parser that behaves identically to the current one on success, but replaces the
+	/// expectation in any error with `expectation`.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Input, Parser, is};
+	///
+	/// let parser = is('A').with_expectation("uppercase A");
+	///
+	/// let mut input = Input::new_from_chars("B".chars(), None);
+	/// let error = parser(&mut input).unwrap_err();
+	/// assert!(error.to_string().contains("uppercase A"));
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, the error is returned with its expectation replaced by
+	/// `expectation`.
 	fn with_expectation<E>(self, expectation: E) -> impl Parser<IT, O>
 	where
 		E: MismatchElement + Clone + 'static,

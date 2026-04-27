@@ -16,6 +16,7 @@ use std::fmt::{Debug, Display};
 ///
 /// - `Token`: The underlying token value type.
 pub trait InputToken: Clone {
+	/// The underlying token, without any extra parsing-related data.
 	type Token: PartialEq + Clone + Display + Debug;
 
 	/// Returns a reference to the underlying token value.
