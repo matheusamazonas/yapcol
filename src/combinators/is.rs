@@ -38,7 +38,7 @@ where
 					let position = input_token.position();
 					let expected = token.clone();
 					let found = (*input_token.token()).clone();
-					let mismatch = Mismatch::with_expectation(expected, found);
+					let mismatch = Mismatch::new(expected, found);
 					Err(Error::UnexpectedToken(
 						input.source_name(),
 						position,
@@ -68,7 +68,7 @@ mod tests {
 	fn fail() {
 		let parser = is('j');
 		let mut input = Input::new_from_chars("h".chars(), None);
-		let mismatch = Mismatch::with_expectation('j', 'h');
+		let mismatch = Mismatch::new('j', 'h');
 		assert_eq!(
 			parser(&mut input),
 			Err(Error::UnexpectedToken(

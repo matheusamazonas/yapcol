@@ -60,7 +60,7 @@
 //!
 //! // Fails with UnexpectedToken when the token does not match.
 //! let output = is('b')(&mut input);
-//! let mismatch = Mismatch::with_expectation('b', 'a');
+//! let mismatch = Mismatch::new('b', 'a');
 //! assert_eq!(
 //! 	output,
 //! 	Err(Error::UnexpectedToken(

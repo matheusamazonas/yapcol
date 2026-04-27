@@ -81,7 +81,7 @@ mod tests {
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
-		let mismatch = Mismatch::with_expectation('x', 'y');
+		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(

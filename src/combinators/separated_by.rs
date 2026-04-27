@@ -133,7 +133,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,2".chars(), None);
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
-			let mismatch = Mismatch::with_expectation('1', '2');
+			let mismatch = Mismatch::new('1', '2');
 			assert_eq!(
 				output,
 				Err(Error::UnexpectedToken(
@@ -177,7 +177,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,2".chars(), None);
 			let output = separated_by0(&parse_item, &parse_separator)(&mut input);
-			let mismatch = Mismatch::with_expectation('1', '2');
+			let mismatch = Mismatch::new('1', '2');
 			assert_eq!(
 				output,
 				Err(Error::UnexpectedToken(
@@ -235,7 +235,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,2".chars(), None);
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-			let mismatch = Mismatch::with_expectation('1', '2');
+			let mismatch = Mismatch::new('1', '2');
 			assert_eq!(
 				output,
 				Err(Error::UnexpectedToken(
@@ -279,7 +279,7 @@ mod tests {
 			let parse_separator = is(',');
 			let mut input = Input::new_from_chars("1,1,1,1,1,1,1,1,1,1,2".chars(), None);
 			let output = separated_by1(&parse_item, &parse_separator)(&mut input);
-			let mismatch = Mismatch::with_expectation('1', '2');
+			let mismatch = Mismatch::new('1', '2');
 			assert_eq!(
 				output,
 				Err(Error::UnexpectedToken(

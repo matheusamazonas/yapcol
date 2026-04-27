@@ -50,7 +50,7 @@ use crate::{InputToken, Parser};
 /// 	Ok((o1, o2))
 /// };
 /// let output = attempt(&consuming_parser)(&mut input);
-/// let mismatch = Mismatch::with_expectation('1', '3');
+/// let mismatch = Mismatch::new('1', '3');
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
@@ -128,7 +128,7 @@ mod tests {
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
-		let mismatch = Mismatch::with_expectation('h', 'j');
+		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -150,7 +150,7 @@ mod tests {
 			Ok((o1, o2))
 		};
 		let output = attempt(&consuming_parser)(&mut input);
-		let mismatch = Mismatch::with_expectation('x', 'e');
+		let mismatch = Mismatch::new('x', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -176,7 +176,7 @@ mod tests {
 		assert_eq!(first, Ok('h'));
 		// First attempt consumed 'h'.
 		let second = attempt(&parser)(&mut input);
-		let mismatch = Mismatch::with_expectation('h', 'e');
+		let mismatch = Mismatch::new('h', 'e');
 		assert_eq!(
 			second,
 			Err(Error::UnexpectedToken(
@@ -218,7 +218,7 @@ mod tests {
 		let parser_attempt_1 = attempt(&parser1);
 		let parser = option(&parser_attempt_1, &parser2);
 		let output = attempt(&parser)(&mut input);
-		let mismatch = Mismatch::with_expectation('l', 'h');
+		let mismatch = Mismatch::new('l', 'h');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -288,7 +288,7 @@ mod tests {
 		let output = attempt(&parser)(&mut input);
 		// The first parser failed while consuming input and `attempt` was not used, so the input
 		// was consumed, and `option`'s second operand failed.
-		let mismatch = Mismatch::with_expectation('h', 'e');
+		let mismatch = Mismatch::new('h', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(

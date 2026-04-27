@@ -117,10 +117,7 @@ fn parse_operations(
 			t => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
-				Some(Mismatch::with_expectation(
-					Box::new("operator"),
-					Box::new(t),
-				)),
+				Some(Mismatch::new(Box::new("operator"), Box::new(t))),
 			)),
 		}
 	}

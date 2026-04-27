@@ -17,13 +17,14 @@ impl PartialEq for dyn MismatchElement {
 	}
 }
 
+#[derive(PartialEq, Debug)]
 pub struct Mismatch {
 	expected: Option<Box<dyn MismatchElement>>,
-	found: Box<dyn MismatchElement>,
+	found: Option<Box<dyn MismatchElement>>,
 }
 
 impl Mismatch {
-	pub fn with_expectation<E1, E2>(expected: E1, found: E2) -> Mismatch
+	pub fn new<E1, E2>(expected: E1, found: E2) -> Mismatch
 	where
 		E1: MismatchElement + 'static,
 		E2: MismatchElement + 'static,
@@ -32,7 +33,18 @@ impl Mismatch {
 		let found = Box::new(found);
 		Mismatch {
 			expected: Some(expected),
-			found,
+			found: Some(found),
+		}
+	}
+
+	pub fn without_found<E>(expected: E) -> Mismatch
+	where
+		E: MismatchElement + 'static,
+	{
+		let expected = Box::new(expected);
+		Mismatch {
+			expected: Some(expected),
+			found: None,
 		}
 	}
 
@@ -43,7 +55,7 @@ impl Mismatch {
 		let found = Box::new(found);
 		Mismatch {
 			expected: None,
-			found,
+			found: Some(found),
 		}
 	}
 
@@ -58,39 +70,14 @@ impl Mismatch {
 impl Display for Mismatch {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self.expected {
-			Some(ref expected) => {
-				write!(f, "Expected: {}, found: {}", expected, self.found)
-			}
-			None => write!(f, "Found: {}", self.found),
-		}
-	}
-}
-
-impl PartialEq for Mismatch {
-	fn eq(&self, other: &Self) -> bool {
-		if *self.found == *other.found {
-			match self.expected {
-				Some(ref expected) => match other.expected {
-					Some(ref other_expected) => expected == other_expected,
-					None => false,
-				},
-				None => other.expected.is_none(),
-			}
-		} else {
-			false
-		}
-	}
-}
-
-impl Debug for Mismatch {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.expected {
-			Some(ref expected) => write!(
-				f,
-				"Mismatch {{ expected: {}, found: {} }}",
-				expected, self.found
-			),
-			None => write!(f, "Mismatch {{ found: {} }}", self.found),
+			Some(ref expected) => match self.found {
+				Some(ref found) => write!(f, "Expected: {expected}, found: {found}"),
+				None => write!(f, "Expected: {expected}"),
+			},
+			None => match self.found {
+				Some(ref found) => write!(f, "Found: {found}"),
+				None => panic!("Invalid error mismatch."),
+			},
 		}
 	}
 }
@@ -113,7 +100,7 @@ impl Debug for Mismatch {
 ///
 /// // Fails with UnexpectedToken when the token does not match.
 /// let output = is('b')(&mut input);
-/// let mismatch = Mismatch::with_expectation('b', 'a');
+/// let mismatch = Mismatch::new('b', 'a');
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
@@ -170,8 +157,8 @@ mod tests {
 
 		#[test]
 		fn same_with_expectation_equal() {
-			let m1 = Mismatch::with_expectation("h", "p");
-			let m2 = Mismatch::with_expectation("h", "p");
+			let m1 = Mismatch::new("h", "p");
+			let m2 = Mismatch::new("h", "p");
 			assert_eq!(m1, m2);
 		}
 
@@ -184,22 +171,22 @@ mod tests {
 
 		#[test]
 		fn different_expectation_presence() {
-			let m1 = Mismatch::with_expectation("hello", "p");
+			let m1 = Mismatch::new("hello", "p");
 			let m2 = Mismatch::without_expectation("hello");
 			assert_ne!(m1, m2);
 		}
 
 		#[test]
 		fn different_expectation() {
-			let m1 = Mismatch::with_expectation("hello", "p");
-			let m2 = Mismatch::with_expectation("hallo", "p");
+			let m1 = Mismatch::new("hello", "p");
+			let m2 = Mismatch::new("hallo", "p");
 			assert_ne!(m1, m2);
 		}
 
 		#[test]
 		fn different_found() {
-			let m1 = Mismatch::with_expectation("hello", "p");
-			let m2 = Mismatch::with_expectation("hello", "x");
+			let m1 = Mismatch::new("hello", "p");
+			let m2 = Mismatch::new("hello", "x");
 			assert_ne!(m1, m2);
 		}
 	}

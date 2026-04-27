@@ -27,7 +27,7 @@ fn parse_number() -> impl StringExpressionParser {
 			Err(_) => Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
-				Some(Mismatch::with_expectation("number", digits)),
+				Some(Mismatch::new("number", digits)),
 			)),
 		}
 	}
