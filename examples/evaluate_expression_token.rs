@@ -78,7 +78,7 @@ fn tokenize(input: String) -> Result<Vec<SourceToken>, Error> {
 				return Err(Error::UnexpectedToken(None, position, Some(mismatch)));
 			}
 		};
-		let position = Position::new(1, i);
+		let position = Position::new(1, i + 1);
 		i += 1;
 		tokens.push(SourceToken { token, position });
 	}
