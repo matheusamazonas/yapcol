@@ -47,9 +47,24 @@ mod tests {
 	}
 
 	#[test]
+	fn empty_shortcut() {
+		let mut input = Input::new_from_chars("".chars(), None);
+		let output = is('h').between(&is('('), &is(')'))(&mut input);
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('(')))));
+	}
+
+	#[test]
 	fn success() {
 		let mut input = Input::new_from_chars("(x)".chars(), None);
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
+		assert_eq!(output, Ok('x'));
+		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+	}
+
+	#[test]
+	fn success_shortcut() {
+		let mut input = Input::new_from_chars("(x)".chars(), None);
+		let output = is('x').between(&is('('), &is(')'))(&mut input);
 		assert_eq!(output, Ok('x'));
 		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 	}

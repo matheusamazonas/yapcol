@@ -308,6 +308,24 @@ where
 	{
 		move |input| many1(&self)(input)
 	}
+
+	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
+	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
+	where
+		PO: Parser<IT, OO>,
+		PC: Parser<IT, OC>,
+		Self: Sized,
+	{
+		move |input| between(open, &self, close)(input)
+	}
+
+	/// A shortcut for the [`count`] combinator.
+	fn count(self, c: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| count(&self, c)(input)
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X

@@ -66,10 +66,26 @@ mod tests {
 	}
 
 	#[test]
+	fn count_zero_empty_shortcut() {
+		let parser = is('h').count(0);
+		let mut input = Input::new_from_chars("".chars(), None);
+		let output = parser(&mut input);
+		assert_eq!(output, Ok(vec![]));
+	}
+
+	#[test]
 	fn count_0_not_empty() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let parser = count(&parser, 0);
+		let output = parser(&mut input);
+		assert_eq!(output, Ok(vec![]));
+	}
+
+	#[test]
+	fn count_0_not_empty_shortcut() {
+		let parser = is('h').count(0);
+		let mut input = Input::new_from_chars("jello".chars(), None);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
 	}
@@ -110,7 +126,26 @@ mod tests {
 		tokens.push('x');
 		tokens.push('y');
 		let mut input = Input::new_from_chars(tokens, None);
-		let parser = count(&parser, 4); // The 4th element is "other", so this should fail.
+		let parser = count(&parser, 4); // The 4th element is "x", so this should fail.
+		let output = parser(&mut input);
+		let mismatch = Mismatch::new('h', 'x');
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 4),
+				Some(mismatch)
+			))
+		);
+	}
+
+	#[test]
+	fn count_not_enough_shortcut() {
+		let parser = is('h').count(4);
+		let mut tokens: Vec<_> = std::iter::repeat_n('h', 3).collect();
+		tokens.push('x');
+		tokens.push('y');
+		let mut input = Input::new_from_chars(tokens, None);
 		let output = parser(&mut input);
 		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
