@@ -43,7 +43,7 @@ cargo add yapcol
 The most convenient approach to YAPCoL is to use the built-in combinators to create your parsers:
 
 ```rust
-use yapcol::input::core::Input;
+use yapcol::{Input, Parser};
 use yapcol::{is, many0};
 
 let mut input = Input::new_from_chars("aaab".chars(), None);
@@ -52,6 +52,12 @@ let mut input = Input::new_from_chars("aaab".chars(), None);
 let is_a = is('a');
 let parser = many0(&is_a);
 
+let result = parser(&mut input);
+assert_eq!(result, Ok(vec!['a', 'a', 'a']));
+
+// Shortcuts methods are available for some combinators:
+let mut input = Input::new_from_chars("aaab".chars(), None);
+let parser = is('a').many0();
 let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 ```
@@ -65,9 +71,8 @@ Fn(&mut Input<IT>) -> Result<O, Error>
 ```
 For example:
 ```rust
-use yapcol::input::string::StringInput;
-use yapcol::error::Error;
 use yapcol::is;
+use yapcol::{Error, Input, StringInput};
 
 fn my_custom_parser(input: &mut StringInput) -> Result<String, Error> {
 	let a = is('a')(input)?;
@@ -75,7 +80,7 @@ fn my_custom_parser(input: &mut StringInput) -> Result<String, Error> {
 	Ok(format!("{}{}", a, b))
 }
 
-let mut input = StringInput::new_from_chars("ab".chars(), None);
+let mut input = Input::new_from_chars("ab".chars(), None);
 assert_eq!(my_custom_parser(&mut input), Ok("ab".to_string()));
 ```
 
@@ -91,33 +96,57 @@ defined in the `yapcol::error::Error` enum:
 
 The code below showcases both error variants in a simple character-based parsing example:
 ```rust
-use yapcol::{is, any};
-use yapcol::error::Error;
-use yapcol::input::core::Input;
-use yapcol::input::position::Position;
+use yapcol::input::Position;
+use yapcol::{Error, Input, Mismatch, any, is};
 
 let source_name = Some(String::from("file.txt"));
 let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
+let parser = is('b');
+let output = parser(&mut input);
 
 // Fails with UnexpectedToken when the token does not match.
-assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken(source_name, Position::new(1, 1))));
+let position = Position::new(1, 1); // The position of the error on the input.
+let mismatch = Mismatch::new('b', 'a'); // The mismatch (expected, found).
+assert_eq!(
+	output,
+	Err(Error::UnexpectedToken(
+		source_name,
+		position,
+		Some(mismatch)
+	))
+);
 
 // Consume the only token, then try to read more.
 is('a')(&mut input).unwrap();
-assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 ```
 
-The `Error` type implements `Display`, so you can easily print human-readable error messages:
+The `Error` type implements `Display`, so you can print human-readable error messages:
 
 ```rust
-use yapcol::error::Error;
-use yapcol::input::position::Position;
+use yapcol::input::Position;
+use yapcol::{Error, Mismatch};
 
-let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12));
+let source = "file.txt".to_string();
+let position = Position::new(3, 12); // The position of the error on the input.
+let mismatch = Mismatch::new("expression", "operator"); // The mismatch (expected, found).
+let error = Error::UnexpectedToken(Some(source), position, Some(mismatch));
+assert_eq!(
+	error.to_string(),
+	"Unexpected token at file.txt:3:12. Expected: expression, found: operator"
+);
+
+// With no mismatch data
+let source = "file.txt".to_string();
+let error = Error::UnexpectedToken(Some(source), position, None);
 assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 
-let error = Error::EndOfInput;
-assert_eq!(error.to_string(), "End of input reached.");
+let expected = Box::new("expression");
+let error = Error::EndOfInput(Some(expected));
+assert_eq!(
+	error.to_string(),
+	"End of input reached when expected expression."
+);
 ```
 
 ## Examples
