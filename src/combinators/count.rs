@@ -11,6 +11,10 @@ use crate::{InputToken, Parser};
 /// - `parser`: The parser to apply repeatedly.
 /// - `count`: The exact number of times to apply the parser.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::count`].
+///
 /// # Examples
 ///
 /// ```

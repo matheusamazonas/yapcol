@@ -24,6 +24,10 @@ use crate::{InputToken, Parser};
 ///
 /// - `parser`: The parser to attempt.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::attempt`].
+///
 /// # Examples
 ///
 /// ```

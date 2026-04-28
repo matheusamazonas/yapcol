@@ -7,6 +7,10 @@ use crate::{Error, Input, InputToken, Parser};
 ///
 /// - `parser`: The parser to possibly be applied many times.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many0`].
+///
 /// # Examples
 ///
 /// ```
@@ -42,6 +46,10 @@ where
 /// # Arguments
 ///
 /// - `parser`: The parser to be applied many times.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many1`].
 ///
 /// # Examples
 ///

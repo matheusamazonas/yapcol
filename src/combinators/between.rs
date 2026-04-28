@@ -8,6 +8,10 @@ use crate::{InputToken, Parser};
 /// - `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
 /// - `close`: The parser that "closes" the between.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::between`].
+///
 /// # Examples
 ///
 /// ```

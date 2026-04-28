@@ -10,6 +10,10 @@ use crate::{InputToken, Parser};
 ///
 /// - `parser`: The parser to make optional.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::maybe`].
+///
 /// # Examples
 ///
 /// ```
