@@ -198,13 +198,13 @@ mod tests {
 	}
 
 	#[test]
-	fn attempt_with_option_succeeds_consuming() {
+	fn option_with_attempt_succeeds_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
-		let parser1 = is('h');
-		let parser2 = is('e');
-		let parser_attempt = attempt(&parser1);
-		let parser = option(&parser_attempt, &parser2);
-		let output = attempt(&parser)(&mut input);
+		let parser_h = is('h');
+		let parser_e = is('e');
+		let parser_attempt_h = attempt(&parser_h);
+		let parser = option(&parser_attempt_h, &parser_e);
+		let output = parser(&mut input);
 		// Input was consumed because the first argument of `option` succeeded.
 		assert_eq!(output, Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));
@@ -215,13 +215,13 @@ mod tests {
 	}
 
 	#[test]
-	fn attempt_with_option_fails_not_consuming() {
+	fn option_with_attempt_fails_not_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
-		let parser1 = is('e');
-		let parser2 = is('l');
-		let parser_attempt_1 = attempt(&parser1);
-		let parser = option(&parser_attempt_1, &parser2);
-		let output = attempt(&parser)(&mut input);
+		let parser_e = is('e');
+		let parser_l = is('l');
+		let parser_attempt_e = attempt(&parser_e);
+		let parser = option(&parser_attempt_e, &parser_l);
+		let output = parser(&mut input);
 		let mismatch = Mismatch::new('l', 'h');
 		assert_eq!(
 			output,
@@ -241,25 +241,25 @@ mod tests {
 	}
 
 	#[test]
-	fn attempt_with_option_on_consuming_parser_succeeds_consuming() {
+	fn option_with_attempt_on_consuming_parser_succeeds_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		// Create two parsers that share a prefix.
-		let parser1 = is('h');
-		let parser2 = is('e');
-		let parser3 = is('l');
-		let parser13 = |input: &mut Input<_>| {
-			let o1 = parser1(input)?;
-			let o2 = parser3(input)?;
+		let parser_h = is('h');
+		let parser_e = is('e');
+		let parser_l = is('l');
+		let parser_hl = |input: &mut Input<_>| {
+			let o1 = parser_h(input)?;
+			let o2 = parser_l(input)?;
 			Ok((o1, o2))
 		};
-		let parser12 = |input: &mut Input<_>| {
-			let o1 = parser1(input)?;
-			let o2 = parser2(input)?;
+		let parser_he = |input: &mut Input<_>| {
+			let o1 = parser_h(input)?;
+			let o2 = parser_e(input)?;
 			Ok((o1, o2))
 		};
 		// Use `option` while the first uses `attempt`.
-		let parser_attempt_1 = attempt(&parser13);
-		let parser = option(&parser_attempt_1, &parser12);
+		let parser_attempt_hl = attempt(&parser_hl);
+		let parser = option(&parser_attempt_hl, &parser_he);
 		let output = parser(&mut input);
 		// Even though the first parser failed consuming input, `option` succeeded because `attempt`
 		// implements arbitrary lookahead and conserved input.
@@ -271,24 +271,24 @@ mod tests {
 	}
 
 	#[test]
-	fn attempt_without_option_on_consuming_parser_fails_not_consuming() {
+	fn option_without_attempt_on_consuming_parser_fails_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		// Create two parsers that share a prefix.
-		let parser1 = is('h');
-		let parser2 = is('e');
-		let parser3 = is('l');
-		let parser13 = |input: &mut Input<_>| {
-			let o1 = parser1(input)?;
-			let o2 = parser3(input)?;
+		let parser_h = is('h');
+		let parser_e = is('e');
+		let parser_l = is('l');
+		let parser_hl = |input: &mut Input<_>| {
+			let o1 = parser_h(input)?;
+			let o2 = parser_l(input)?;
 			Ok((o1, o2))
 		};
-		let parser12 = |input: &mut Input<_>| {
-			let o1 = parser1(input)?;
-			let o2 = parser2(input)?;
+		let parser_he = |input: &mut Input<_>| {
+			let o1 = parser_h(input)?;
+			let o2 = parser_e(input)?;
 			Ok((o1, o2))
 		};
 		// Use `option` while the first does NOT use `attempt`.
-		let parser = option(&parser13, &parser12);
+		let parser = option(&parser_hl, &parser_he);
 		let output = attempt(&parser)(&mut input);
 		// The first parser failed while consuming input and `attempt` was not used, so the input
 		// was consumed, and `option`'s second operand failed.
