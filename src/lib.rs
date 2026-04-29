@@ -43,18 +43,17 @@
 //! Every parser returns a `Result<Output, Error>`. When parsing fails, the `Err` variant contains
 //! one of two possible errors, defined in the [`Error`] enum:
 //!
-//! - [`Error::UnexpectedToken`]`(Option<String>, Position, Option<Mismatch>)`: the
-//!   parser encountered a token that did not satisfy its requirements. The first field is an
-//!   optional source name (e.g., a file name). The second is the [`input::Position`] (line and
-//!   column) where the unexpected token was found. The third field is an optional [`Mismatch`]
-//!   describing what was expected versus what was found.
+//! - [`Error::UnexpectedToken`]: the parser encountered a token that did not satisfy its
+//!   requirements.
 //! - [`Error::EndOfInput`]: the input stream was exhausted before the parser could match.
+//! - [`Error::NonConsumingLoop`]: a repetition parser detected that the inner parser succeeded
+//!   without consuming any input, which would cause an infinite loop.
 //!
 //! The code below showcases both error variants in a simple character-based parsing example:
 //!
 //! ```
 //! use yapcol::input::Position;
-//! use yapcol::{Error, Input, Mismatch, any, is};
+//! use yapcol::{Error, Input, Mismatch, any, is, many0, success};
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
@@ -74,9 +73,19 @@
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();
 //! assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+//!
+//! // The `success` combinator always succeeds without consuming any input, so `many0` detects the
+//! // loop.
+//! let parser = success(());
+//! let mut input = Input::new_from_chars("abc".chars(), None);
+//! assert_eq!(
+//! 	many0(&parser)(&mut input),
+//! 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+//! );
 //! ```
 //!
-//! The [`Error`] type implements [`std::fmt::Display`], so you can print human-readable error messages.
+//! The [`Error`] type implements [`std::fmt::Display`], so you can print human-readable error
+//! messages.
 //!
 //! ```
 //! use yapcol::Error;
@@ -87,6 +96,12 @@
 //!
 //! let error = Error::EndOfInput(None);
 //! assert_eq!(error.to_string(), "End of input reached.");
+//!
+//! let error = Error::NonConsumingLoop(Some("file.txt".to_string()), Position::new(3, 12));
+//! assert_eq!(
+//! 	error.to_string(),
+//! 	"Non-consuming parser loop at file.txt:3:12."
+//! );
 //! ```
 //!
 //! # Examples
