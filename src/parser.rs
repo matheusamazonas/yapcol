@@ -126,6 +126,7 @@ where
 				let mismatch = Mismatch::without_found(expectation.clone());
 				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
 			}
+			Err(error) => Err(error),
 		}
 	}
 

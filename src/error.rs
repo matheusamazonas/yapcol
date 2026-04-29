@@ -139,6 +139,33 @@ pub enum Error {
 	///
 	/// It contains an optional mismatch element, describing what was expected.
 	EndOfInput(Option<Box<dyn MismatchElement>>),
+	/// A repetition parser (e.g., [`crate::many0`], [`crate::many1`] or [`crate::many_until`])
+	/// detected that the inner parser succeeded without consuming any input, which would cause an
+	/// infinite loop.
+	///
+	/// The first field is the optional source name (e.g., a file name). The second field is the
+	/// position in the input where the loop was detected.
+	///
+	/// A parser is said to be *non-consuming* when it matches successfully without advancing the
+	/// input position. When such a parser is used inside a repetition combinator, every iteration
+	/// would succeed indefinitely without making progress, so the combinator returns this error
+	/// instead of looping forever.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::input::Position;
+	/// use yapcol::{Error, Input, many0, success};
+	///
+	/// // `success` always succeeds without consuming any input, so `many0` detects the loop.
+	/// let parser = success(());
+	/// let mut input = Input::new_from_chars("abc".chars(), None);
+	/// assert_eq!(
+	/// 	many0(&parser)(&mut input),
+	/// 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+	/// );
+	/// ```
+	NonConsumingLoop(Option<String>, Position),
 }
 
 impl Display for Error {
@@ -158,6 +185,10 @@ impl Display for Error {
 				write!(f, "End of input reached when expected {}.", expected)
 			}
 			Error::EndOfInput(None) => write!(f, "End of input reached."),
+			Error::NonConsumingLoop(Some(source_name), pos) => {
+				write!(f, "Non-consuming parser loop at {source_name}:{pos}.")
+			}
+			Error::NonConsumingLoop(None, pos) => write!(f, "Non-consuming parser loop at {pos}."),
 		}
 	}
 }

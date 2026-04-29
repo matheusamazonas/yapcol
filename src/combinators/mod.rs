@@ -16,6 +16,7 @@ mod not_followed_by;
 mod option;
 mod satisfy;
 mod separated_by;
+mod success;
 
 pub use any::any;
 pub use attempt::attempt;
@@ -33,3 +34,4 @@ pub use not_followed_by::not_followed_by;
 pub use option::option;
 pub use satisfy::satisfy;
 pub use separated_by::{separated_by0, separated_by1};
+pub use success::success;
