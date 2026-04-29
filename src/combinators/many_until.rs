@@ -1,4 +1,4 @@
-use crate::{InputToken, Parser};
+use crate::{Error, InputToken, Parser};
 
 /// Parses one or more instances of `parser`, until `end` succeeds.
 ///
@@ -31,9 +31,22 @@ where
 {
 	|input| {
 		let mut matches = Vec::new();
+		let mut previous_count: Option<usize> = None;
 		while end(input).is_err() {
 			let token = parser(input)?;
+			let new_count = input.consumed_count();
+			// Check if non-consuming parser. If so, it would cause an infinite loop.
+			if let Some(previous) = previous_count
+				&& previous == new_count
+			{
+				return Err(Error::NonConsumingLoop(
+					input.source_name(),
+					input.position(),
+				));
+			}
+
 			matches.push(token);
+			previous_count = Some(new_count);
 		}
 		Ok(matches)
 	}
@@ -91,5 +104,16 @@ mod tests {
 			))
 		);
 		assert_eq!(any()(&mut input), Ok('y')); // Input was consumed while looking for the end.
+	}
+
+	#[test]
+	fn non_consuming_parser_does_not_loop() {
+		let non_consuming = success(1); // Non-consuming parser.
+		let mut input = Input::new_from_chars("hello#".chars(), None);
+		let end_parser = is('#');
+		let parser = many_until(&non_consuming, &end_parser);
+		let output = parser(&mut input);
+		let position = Position::new(1, 1);
+		assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
 	}
 }

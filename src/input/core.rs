@@ -98,9 +98,9 @@ where
 	pub(crate) fn next_token(&mut self) -> Option<IT> {
 		match self.next_location {
 			TokenLocation::Stream => {
-				self.consumed_count += 1;
 				let token = self.source.next_token()?;
 				self.last_token_position = token.position();
+				self.consumed_count += 1;
 				Some(token)
 			}
 			TokenLocation::StreamLookingAhead => {
@@ -112,12 +112,12 @@ where
 						let cloned = token.clone();
 						self.look_ahead_buffer.push_back(token);
 						frame.increment();
+						self.consumed_count += 1;
 						Some(cloned)
 					}
 				}
 			}
 			TokenLocation::BufferHead => {
-				self.consumed_count += 1;
 				let output = self.look_ahead_buffer.pop_front();
 				self.next_location = if self.look_ahead_buffer.is_empty() {
 					TokenLocation::Stream
@@ -126,6 +126,7 @@ where
 				};
 				let token = output?;
 				self.last_token_position = token.position();
+				self.consumed_count += 1;
 				Some(token)
 			}
 			TokenLocation::BufferTail => {
@@ -138,6 +139,7 @@ where
 					TokenLocation::BufferTail
 				};
 				self.last_token_position = token.position();
+				self.consumed_count += 1;
 				Some(token.clone())
 			}
 		}
@@ -239,8 +241,9 @@ where
 			panic!("Look ahead handler doesn't match current lookahead depth.")
 		}
 
-		if !backtrack {
-			self.consumed_count += frame.length();
+		if backtrack {
+			self.consumed_count -= frame.length();
+		} else {
 			let buffer_length = self.look_ahead_buffer.len();
 			self.look_ahead_buffer
 				.truncate(buffer_length - frame.length());

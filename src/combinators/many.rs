@@ -92,11 +92,22 @@ where
 	IT: InputToken,
 {
 	|input, mut output| {
+		let mut previous_count: Option<usize> = None;
 		loop {
 			match parser(input) {
 				Ok(token) => {
+					let new_count = input.consumed_count();
+					// Check if non-consuming parser. If so, it would cause an infinite loop.
+					if let Some(previous) = previous_count
+						&& previous == new_count
+					{
+						return Err(Error::NonConsumingLoop(
+							input.source_name(),
+							input.position(),
+						));
+					}
 					output.push(token);
-					continue;
+					previous_count = Some(new_count);
 				}
 				Err(_) => return Ok(output),
 			}
@@ -107,6 +118,7 @@ where
 #[cfg(test)]
 mod tests {
 	mod many0 {
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]
@@ -174,6 +186,16 @@ mod tests {
 			assert_eq!(output.len(), token_count);
 			assert_eq!(input.consumed_count(), token_count);
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
+
+		#[test]
+		fn non_consuming_parser_does_not_loop() {
+			let parser = success(1); // Non-consuming parser.
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser = parser.many0();
+			let output = parser(&mut input);
+			let position = Position::new(1, 1);
+			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
 		}
 	}
 
@@ -277,6 +299,16 @@ mod tests {
 			let output = parser_many1(&mut input).unwrap();
 			assert_eq!(output, vec!['h', 'h']);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn non_consuming_parser_does_not_loop() {
+			let parser = success(1); // Non-consuming parser.
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser = parser.many1();
+			let output = parser(&mut input);
+			let position = Position::new(1, 1);
+			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
 		}
 	}
 }
