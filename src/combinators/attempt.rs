@@ -282,17 +282,17 @@ mod tests {
 			let o2 = parser_l(input)?;
 			Ok((o1, o2))
 		};
-		let parser_he = |input: &mut Input<_>| {
-			let o1 = parser_h(input)?;
-			let o2 = parser_e(input)?;
+		let parser_el = |input: &mut Input<_>| {
+			let o1 = parser_e(input)?;
+			let o2 = parser_l(input)?;
 			Ok((o1, o2))
 		};
 		// Use `option` while the first does NOT use `attempt`.
-		let parser = option(&parser_hl, &parser_he);
-		let output = attempt(&parser)(&mut input);
+		let parser = option(&parser_hl, &parser_el);
+		let output = parser(&mut input);
 		// The first parser failed while consuming input and `attempt` was not used, so the input
 		// was consumed, and `option`'s second operand failed.
-		let mismatch = Mismatch::new('h', 'e');
+		let mismatch = Mismatch::new('l', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
@@ -301,7 +301,6 @@ mod tests {
 				Some(mismatch)
 			))
 		);
-		assert_eq!(any()(&mut input), Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));
 		assert_eq!(any()(&mut input), Ok('l'));
 		assert_eq!(any()(&mut input), Ok('l'));
