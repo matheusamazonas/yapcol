@@ -30,7 +30,7 @@ cargo add yapcol
 `yapcol` provides a wide range of built-in combinators:
 
 - Basic: `is`, `satisfy`, `any`, `end_of_input`.
-- Choice and Optional: `choice`, `option`, `maybe`.
+- Choice and Optional: `choice`, `maybe`, `either`.
 - Repetition: `many0`, `many1`, `count`, `many_until`, `separated_by0`, `separated_by1`.
 - Lookahead and Backtracking: `attempt`, `look_ahead`, `not_followed_by`.
 - Grouping: `between`.

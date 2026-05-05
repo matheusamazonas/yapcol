@@ -12,7 +12,7 @@
 //! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
 //!   tracking capabilities.
 //! - Combinators: Functions that take one or more parsers and return a new, more complex
-//!   parser. Examples: [`is()`], [`many0()`], [`option()`], [`chain_left()`].
+//!   parser. Examples: [`is()`], [`many0()`], [`either()`], [`chain_left()`].
 //!
 //! # Features
 //!

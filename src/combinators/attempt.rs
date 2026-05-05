@@ -7,15 +7,15 @@ use crate::{InputToken, Parser};
 /// If the given parser fails while consuming input, this parser also fails but does not consume
 /// input.
 ///
-/// This combinator is often used alongside [`crate::option()`] whenever both input parsers share a
-/// prefix. By doing so, we prevent [`crate::option()`] from failing if its first parser argument
+/// This combinator is often used alongside [`crate::either()`] whenever both input parsers share a
+/// prefix. By doing so, we prevent [`crate::either()`] from failing if its first parser argument
 /// failed while consuming input. For example:
 /// ```rust,ignore
-/// // Instead of this, where `option` would fail early and not even try applying `parser2`.
-/// let parser = option(&parser1, &parser2);
+/// // Instead of this, where `either` would fail early and not even try applying `parser2`.
+/// let parser = either(&parser1, &parser2);
 /// // Do this, so if `parser1` fails consuming input, `parser2` will be applied.
 /// let attempt_parser_1 = attempt(&parser1);
-/// let parser = option(&attempt_parser_1, &parser2);
+/// let parser = either(&attempt_parser_1, &parser2);
 /// ```
 ///
 /// Warning: this combinator implements arbitrary lookahead.
@@ -198,14 +198,14 @@ mod tests {
 	}
 
 	#[test]
-	fn option_with_attempt_succeeds_consuming() {
+	fn either_with_attempt_succeeds_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		let parser_h = is('h');
 		let parser_e = is('e');
 		let parser_attempt_h = attempt(&parser_h);
-		let parser = option(&parser_attempt_h, &parser_e);
+		let parser = either(&parser_attempt_h, &parser_e);
 		let output = parser(&mut input);
-		// Input was consumed because the first argument of `option` succeeded.
+		// Input was consumed because the first argument of `either` succeeded.
 		assert_eq!(output, Ok('h'));
 		assert_eq!(any()(&mut input), Ok('e'));
 		assert_eq!(any()(&mut input), Ok('l'));
@@ -215,12 +215,12 @@ mod tests {
 	}
 
 	#[test]
-	fn option_with_attempt_fails_not_consuming() {
+	fn either_with_attempt_fails_not_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		let parser_e = is('e');
 		let parser_l = is('l');
 		let parser_attempt_e = attempt(&parser_e);
-		let parser = option(&parser_attempt_e, &parser_l);
+		let parser = either(&parser_attempt_e, &parser_l);
 		let output = parser(&mut input);
 		let mismatch = Mismatch::new('l', 'h');
 		assert_eq!(
@@ -241,7 +241,7 @@ mod tests {
 	}
 
 	#[test]
-	fn option_with_attempt_on_consuming_parser_succeeds_consuming() {
+	fn either_with_attempt_on_consuming_parser_succeeds_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		// Create two parsers that share a prefix.
 		let parser_h = is('h');
@@ -257,11 +257,11 @@ mod tests {
 			let o2 = parser_e(input)?;
 			Ok((o1, o2))
 		};
-		// Use `option` while the first uses `attempt`.
+		// Use `either` while the first uses `attempt`.
 		let parser_attempt_hl = attempt(&parser_hl);
-		let parser = option(&parser_attempt_hl, &parser_he);
+		let parser = either(&parser_attempt_hl, &parser_he);
 		let output = parser(&mut input);
-		// Even though the first parser failed consuming input, `option` succeeded because `attempt`
+		// Even though the first parser failed consuming input, `either` succeeded because `attempt`
 		// implements arbitrary lookahead and conserved input.
 		assert_eq!(output, Ok(('h', 'e')));
 		assert_eq!(any()(&mut input), Ok('l'));
@@ -271,7 +271,7 @@ mod tests {
 	}
 
 	#[test]
-	fn option_without_attempt_on_consuming_parser_fails_consuming() {
+	fn either_without_attempt_on_consuming_parser_fails_consuming() {
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		// Create two parsers that share a prefix.
 		let parser_h = is('h');
@@ -287,11 +287,11 @@ mod tests {
 			let o2 = parser_l(input)?;
 			Ok((o1, o2))
 		};
-		// Use `option` while the first does NOT use `attempt`.
-		let parser = option(&parser_hl, &parser_el);
+		// Use `either` while the first does NOT use `attempt`.
+		let parser = either(&parser_hl, &parser_el);
 		let output = parser(&mut input);
 		// The first parser failed while consuming input and `attempt` was not used, so the input
-		// was consumed, and `option`'s second operand failed.
+		// was consumed, and `either`'s second operand failed.
 		let mismatch = Mismatch::new('l', 'e');
 		assert_eq!(
 			output,

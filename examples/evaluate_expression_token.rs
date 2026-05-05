@@ -3,8 +3,8 @@ use std::fmt::Display;
 use std::io;
 use yapcol::input::Position;
 use yapcol::{
-	Error, Input, InputToken, Mismatch, Parser, attempt, between, chain_left, chain_right, is,
-	option, satisfy,
+	Error, Input, InputToken, Mismatch, Parser, attempt, between, chain_left, chain_right, either,
+	is, satisfy,
 };
 mod expression;
 
@@ -111,7 +111,7 @@ fn parse_operations(
 		let parse_op1 = is(Token::Operator(operator1.clone()));
 		let parse_op2 = is(Token::Operator(operator2.clone()));
 		let parse_attempt_op1 = attempt(&parse_op1);
-		let operator = option(&parse_attempt_op1, &parse_op2)(input)?;
+		let operator = either(&parse_attempt_op1, &parse_op2)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
 			t => Err(Error::UnexpectedToken(
@@ -153,7 +153,7 @@ fn parse_bottom() -> impl TokenExpressionParser {
 		let parse_close = is(Token::CloseParenthesis);
 		let parse_parenthesis = between(&parse_open, &parse_expression, &parse_close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
-		option(&parse_parenthesis, &parse_number)(input)
+		either(&parse_parenthesis, &parse_number)(input)
 	}
 }
 

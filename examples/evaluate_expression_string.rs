@@ -1,8 +1,8 @@
 use expression::{Expression, Operator, evaluate};
 use std::io;
 use yapcol::{
-	Error, Input, Mismatch, Parser, StringParser, attempt, between, chain_left, chain_right, is,
-	many1, option, satisfy,
+	Error, Input, Mismatch, Parser, StringParser, attempt, between, chain_left, chain_right,
+	either, is, many1, satisfy,
 };
 mod expression;
 
@@ -51,7 +51,7 @@ fn parse_expression() -> impl StringExpressionParser {
 			let parse_plus = is('+');
 			let parse_minus = is('-');
 			let parse_attempt_plus = attempt(&parse_plus);
-			option(&parse_attempt_plus, &parse_minus).map(build_operation)(input)
+			either(&parse_attempt_plus, &parse_minus).map(build_operation)(input)
 		};
 		chain_left(&parse_factor(), &parse_operator).with_expectation("expression")(input)
 	}
@@ -63,7 +63,7 @@ fn parse_factor() -> impl StringExpressionParser {
 			let parse_multiplication = is('*');
 			let parse_division = is('/');
 			let parse_attempt_multiplication = attempt(&parse_multiplication);
-			option(&parse_attempt_multiplication, &parse_division).map(build_operation)(input)
+			either(&parse_attempt_multiplication, &parse_division).map(build_operation)(input)
 		};
 		chain_left(&parse_exponentiation(), &parse_operator).with_expectation("factor")(input)
 	}
@@ -84,7 +84,7 @@ fn parse_bottom() -> impl StringExpressionParser {
 		let parse_close = is(')');
 		let parse_parenthesis = between(&parse_open, &parse_expression, &parse_close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
-		option(&parse_parenthesis, &parse_number)(input)
+		either(&parse_parenthesis, &parse_number)(input)
 	}
 }
 

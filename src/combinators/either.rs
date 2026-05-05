@@ -18,24 +18,24 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{Input, any, end_of_input, is, option};
+/// use yapcol::{Input, any, either, end_of_input, is};
 ///
 /// // parser1 succeeds: returns its result.
 /// let mut input = Input::new_from_chars("ab".chars(), None);
-/// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
+/// let output = either(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'a');
 ///
 /// // parser1 fails without consuming input: parser2 is tried.
 /// let mut input = Input::new_from_chars("b".chars(), None);
-/// let output = option(&is('a'), &is('b'))(&mut input).unwrap();
+/// let output = either(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'b');
 ///
 /// // Both parsers fail: an error is returned and input is not consumed.
 /// let mut input = Input::new_from_chars("c".chars(), None);
-/// assert!(option(&is('a'), &is('b'))(&mut input).is_err());
+/// assert!(either(&is('a'), &is('b'))(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
-pub fn option<P1, P2, IT, O>(parser1: &P1, parser2: &P2) -> impl Parser<IT, O>
+pub fn either<P1, P2, IT, O>(parser1: &P1, parser2: &P2) -> impl Parser<IT, O>
 where
 	P1: Parser<IT, O>,
 	P2: Parser<IT, O>,
@@ -61,8 +61,8 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('j');
 		let mut input = Input::new_from_chars("h".chars(), None);
-		let parse_option = option(&parser1, &parser2);
-		let output = parse_option(&mut input).unwrap();
+		let parse_either = either(&parser1, &parser2);
+		let output = parse_either(&mut input).unwrap();
 		assert_eq!(output, 'h');
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
@@ -72,8 +72,8 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('j');
 		let mut input = Input::new_from_chars("j".chars(), None);
-		let parse_option = option(&parser1, &parser2);
-		let output = parse_option(&mut input).unwrap();
+		let parse_either = either(&parser1, &parser2);
+		let output = parse_either(&mut input).unwrap();
 		assert_eq!(output, 'j');
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
@@ -83,10 +83,10 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('j');
 		let mut input = Input::new_from_chars("kello".chars(), None);
-		let parse_option = option(&parser1, &parser2);
+		let parse_either = either(&parser1, &parser2);
 		let mismatch = Mismatch::new('j', 'k');
 		assert_eq!(
-			parse_option(&mut input),
+			parse_either(&mut input),
 			Err(Error::UnexpectedToken(
 				None,
 				Position::new(1, 1),
@@ -105,8 +105,8 @@ mod tests {
 			parser1(input)?;
 			parser2(input)
 		};
-		let parse_option = option(&consuming_parser, &parser2);
-		let output = parse_option(&mut input);
+		let parse_either = either(&consuming_parser, &parser2);
+		let output = parse_either(&mut input);
 		let mismatch = Mismatch::new('j', 'e');
 		assert_eq!(
 			output,
