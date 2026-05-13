@@ -2,18 +2,34 @@ use crate::{InputToken, Parser};
 
 /// Creates a parser that applies the given parser exactly `count` times.
 ///
-/// The parser succeeds only if the given parser succeeds exactly `count` times in a row,
-/// returning a vector of the matched values. If the given parser fails at any point before
-/// `count` applications, the whole parser fails.
+/// # Outcome
+///
+/// If successful, this combinator returns a vector with the matched values.
+///
+/// This combinator succeeds if:
+/// - `parser` occurs exactly `count` times in a row.
+/// - Its `count` argument is 0.
+///
+/// It fails if the `parser` argument fails at any point before being applied `count` times.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds with `count` greater than 0, and its argument parser consumes input upon success.
+/// - It fails and its argument parser consumes input upon failure.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::count`].
 ///
 /// # Arguments
 ///
 /// - `parser`: The parser to apply repeatedly.
 /// - `count`: The exact number of times to apply the parser.
-///
-/// # Shortcut
-///
-/// This combinator has a shortcut version: [`Parser::count`].
 ///
 /// # Examples
 ///

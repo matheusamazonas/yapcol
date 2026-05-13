@@ -1,8 +1,22 @@
 use crate::{InputToken, Parser};
 
-/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`. It combines
-/// all values parsed by `operand_parser` into a final one using functions returned by
-/// `operator_parser`, in a left-associative manner.
+/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`, in a
+/// left-associative manner.
+///
+/// # Outcome
+///
+/// This combinator combines all values parsed by `operand_parser` into a final one using functions
+/// returned by `operator_parser`, in a left-associative manner.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds and any of its argument parsers consume input upon success.
+/// - Any of its argument parsers fail while consuming input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Arguments
 ///
@@ -66,9 +80,23 @@ where
 	}
 }
 
-/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`. It combines
-/// all values parsed by `operand_parser` into a final one using functions returned by
-/// `operator_parser`, in a right-associative manner.
+/// Parses at least one occurrence of `operand_parser`, separated by `operator_parser`, in a
+/// right-associative manner.
+///
+/// # Outcome
+///
+/// This combinator combines all values parsed by `operand_parser` into a final one using functions
+/// returned by `operator_parser`, in a right-associative manner.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds and any of its argument parsers consume input upon success.
+/// - Any of its argument parsers fail while consuming input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Arguments
 ///

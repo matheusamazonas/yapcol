@@ -3,6 +3,26 @@ use crate::{Error, InputToken, Parser};
 /// Applies each parser in `parsers` in order, returning the result of the first one that succeeds.
 /// Fails if all parsers fail.
 ///
+/// # Outcome
+///
+/// This combinator succeeds if at least one element of its `parsers` argument succeeds. In this
+/// case, the returned value will be the outcome of the succeeding parser.
+///
+/// This combinator fails if all the elements in its `parser` argument fail.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds, and the succeeding argument parser consumes input upon success.
+/// - It succeeds, but a previous argument parser failed while consuming input.
+/// - It fails, and at least one of its argument parsers failed while consuming input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure. If you would
+/// like to change that behavior (for example, if the provided parsers consume upon failure),
+/// wrap the argument parsers with [`crate::attempt`].
+///
 /// # Arguments
 ///
 /// - `parsers`: An iterator that contains all parsers to attempt until a success.

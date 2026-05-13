@@ -2,10 +2,20 @@ use crate::{InputToken, Parser};
 
 /// Creates a parser that does not consume input in case the given parser fails.
 ///
-/// If the given parser succeeds, the matched value is returned. If the given parser consumed input,
-/// this parser also does.
-/// If the given parser fails while consuming input, this parser also fails but does not consume
-/// input.
+/// # Outcome
+///
+/// The outcome of this combinator is based on the outcome of its parser argument.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if the argument parser succeeds while consuming input.
+/// Otherwise, it does not consume input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator performs arbitrary lookahead, and will backtrack upon failure.
+///
+/// # Common usage
 ///
 /// This combinator is often used alongside [`crate::either()`] whenever both input parsers share a
 /// prefix. By doing so, we prevent [`crate::either()`] from failing if its first parser argument
@@ -18,15 +28,13 @@ use crate::{InputToken, Parser};
 /// let parser = either(&attempt_parser_1, &parser2);
 /// ```
 ///
-/// Warning: this combinator implements arbitrary lookahead.
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::attempt`].
 ///
 /// # Arguments
 ///
 /// - `parser`: The parser to attempt.
-///
-/// # Shortcut
-///
-/// This combinator has a shortcut version: [`Parser::attempt`].
 ///
 /// # Examples
 ///

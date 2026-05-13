@@ -1,15 +1,31 @@
 use crate::{Error, Input, InputToken, Parser};
 
-/// Applies `parser` zero or more times, returning a vector of matches.
-/// This parser never fails: if no matches are found, it returns an empty vector.
+/// Applies `parser` zero or more times.
 ///
-/// # Arguments
+/// # Outcome
 ///
-/// - `parser`: The parser to possibly be applied many times.
+/// This parser always succeeds, even if its argument parser doesn't. It returns a vector of
+/// matches of its argument parser, which might be empty in case no matches were found.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds, *and* its argument parser consumes
+///   input upon success.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
+/// fails.
 ///
 /// # Shortcut
 ///
 /// This combinator has a shortcut version: [`Parser::many0`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to possibly be applied many times.
 ///
 /// # Examples
 ///
@@ -40,16 +56,30 @@ where
 	}
 }
 
-/// Applies `parser` one or more times, returning a vector of matches.
-/// This parser fails if no matches are found.
+/// Applies `parser` one or more times.
 ///
-/// # Arguments
+/// # Outcome
 ///
-/// - `parser`: The parser to be applied many times.
+/// If it succeeds, this combinator returns a (non-empty) vector of matches of its argument parser.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds, *and* its argument parser consumes
+///   input upon success.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Shortcut
 ///
 /// This combinator has a shortcut version: [`Parser::many1`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to be applied many times.
 ///
 /// # Examples
 ///

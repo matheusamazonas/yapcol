@@ -3,6 +3,19 @@ use crate::{Error, InputToken};
 
 /// A simple combinator that returns the next token in the input, if any.
 ///
+/// # Outcome
+///
+/// This combinator succeeds if at least 1 token is available on the input. It fails only if the
+/// input was exhausted (i.e., empty, there are no more tokens on the input).
+///
+/// # Input consumption
+///
+/// This combinator consumes exactly 1 token if it succeeds. It doesn't consume input if it fails.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
 /// # Examples
 ///
 /// ```

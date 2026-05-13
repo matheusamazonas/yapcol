@@ -3,12 +3,28 @@ use crate::{InputToken, Parser};
 /// Creates a parser based on two input parsers. It tries the first parser and falls back to the
 /// second if the first fails without consuming input.
 ///
-/// If `parser1` succeeds, its result is returned. If `parser1` fails without consuming any input,
-/// `parser2` is applied and its result is returned. If `parser1` fails while consuming input, the
-/// error is propagated and no attempt to apply `parser2` is made.
+/// # Outcome
 ///
-///  If you would like to attempt to apply `parser2` even if `parser1` failed while consuming input,
-/// check the `attempt` parser combinator.
+/// This combinator succeeds if:
+/// - The first parser argument succeeds. In this case, the second parser argument isn't applied.
+/// - The first parser argument fails without consuming any input, and the second parser argument
+///   succeeds.
+///
+/// It fails if:
+/// - The first parser argument fails while consuming input. In this case, the second parser
+///   argument isn't even applied.
+/// - The first parser argument fails without consuming input, and the second parser argument fails.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds, and the succeeding argument parser consumes input upon success.
+/// - Any of its argument parsers fail while consuming input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure. Check the
+/// [`crate::attempt`] combinator if you would like to change that behavior.
 ///
 /// # Arguments
 ///

@@ -2,17 +2,32 @@ use crate::{InputToken, Parser};
 
 /// Creates a parser that makes another parser optional.
 ///
-/// If the input parser succeeds, its result is wrapped in `Some` and returned. If the input
-/// parser fails **without consuming any input**, the returned parser succeeds with `Ok(None)`.
-/// If the input parser fails **after consuming input**, the error is propagated as `Err`.
+/// # Outcome
 ///
-/// # Arguments
+/// This combinator succeeds if:
+/// - The input parser succeeds. In this case, its result is wrapped in `Some`.
+/// - The argument parser fails **without consuming any input**. In this case, this combinator
+///   succeeds and returns `None`.
 ///
-/// - `parser`: The parser to make optional.
+/// This combinator fails if the argument parser fails **while consuming input**.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds while returning `Some` value, and its argument parser consumes input upon success.
+/// - It fails, and its argument parser consumes input upon failure.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Shortcut
 ///
 /// This combinator has a shortcut version: [`Parser::maybe`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to make optional.
 ///
 /// # Examples
 ///

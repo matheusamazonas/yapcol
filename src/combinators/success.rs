@@ -1,6 +1,18 @@
 use crate::{InputToken, Parser};
 
-/// Creates a parser that always succeeds with the given value, without consuming any input.
+/// Creates a parser that always succeeds with the given value.
+///
+/// # Outcome
+///
+/// This combinator always succeeds.
+///
+/// # Input consumption
+///
+/// This combinator never consumes input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator never performs lookahead.
 ///
 /// # Arguments
 ///

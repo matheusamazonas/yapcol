@@ -2,8 +2,18 @@ use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Creates a parser that succeeds if the next token in the input equals `token`.
 ///
-/// If the token matches, it is consumed and returned. If the token does not match, the parser
-/// fails without consuming any input.
+/// # Outcome
+///
+/// This parser succeeds if the provided token matches the next one in the input. It fails
+/// otherwise.
+///
+/// # Input consumption
+///
+/// This parser consumes exactly 1 input token if it succeeds. It never consumes input upon failure.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Arguments
 ///

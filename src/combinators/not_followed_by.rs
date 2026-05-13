@@ -1,6 +1,22 @@
 use crate::{Error, InputToken, Parser};
 
-/// Succeeds if `parser` fails. This combinator does not consume input, even if `parser` does.
+/// A combinator that ensures that the given parser fails.
+///
+/// # Outcome
+///
+/// This combinator succeeds if its parser argument fails with an error different from
+/// [`Error::EndOfInput`].
+/// It fails if:
+///   - Its parser argument succeeds.
+///   - Input is exhausted.
+///
+/// # Input consumption
+///
+/// This combinator never consumes input, even if its parser argument does.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator performs arbitrary lookahead, and always backtracks.
 ///
 /// # Arguments
 ///

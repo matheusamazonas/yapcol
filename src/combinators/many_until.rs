@@ -1,6 +1,24 @@
 use crate::{Error, InputToken, Parser};
 
-/// Parses one or more instances of `parser`, until `end` succeeds.
+/// Parses zero or more instances of `parser`, until `end` succeeds.
+///
+/// # Outcome
+///
+/// If it succeeds, this combinator returns a vector of matches of its `parser` argument.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - It succeeds, and:
+///   - Its `end` argument parser consumes upon success, or;
+///   - Its `parser` argument consumes upon success, *and* it was applied at least once.
+/// - It fails, and:
+///   - Its `end` argument parser consumes upon failure, or;
+///   - Its `parser` argument consumes upon failure, *and* it was applied at least once.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Arguments
 ///

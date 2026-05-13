@@ -1,24 +1,25 @@
 use crate::{Error, Input, InputToken, Parser};
 
-fn separated_tail<P, S, IT, O, SO>(
-	parser: &P,
-	separator: &S,
-) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
-where
-	P: Parser<IT, O>,
-	S: Parser<IT, SO>,
-	IT: InputToken,
-{
-	move |input, mut output| {
-		while separator(input).is_ok() {
-			let next = parser(input)?;
-			output.push(next);
-		}
-		Ok(output)
-	}
-}
-
 /// Creates a parser that parses zero or more occurrences of `parser`, separated by `separator`.
+///
+/// # Outcome
+///
+/// This parser always succeeds, even if its `parser` argument doesn't. It returns a vector of
+/// matches of its `parser` argument, which might be empty in case no matches were found.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - It succeeds, and:
+///   - Its `parser` argument consumes upon success, or;
+///   - Its `separator` argument parser consumes upon success, *and* it was applied at least once.
+/// - It fails, and:
+///   - Its `parser` argument consumes upon failure, or;
+///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Arguments
 ///
@@ -55,6 +56,24 @@ where
 
 /// Creates a parser that parses one or more occurrences of `parser`, separated by `separator`.
 ///
+/// # Outcome
+///
+/// If it succeeds, this combinator returns a vector of matches of its `parser` argument.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - It succeeds, and:
+///   - Its `parser` argument consumes upon success, or;
+///   - Its `separator` argument parser consumes upon success, *and* it was applied at least once.
+/// - It fails, and:
+///   - Its `parser` argument consumes upon failure, or;
+///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
 /// # Arguments
 ///
 /// - `parser`: The parser whose occurrences we're collecting.
@@ -82,6 +101,24 @@ where
 		let first = parser(input)?;
 		let output = vec![first];
 		separated_tail(&parser, &separator)(input, output)
+	}
+}
+
+fn separated_tail<P, S, IT, O, SO>(
+	parser: &P,
+	separator: &S,
+) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
+where
+	P: Parser<IT, O>,
+	S: Parser<IT, SO>,
+	IT: InputToken,
+{
+	move |input, mut output| {
+		while separator(input).is_ok() {
+			let next = parser(input)?;
+			output.push(next);
+		}
+		Ok(output)
 	}
 }
 

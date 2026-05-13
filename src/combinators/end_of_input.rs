@@ -2,8 +2,18 @@ use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Creates a parser that succeeds only if the input stream is empty.
 ///
-/// If the input is empty, the parser succeeds and returns `()`. If the input still has tokens,
-/// the parser fails without consuming any input.
+/// # Outcome
+///
+/// This parser succeeds and returns `()` if the input is empty. Otherwise, it fails with an
+/// [`Error::UnexpectedToken`].
+///
+/// # Input consumption
+///
+/// This parser never consumes input tokens.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Examples
 ///

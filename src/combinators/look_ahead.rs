@@ -2,8 +2,18 @@ use crate::{InputToken, Parser};
 
 /// Creates a parser that does not consume input in case the given parser succeeds.
 ///
-/// If the given parser succeeds, the matched value is returned, but the input is left unchanged.
-/// If the given parser fails while consuming input, this parser also fails while consuming input.
+/// # Outcome
+///
+/// The outcome of this combinator is based on the outcome of its parser argument.
+///
+/// # Input consumption
+///
+/// This combinator only consumes input if the argument parser consumes input upon failure. It never
+/// consumes input upon success.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator performs arbitrary lookahead, and will backtrack upon success.
 ///
 /// # Arguments
 ///

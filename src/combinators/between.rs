@@ -2,15 +2,30 @@ use crate::{InputToken, Parser};
 
 /// Applies parsers `open` and `close` around `parser`. Often used for parenthesis, brackets, etc.
 ///
+/// # Outcome
+///
+/// This combinator succeeds if exactly one occurrence of `parser` is placed between `open` and
+/// `close`. It fails otherwise.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if:
+/// - It succeeds and any of its argument parsers consume input upon success.
+/// - Any of its argument parsers fail while consuming input.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::between`].
+///
 /// # Arguments
 ///
 /// - `open`: The parser that "opens" the between.
 /// - `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
 /// - `close`: The parser that "closes" the between.
-///
-/// # Shortcut
-///
-/// This combinator has a shortcut version: [`Parser::between`].
 ///
 /// # Examples
 ///
