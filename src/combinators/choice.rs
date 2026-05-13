@@ -119,4 +119,50 @@ mod tests {
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}
+
+	#[test]
+	fn fail_consuming_input_no_attempt() {
+		// Parser that consumes input upon failure:
+		let parser1 = |input: &mut StringInput| {
+			is('h')(input)?;
+			is('a')(input)
+		};
+		let parser2 = is('j');
+		let parser3 = is('k');
+		let parsers: Vec<Box<dyn Parser<_, _>>> =
+			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+		let parser_choice = choice(&parsers);
+		let mut input = Input::new_from_chars("hello".chars(), None);
+		let output = parser_choice(&mut input);
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+		);
+		assert_eq!(any()(&mut input), Ok('e')); // Input was consumed.
+	}
+
+	#[test]
+	fn fail_consuming_input_attempt() {
+		// Parser that consumes input upon failure:
+		let parser1 = |input: &mut StringInput| {
+			is('h')(input)?;
+			is('a')(input)
+		};
+		let parser2 = is('j');
+		let parser3 = is('k');
+		// Wrapped in `attempt`
+		let parsers: Vec<Box<dyn Parser<_, _>>> = vec![
+			Box::new(parser1.attempt()),
+			Box::new(parser2.attempt()),
+			Box::new(parser3.attempt()),
+		];
+		let parser_choice = choice(&parsers);
+		let mut input = Input::new_from_chars("hello".chars(), None);
+		let output = parser_choice(&mut input);
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+		);
+		assert_eq!(any()(&mut input), Ok('h')); // Input was NOT consumed.
+	}
 }

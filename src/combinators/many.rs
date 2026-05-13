@@ -227,6 +227,24 @@ mod tests {
 			let position = Position::new(1, 1);
 			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
 		}
+
+		#[test]
+		fn match_consuming_upon_failure() {
+			// Parser that consumes input upon failure:
+			let parser = |input: &mut StringInput| {
+				let o1 = is('#')(input)?;
+				let o2 = is('a')(input)?;
+				Ok((o1, o2))
+			};
+			let mut input = Input::new_from_chars("#a#e".chars(), None);
+			let many_parser = parser.many0();
+			let output = many_parser(&mut input).unwrap();
+			assert_eq!(output.len(), 1);
+			assert_eq!(output[0], ('#', 'a'));
+			assert_eq!(input.consumed_count(), 3); // The second attempt failed while consuming.
+			assert_eq!(any()(&mut input), Ok('e'));
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
 	}
 
 	mod many1 {
@@ -339,6 +357,24 @@ mod tests {
 			let output = parser(&mut input);
 			let position = Position::new(1, 1);
 			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
+		}
+
+		#[test]
+		fn match_consuming_upon_failure() {
+			// Parser that consumes input upon failure:
+			let parser = |input: &mut StringInput| {
+				let o1 = is('#')(input)?;
+				let o2 = is('a')(input)?;
+				Ok((o1, o2))
+			};
+			let mut input = Input::new_from_chars("#a#e".chars(), None);
+			let many_parser = parser.many1();
+			let output = many_parser(&mut input).unwrap();
+			assert_eq!(output.len(), 1);
+			assert_eq!(output[0], ('#', 'a'));
+			assert_eq!(input.consumed_count(), 3); // The second attempt failed while consuming.
+			assert_eq!(any()(&mut input), Ok('e'));
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
 	}
 }
