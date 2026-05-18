@@ -53,15 +53,21 @@ where
 	IT: InputToken,
 	&'a PI: IntoIterator<Item = &'a P>,
 {
-	|input| {
-		parsers
-			.into_iter()
-			.find_map(|p| p(input).ok())
-			.ok_or(Error::UnexpectedToken(
-				input.source_name(),
-				input.position(),
-				None,
-			))
+	move |input| {
+		let mut first_error: Option<Error> = None;
+		for parser in parsers {
+			match parser(input) {
+				Ok(output) => return Ok(output), // Short circuit. First match wins.
+				Err(e) => first_error = first_error.or(Some(e)), // Keep the first error intact.
+			}
+		}
+		match first_error {
+			Some(error) => Err(error),
+			None => {
+				let fallback = Error::UnexpectedToken(input.source_name(), input.position(), None);
+				Err(fallback)
+			}
+		}
 	}
 }
 
@@ -95,9 +101,14 @@ mod tests {
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		// 4, fail.
 		let mut input = Input::new_from_chars("u".chars(), None);
+		let mismatch = Mismatch::new('h', 'u');
 		assert_eq!(
 			parser_choice(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}
@@ -110,14 +121,31 @@ mod tests {
 		let parsers: Vec<Box<dyn Parser<_, _>>> =
 			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 		let parser_choice = choice(&parsers);
-		// 1, success.
 		let mut input = Input::new_from_chars("x".chars(), None);
 		let output = parser_choice(&mut input);
+		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
 		);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+	}
+
+	#[test]
+	fn empty() {
+		let parser1 = is('h');
+		let parser2 = is('e');
+		let parser3 = is('l');
+		let parsers: Vec<Box<dyn Parser<_, _>>> =
+			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+		let parser_choice = choice(&parsers);
+		let mut input = Input::new_from_chars("".chars(), None);
+		let output = parser_choice(&mut input);
+		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
 	}
 
 	#[test]
@@ -134,9 +162,14 @@ mod tests {
 		let parser_choice = choice(&parsers);
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		let output = parser_choice(&mut input);
+		let mismatch = Mismatch::new('a', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 2), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('e')); // Input was consumed.
 	}
@@ -159,9 +192,14 @@ mod tests {
 		let parser_choice = choice(&parsers);
 		let mut input = Input::new_from_chars("hello".chars(), None);
 		let output = parser_choice(&mut input);
+		let mismatch = Mismatch::new('a', 'e');
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
 		);
 		assert_eq!(any()(&mut input), Ok('h')); // Input was NOT consumed.
 	}
