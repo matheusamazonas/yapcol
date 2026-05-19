@@ -42,8 +42,9 @@ where
 		match input.peek() {
 			Some(input_token) => {
 				if token == *input_token.token() {
-					input.next_token(); // Consume if successful.
-					Ok(token.clone())
+					// We know for a fact that there is a next token, so we can unwrap safely.
+					let matched_token = input.next_token().unwrap();
+					Ok(matched_token.token_owned())
 				} else {
 					let position = input_token.position();
 					let expected = token.clone();
