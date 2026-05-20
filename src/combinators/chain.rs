@@ -50,33 +50,14 @@ where
 	IT: InputToken,
 	OP: Parser<IT, F>,
 	F: Fn(O, O) -> O,
-	O: Clone,
 {
 	move |input| {
-		let o1 = operand_parser(input)?;
-		parse_chain_left_tail(o1, operand_parser, operator_parser)(input)
-	}
-}
-
-fn parse_chain_left_tail<P, IT, O, OP, F>(
-	o1: O,
-	parser: &P,
-	operator_parser: &OP,
-) -> impl Parser<IT, O>
-where
-	P: Parser<IT, O>,
-	IT: InputToken,
-	OP: Parser<IT, F>,
-	F: FnOnce(O, O) -> O,
-	O: Clone,
-{
-	move |input| match operator_parser(input) {
-		Ok(operator) => {
-			let o2 = parser(input)?;
-			let output = operator(o1.clone(), o2);
-			parse_chain_left_tail(output, parser, operator_parser)(input)
+		let mut operand1 = operand_parser(input)?;
+		while let Ok(operator) = operator_parser(input) {
+			let operand2 = operand_parser(input)?;
+			operand1 = operator(operand1, operand2);
 		}
-		Err(_) => Ok(o1.clone()),
+		Ok(operand1)
 	}
 }
 
@@ -132,14 +113,14 @@ where
 	F: Fn(O, O) -> O,
 {
 	move |input| {
-		let o1 = operand_parser(input)?;
+		let operand1 = operand_parser(input)?;
 		match operator_parser(input) {
 			Ok(operator) => {
-				let o2 = chain_right(operand_parser, operator_parser)(input)?;
-				let output = operator(o1, o2);
+				let operand2 = chain_right(operand_parser, operator_parser)(input)?;
+				let output = operator(operand1, operand2);
 				Ok(output)
 			}
-			Err(_) => Ok(o1),
+			Err(_) => Ok(operand1),
 		}
 	}
 }
