@@ -10,7 +10,7 @@ powerful features like arbitrary lookahead and nested parsers.
 ## Features
 
 - Arbitrary Lookahead: easily backtrack and try alternative parsers using `attempt` and `look_ahead`.
-- Generic Input: works with any iterator whose items implement the `Token` trait.
+- Generic Input: works with any iterator whose items implement the `InputToken` trait.
 - Zero Dependencies: `yapcol` has no dependencies besides Rust's standard library.
 
 ## Installation
