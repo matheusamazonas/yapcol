@@ -1,9 +1,12 @@
-use std::io;
-use yapcol::error::Error;
-use yapcol::input::Input;
-use yapcol::{Parser, attempt, between, chain_left, chain_right, is, option, satisfy};
-mod expression;
 use expression::{Expression, Operator, evaluate};
+use std::fmt::Display;
+use std::io;
+use yapcol::input::Position;
+use yapcol::{
+	Error, Input, InputToken, Mismatch, Parser, attempt, between, chain_left, chain_right, either,
+	is, satisfy,
+};
+mod expression;
 
 #[derive(Debug, PartialEq, Clone)]
 enum Token {
@@ -13,7 +16,40 @@ enum Token {
 	CloseParenthesis,
 }
 
-fn tokenize(input: String) -> Vec<Token> {
+impl Display for Token {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Token::Number(n) => write!(f, "{n}"),
+			Token::Operator(op) => write!(f, "{op}"),
+			Token::OpenParenthesis => write!(f, "("),
+			Token::CloseParenthesis => write!(f, ")"),
+		}
+	}
+}
+
+#[derive(Debug, Clone)]
+struct SourceToken {
+	position: Position,
+	token: Token,
+}
+
+impl InputToken for SourceToken {
+	type Token = Token;
+
+	fn token(&self) -> &Self::Token {
+		&self.token
+	}
+
+	fn token_owned(self) -> Self::Token {
+		self.token
+	}
+
+	fn position(&self) -> Position {
+		self.position
+	}
+}
+
+fn tokenize(input: String) -> Result<Vec<SourceToken>, Error> {
 	let mut tokens = Vec::new();
 	let input = input.chars().collect::<Vec<char>>();
 	let mut i = 0;
@@ -36,100 +72,80 @@ fn tokenize(input: String) -> Vec<Token> {
 				let number = number.parse().unwrap();
 				Token::Number(number)
 			}
-			c => panic!("Unexpected character: {c}"),
+			unsupported => {
+				let position = Position::new(1, i + 1);
+				let mismatch = Mismatch::without_expectation(unsupported);
+				return Err(Error::UnexpectedToken(None, position, Some(mismatch)));
+			}
 		};
+		let position = Position::new(1, i + 1);
 		i += 1;
-		tokens.push(token);
+		tokens.push(SourceToken { token, position });
 	}
 
-	tokens
+	Ok(tokens)
 }
 
-trait TokenExpressionParser<I>: Parser<I, Expression>
-where
-	I: Iterator<Item = Token>,
-{
-}
+trait TokenExpressionParser: Parser<SourceToken, Expression> {}
 
-impl<I, T> TokenExpressionParser<I> for T
-where
-	I: Iterator<Item = Token>,
-	T: Fn(&mut Input<I>) -> Result<Expression, Error>,
-{
-}
+impl<T> TokenExpressionParser for T where T: Fn(&mut Input<SourceToken>) -> Result<Expression, Error>
+{}
 
-fn parse_number<I>() -> impl TokenExpressionParser<I>
-where
-	I: Iterator<Item = Token>,
-{
+fn parse_number() -> impl TokenExpressionParser {
 	let f = |token: &Token| match token {
-		Token::Number(number) => Ok(Expression::Number(*number)),
-		_ => Err(Error::UnexpectedToken),
+		Token::Number(number) => Some(Expression::Number(*number)),
+		_ => None,
 	};
-	satisfy(f)
+	satisfy(f).with_expectation("number")
 }
 
 fn build_operation(op: Operator) -> impl Fn(Expression, Expression) -> Expression {
 	move |o1, o2| Expression::Operation(Box::new(o1), op.clone(), Box::new(o2))
 }
 
-fn parse_operations<I>(
+fn parse_operations(
 	operator1: Operator,
 	operator2: Operator,
-) -> impl Parser<I, Box<dyn Fn(Expression, Expression) -> Expression>>
-where
-	I: Iterator<Item = Token>,
-{
+) -> impl Parser<SourceToken, Box<dyn Fn(Expression, Expression) -> Expression>> {
 	move |input| {
-		let parse_multiplication = is(Token::Operator(operator1.clone()));
-		let parse_division = is(Token::Operator(operator2.clone()));
-		let parse_attempt_multiplication = attempt(&parse_multiplication);
-		let operator = option(&parse_attempt_multiplication, &parse_division)(input)?;
+		let parse_op1 = is(Token::Operator(operator1.clone()));
+		let parse_op2 = is(Token::Operator(operator2.clone()));
+		let parse_attempt_op1 = attempt(&parse_op1);
+		let operator = either(&parse_attempt_op1, &parse_op2)(input)?;
 		match operator {
 			Token::Operator(op) => Ok(Box::new(build_operation(op))),
-			_ => Err(Error::UnexpectedToken),
+			t => Err(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+				Some(Mismatch::new(Box::new("operator"), Box::new(t))),
+			)),
 		}
 	}
 }
 
-fn parse_expression<I>() -> impl TokenExpressionParser<I>
-where
-	I: Iterator<Item = Token>,
-{
+fn parse_expression() -> impl TokenExpressionParser {
 	|input| {
 		let parse_operator = parse_operations(Operator::Addition, Operator::Subtraction);
-		chain_left(&parse_factor(), &parse_operator)(input)
+		chain_left(&parse_factor(), &parse_operator).with_expectation("expression")(input)
 	}
 }
 
-fn parse_factor<I>() -> impl TokenExpressionParser<I>
-where
-	I: Iterator<Item = Token>,
-{
+fn parse_factor() -> impl TokenExpressionParser {
 	|input| {
 		let parse_operator = parse_operations(Operator::Multiplication, Operator::Division);
-		chain_left(&parse_exponentiation(), &parse_operator)(input)
+		chain_left(&parse_exponentiation(), &parse_operator).with_expectation("factor")(input)
 	}
 }
 
-fn parse_exponentiation<I>() -> impl TokenExpressionParser<I>
-where
-	I: Iterator<Item = Token>,
-{
+fn parse_exponentiation() -> impl TokenExpressionParser {
 	|input| {
-		let parse_operator =
-			|input: &mut Input<I>| match is(Token::Operator(Operator::Exponentiation))(input) {
-				Ok(_) => Ok(build_operation(Operator::Exponentiation)),
-				Err(_) => Err(Error::UnexpectedToken),
-			};
-		chain_right(&parse_bottom(), &parse_operator)(input)
+		let parse_operator = is(Token::Operator(Operator::Exponentiation))
+			.map(|_| build_operation(Operator::Exponentiation));
+		chain_right(&parse_bottom(), &parse_operator).with_expectation("exponentiation")(input)
 	}
 }
 
-fn parse_bottom<I>() -> impl TokenExpressionParser<I>
-where
-	I: Iterator<Item = Token>,
-{
+fn parse_bottom() -> impl TokenExpressionParser {
 	|input| {
 		let parse_number = parse_number();
 		let parse_open = is(Token::OpenParenthesis);
@@ -137,7 +153,7 @@ where
 		let parse_close = is(Token::CloseParenthesis);
 		let parse_parenthesis = between(&parse_open, &parse_expression, &parse_close);
 		let parse_parenthesis = attempt(&parse_parenthesis);
-		option(&parse_parenthesis, &parse_number)(input)
+		either(&parse_parenthesis, &parse_number)(input)
 	}
 }
 
@@ -152,11 +168,15 @@ fn main() {
 			Ok(_) if input.len() == 2 && input.starts_with('q') => break,
 			Ok(_) => {
 				input.retain(|c| c != '\n');
-				let tokens = tokenize(input.clone());
-				let mut input = Input::new(tokens);
-				match parse_expression()(&mut input) {
-					Ok(e) => println!("Success: {:?}", evaluate(e)),
-					Err(e) => println!("Failed to parse expression: {:?}", e),
+				match tokenize(input.clone()) {
+					Ok(tokens) => {
+						let mut input = Input::new_from_tokens(tokens, Some("stdin".to_string()));
+						match parse_expression().exhaustive()(&mut input) {
+							Ok(e) => println!("Success: {:?}", evaluate(e)),
+							Err(e) => println!("Failed to parse expression: {e}"),
+						}
+					}
+					Err(e) => println!("Failed to tokenize: {e}"),
 				}
 			}
 			Err(_) => println!("Failed to read input."),
@@ -168,60 +188,91 @@ fn main() {
 mod tokenize_tests {
 	use super::*;
 
+	fn assert_tokens(tokens: &[SourceToken], expected: &[Token]) {
+		assert_eq!(tokens.len(), expected.len());
+		assert!(
+			tokens
+				.iter()
+				.zip(expected.iter())
+				.all(|(t, e)| t.token == *e)
+		);
+	}
+
 	#[test]
 	fn addition() {
 		let input = String::from("+");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Operator(Operator::Addition),])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Operator(Operator::Addition)]);
 	}
 
 	#[test]
 	fn subtraction() {
 		let input = String::from("-");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Operator(Operator::Subtraction),])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Operator(Operator::Subtraction)]);
 	}
 
 	#[test]
 	fn multiplication() {
 		let input = String::from("*");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Operator(Operator::Multiplication),])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Operator(Operator::Multiplication)]);
 	}
 
 	#[test]
 	fn division() {
 		let input = String::from("/");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Operator(Operator::Division),])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Operator(Operator::Division)]);
 	}
 
 	#[test]
 	fn number_single() {
 		let input = String::from("1");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Number(1)])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Number(1)]);
 	}
 
 	#[test]
 	fn number_multiple() {
 		let input = String::from("167253571");
-		let tokens = tokenize(input);
-		assert_eq!(tokens, vec![Token::Number(167253571)])
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(&tokens, &vec![Token::Number(167253571)]);
 	}
 
 	#[test]
 	fn addition_operation() {
 		let input = String::from("15+3");
-		let tokens = tokenize(input);
-		assert_eq!(
-			tokens,
-			vec![
+		let tokens = tokenize(input).unwrap();
+		assert_tokens(
+			&tokens,
+			&vec![
 				Token::Number(15),
 				Token::Operator(Operator::Addition),
 				Token::Number(3),
-			]
+			],
 		);
+	}
+}
+
+#[cfg(test)]
+mod parsing_tests {
+	use super::*;
+
+	#[test]
+	fn exhaustive() {
+		let tokens = tokenize(String::from("12345(")).unwrap();
+		let mut input = Input::new_from_tokens(tokens, None);
+		let output = parse_expression().exhaustive()(&mut input);
+		let mismatch = Mismatch::new("end of input", "(");
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 6),
+				Some(mismatch)
+			))
+		)
 	}
 }
 
@@ -231,8 +282,8 @@ mod evaluation_tests {
 	use yapcol::end_of_input;
 
 	fn parse_and_evaluate(input: &str) -> i32 {
-		let tokens = tokenize(String::from(input));
-		let mut input = Input::new(tokens);
+		let tokens = tokenize(String::from(input)).unwrap();
+		let mut input = Input::new_from_tokens(tokens, None);
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())

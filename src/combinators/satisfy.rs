@@ -1,0 +1,101 @@
+use crate::{Error, InputToken, Mismatch, Parser};
+
+/// Creates a parser that succeeds if the given predicate returns `Some` for the next token.
+///
+/// # Outcome
+///
+/// The outcome of this parser is determined by the argument predicate. If the predicate returns
+/// `Some`, the combinator succeeds. If the predicate returns `None`, the combinator fails.
+///
+/// # Input consumption
+///
+/// This combinator consumes input if it succeeds.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Arguments
+///
+/// - `f`: A predicate that takes a reference to a token and returns `Some` on success or
+///   `None` on failure.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::{Error, Input, any, satisfy};
+///
+/// let tokens: Vec<char> = vec!['3', 'a', 'b'];
+/// let mut input = Input::new_from_chars(tokens, None);
+/// let parser = satisfy(|c: &char| if c.is_ascii_digit() { Some(*c) } else { None });
+/// assert_eq!(parser(&mut input).unwrap(), '3');
+/// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
+///
+/// let tokens: Vec<char> = vec!['a', 'b', 'c'];
+/// let mut input = Input::new_from_chars(tokens, None);
+/// assert!(parser(&mut input).is_err());
+/// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
+/// ```
+pub fn satisfy<F, IT, O>(f: F) -> impl Parser<IT, O>
+where
+	F: Fn(&IT::Token) -> Option<O>,
+	IT: InputToken,
+{
+	move |input| {
+		match input.peek() {
+			Some(input_token) => {
+				let token = input_token.token();
+				match f(token) {
+					Some(result) => {
+						input.next_token(); // Consume if successful.
+						Ok(result)
+					}
+					None => {
+						let position = input_token.position();
+						let mismatch = Mismatch::without_expectation(token.to_string());
+						Err(Error::UnexpectedToken(
+							input.source_name(),
+							position,
+							Some(mismatch),
+						))
+					}
+				}
+			}
+			None => Err(Error::EndOfInput(None)),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::input::Position;
+	use crate::*;
+
+	#[test]
+	fn digits() {
+		let parser = satisfy(|token: &char| {
+			if token.is_ascii_digit() {
+				Some(*token)
+			} else {
+				None
+			}
+		});
+		// Digits.
+		let mut input = Input::new_from_chars("1".chars(), None);
+		assert_eq!(parser(&mut input), Ok('1'));
+		assert!(end_of_input()(&mut input).is_ok());
+		// Words fails and does not consume.
+		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mismatch = Mismatch::without_expectation('h');
+		assert_eq!(
+			parser(&mut input),
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
+		);
+		assert_eq!(any()(&mut input), Ok('h'));
+		assert_eq!(any()(&mut input), Ok('e'));
+	}
+}

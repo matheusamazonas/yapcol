@@ -1,8 +1,99 @@
 //! Error types returned by parsers when they fail to match input.
 //!
 //! This module defines [`Error`], the single error type used throughout the crate. Every parser
-//! returns `Result<O, Error>`, so understanding the variants is enough to handle all failure
+//! returns `Result<Output, Error>`, so understanding the variants is enough to handle all failure
 //! cases.
+
+use crate::input::Position;
+use std::fmt::{Debug, Display};
+
+/// A trait for types that can be used as elements in a [`Mismatch`].
+///
+/// Any type that implements both [`Display`] and [`Debug`] automatically implements this trait.
+pub trait MismatchElement: Display + Debug {}
+
+impl<T> MismatchElement for T where T: Display + Debug {}
+
+impl PartialEq for dyn MismatchElement {
+	fn eq(&self, other: &Self) -> bool {
+		self.to_string() == other.to_string()
+	}
+}
+
+/// Describes a mismatch between what was expected and what was found during parsing.
+///
+/// A `Mismatch` is carried by [`Error::UnexpectedToken`] and [`Error::EndOfInput`] to provide
+/// human-readable context about why a parser failed. Both the `expected` and `found` fields are
+/// optional: use [`Mismatch::new`] when both are known, [`Mismatch::without_found`] when only the
+/// expectation is known, and [`Mismatch::without_expectation`] when only the found value is known.
+#[derive(PartialEq, Debug)]
+pub struct Mismatch {
+	expected: Option<Box<dyn MismatchElement>>,
+	found: Option<Box<dyn MismatchElement>>,
+}
+
+impl Mismatch {
+	/// Creates a `Mismatch` with both an expected value and a found value.
+	pub fn new<E1, E2>(expected: E1, found: E2) -> Mismatch
+	where
+		E1: MismatchElement + 'static,
+		E2: MismatchElement + 'static,
+	{
+		let expected = Box::new(expected);
+		let found = Box::new(found);
+		Mismatch {
+			expected: Some(expected),
+			found: Some(found),
+		}
+	}
+
+	/// Creates a `Mismatch` with only an expected value, when no token was found (e.g., end of input).
+	pub fn without_found<E>(expected: E) -> Mismatch
+	where
+		E: MismatchElement + 'static,
+	{
+		let expected = Box::new(expected);
+		Mismatch {
+			expected: Some(expected),
+			found: None,
+		}
+	}
+
+	/// Creates a `Mismatch` with only a found value, when no expectation is available.
+	pub fn without_expectation<E>(found: E) -> Mismatch
+	where
+		E: MismatchElement + 'static,
+	{
+		let found = Box::new(found);
+		Mismatch {
+			expected: None,
+			found: Some(found),
+		}
+	}
+
+	/// Replaces the expected value of this `Mismatch`, overwriting any previously set expectation.
+	pub fn replace_expectation<E>(&mut self, expected: E)
+	where
+		E: MismatchElement + 'static,
+	{
+		self.expected.replace(Box::new(expected));
+	}
+}
+
+impl Display for Mismatch {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self.expected {
+			Some(ref expected) => match self.found {
+				Some(ref found) => write!(f, "Expected: {expected}, found: {found}"),
+				None => write!(f, "Expected: {expected}"),
+			},
+			None => match self.found {
+				Some(ref found) => write!(f, "Found: {found}"),
+				None => panic!("Invalid error mismatch."),
+			},
+		}
+	}
+}
 
 /// The error type returned by all parsers in this crate.
 ///
@@ -13,24 +104,134 @@
 /// # Examples
 ///
 /// ```
-/// use yapcol::{is, any};
-/// use yapcol::error::Error;
-/// use yapcol::input::Input;
+/// use yapcol::input::Position;
+/// use yapcol::{Error, Input, Mismatch, any, is};
 ///
 /// let tokens = vec!['a'];
-/// let mut input = Input::new(tokens);
+/// let source_name = Some(String::from("file.txt"));
+/// let mut input = Input::new_from_chars(tokens, source_name.clone());
 ///
 /// // Fails with UnexpectedToken when the token does not match.
-/// assert_eq!(is('b')(&mut input), Err(Error::UnexpectedToken));
+/// let output = is('b')(&mut input);
+/// let mismatch = Mismatch::new('b', 'a');
+/// assert_eq!(
+/// 	output,
+/// 	Err(Error::UnexpectedToken(
+/// 		source_name,
+/// 		Position::new(1, 1),
+/// 		Some(mismatch)
+/// 	))
+/// );
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
-/// assert_eq!(any()(&mut input), Err(Error::EndOfInput));
+/// assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 /// ```
-#[derive(Copy, Clone, PartialOrd, PartialEq, Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
-	UnexpectedToken,
+	///
+	/// The first field is the optional source name (e.g., a file name). The second is the
+	/// position (in the input source) where the unexpected token was found. The third field is an
+	/// optional mismatch, detailing what was found and what was expected.
+	UnexpectedToken(Option<String>, Position, Option<Mismatch>),
 	/// The input stream was exhausted before the parser could match.
-	EndOfInput,
+	///
+	/// It contains an optional mismatch element, describing what was expected.
+	EndOfInput(Option<Box<dyn MismatchElement>>),
+	/// A repetition parser (e.g., [`crate::many0`], [`crate::many1`] or [`crate::many_until`])
+	/// detected that the inner parser succeeded without consuming any input, which would cause an
+	/// infinite loop.
+	///
+	/// The first field is the optional source name (e.g., a file name). The second field is the
+	/// position in the input where the loop was detected.
+	///
+	/// A parser is said to be *non-consuming* when it matches successfully without advancing the
+	/// input position. When such a parser is used inside a repetition combinator, every iteration
+	/// would succeed indefinitely without making progress, so the combinator returns this error
+	/// instead of looping forever.
+	///
+	/// # Examples
+	///
+	/// ```
+	/// use yapcol::input::Position;
+	/// use yapcol::{Error, Input, many0, success};
+	///
+	/// // `success` always succeeds without consuming any input, so `many0` detects the loop.
+	/// let parser = success(());
+	/// let mut input = Input::new_from_chars("abc".chars(), None);
+	/// assert_eq!(
+	/// 	many0(&parser)(&mut input),
+	/// 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+	/// );
+	/// ```
+	NonConsumingLoop(Option<String>, Position),
+}
+
+impl Display for Error {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			Error::UnexpectedToken(Some(source_name), pos, None) => {
+				write!(f, "Unexpected token at {}:{}.", source_name, pos)
+			}
+			Error::UnexpectedToken(Some(source_name), pos, Some(mismatch)) => {
+				write!(f, "Unexpected token at {source_name}:{pos}. {mismatch}")
+			}
+			Error::UnexpectedToken(None, pos, None) => write!(f, "Unexpected token at {pos}."),
+			Error::UnexpectedToken(None, pos, Some(mismatch)) => {
+				write!(f, "Unexpected token at {pos}. {mismatch}")
+			}
+			Error::EndOfInput(Some(expected)) => {
+				write!(f, "End of input reached when expected {}.", expected)
+			}
+			Error::EndOfInput(None) => write!(f, "End of input reached."),
+			Error::NonConsumingLoop(Some(source_name), pos) => {
+				write!(f, "Non-consuming parser loop at {source_name}:{pos}.")
+			}
+			Error::NonConsumingLoop(None, pos) => write!(f, "Non-consuming parser loop at {pos}."),
+		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+
+	mod mismatch {
+		use crate::Mismatch;
+
+		#[test]
+		fn same_with_expectation_equal() {
+			let m1 = Mismatch::new("h", "p");
+			let m2 = Mismatch::new("h", "p");
+			assert_eq!(m1, m2);
+		}
+
+		#[test]
+		fn same_without_expectation_equal() {
+			let m1 = Mismatch::without_expectation("hello");
+			let m2 = Mismatch::without_expectation("hello");
+			assert_eq!(m1, m2);
+		}
+
+		#[test]
+		fn different_expectation_presence() {
+			let m1 = Mismatch::new("hello", "p");
+			let m2 = Mismatch::without_expectation("hello");
+			assert_ne!(m1, m2);
+		}
+
+		#[test]
+		fn different_expectation() {
+			let m1 = Mismatch::new("hello", "p");
+			let m2 = Mismatch::new("hallo", "p");
+			assert_ne!(m1, m2);
+		}
+
+		#[test]
+		fn different_found() {
+			let m1 = Mismatch::new("hello", "p");
+			let m2 = Mismatch::new("hello", "x");
+			assert_ne!(m1, m2);
+		}
+	}
 }

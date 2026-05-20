@@ -1,1 +1,2 @@
 hard_tabs = true
+format_code_in_doc_comments = true # Unstable, needs `cargo +nightly fmt` to be applied.
