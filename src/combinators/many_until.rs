@@ -11,11 +11,17 @@ use crate::{Error, InputToken, Parser};
 /// This parser consumes input if:
 /// - It succeeds, and:
 ///   - Its `end` argument parser consumes upon success, or;
-///   - Its `parser` argument consumes upon success, *and* it was applied at least once.
+///   - Its `parser` argument was applied at least once.
 /// - It fails, and:
 ///   - Its `end` argument parser consumes upon failure, or;
 ///   - Its `parser` argument consumes upon failure, *and* it was applied at least once.
 ///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+/// 
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.

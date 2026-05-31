@@ -10,10 +10,15 @@ use crate::{Error, Input, InputToken, Parser};
 /// # Input consumption
 ///
 /// This parser consumes input if:
-/// - At least one occurrence of its argument parser succeeds, *and* its argument parser consumes
-///   input upon success.
+/// - At least one occurrence of its argument parser succeeds.
 /// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
 ///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+/// 
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
@@ -65,10 +70,15 @@ where
 /// # Input consumption
 ///
 /// This parser consumes input if:
-/// - At least one occurrence of its argument parser succeeds, *and* its argument parser consumes
-///   input upon success.
+/// - At least one occurrence of its argument parser succeeds.
 /// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
 ///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+/// 
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
