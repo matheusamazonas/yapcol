@@ -219,6 +219,18 @@ mod tests {
 		}
 
 		#[test]
+		fn partial_match_then_stop() {
+			let parser = is('#');
+			let mut input = Input::new_from_chars("#####Hello".chars(), None);
+			let parser_many0 = many0(&parser);
+			let output = parser_many0(&mut input).unwrap();
+			assert_eq!(output.len(), 5);
+			assert_eq!(input.consumed_count(), 5);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('H'));
+		}
+
+		#[test]
 		fn non_consuming_parser_does_not_loop() {
 			let parser = success(1); // Non-consuming parser.
 			let mut input = Input::new_from_chars("hello".chars(), None);
@@ -346,7 +358,9 @@ mod tests {
 			let parser_many1 = many1(&parser);
 			let output = parser_many1(&mut input).unwrap();
 			assert_eq!(output, vec!['h', 'h']);
+			assert_eq!(input.consumed_count(), 2);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('j'));
 		}
 
 		#[test]
