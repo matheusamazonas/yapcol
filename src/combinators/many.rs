@@ -449,7 +449,7 @@ mod tests {
 			let mut input = Input::new_from_chars("#####Hello".chars(), None);
 			let parser_many0 = many0(&parser);
 			let output = parser_many0(&mut input).unwrap();
-			assert_eq!(output.len(), 5);
+			assert_eq!(output, "#####".chars().collect::<Vec<_>>());
 			assert_eq!(input.consumed_count(), 5);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 			assert_eq!(any()(&mut input), Ok('H'));
@@ -548,7 +548,7 @@ mod tests {
 			let mut input = Input::new_from_chars("hallo".chars(), None);
 			let parser_many1 = many1(&parser);
 			let output = parser_many1(&mut input).unwrap();
-			assert_eq!(output.len(), 1);
+			assert_eq!(output, vec!['h']);
 			assert_eq!(input.consumed_count(), 1);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
@@ -558,7 +558,7 @@ mod tests {
 			let parser = is('h').many1();
 			let mut input = Input::new_from_chars("hallo".chars(), None);
 			let output = parser(&mut input).unwrap();
-			assert_eq!(output.len(), 1);
+			assert_eq!(output, vec!['h']);
 			assert_eq!(input.consumed_count(), 1);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
