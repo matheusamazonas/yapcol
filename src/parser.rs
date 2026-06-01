@@ -327,6 +327,22 @@ where
 	{
 		move |input| count(&self, c)(input)
 	}
+
+	// A shortcut for the [`many0_up_to`] combinator
+	fn many0_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many0_up_to(&self, max_count)(input)
+	}
+
+	// A shortcut for the [`many1_up_to`] combinator
+	fn many1_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many1_up_to(&self, max_count)(input)
+	}
 }
 
 impl<IT, O, X> Parser<IT, O> for X

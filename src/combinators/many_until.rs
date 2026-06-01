@@ -21,7 +21,7 @@ use crate::{Error, InputToken, Parser};
 /// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
 /// input upon success. This behavior is there to prevent an infinite loop caused by the input never
 /// being consumed.
-/// 
+///
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.

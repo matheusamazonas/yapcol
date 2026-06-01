@@ -1,4 +1,4 @@
-use crate::{Error, Input, InputToken, Parser};
+use crate::{Error, Input, InputToken, Mismatch, Parser};
 
 /// Applies `parser` zero or more times.
 ///
@@ -18,7 +18,7 @@ use crate::{Error, Input, InputToken, Parser};
 /// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
 /// input upon success. This behavior is there to prevent an infinite loop caused by the input never
 /// being consumed.
-/// 
+///
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
@@ -57,7 +57,7 @@ where
 {
 	|input| {
 		let output: Vec<O> = Vec::new();
-		many(parser)(input, output)
+		many(parser, None)(input, output)
 	}
 }
 
@@ -78,7 +78,7 @@ where
 /// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
 /// input upon success. This behavior is there to prevent an infinite loop caused by the input never
 /// being consumed.
-/// 
+///
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
@@ -116,22 +116,217 @@ where
 {
 	|input| {
 		let mut output: Vec<O> = Vec::new();
+		// Parse manually once to ensure that at least one occurrence of the parser succeeds.
 		match parser(input) {
 			Ok(token) => {
 				output.push(token);
-				many(parser)(input, output)
+				many(parser, None)(input, output)
 			}
 			Err(e) => Err(e),
 		}
 	}
 }
 
-fn many<P, IT, O>(parser: &P) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
+/// Applies `parser` between 0 and a given number of times, ensuring that no more matches occur.
+///
+/// # Outcome
+///
+/// This combinator succeeds if the argument parser succeeds between 0 and up to (and including)
+/// `max_count` times. In that case, it returns a vector of matches of its argument parser.
+///
+/// It fails if the argument parser matches more than `max_count` times.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many0_up_to`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to be applied multiple times.
+/// - `max_count`: The (inclusive) maximum number of times that the argument parser should succeed.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::{Input, is, many0_up_to};
+///
+/// // Succeeds if the parser matches exactly `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let max_count = 2;
+/// assert_eq!(
+/// 	many0_up_to(&parser, max_count)(&mut input),
+/// 	Ok("11".chars().collect())
+/// );
+///
+/// // Succeeds if the parser matches less than `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let max_count = 5;
+/// assert_eq!(
+/// 	many0_up_to(&parser, max_count)(&mut input),
+/// 	Ok("11".chars().collect())
+/// );
+///
+/// // Fails if the parser matches more than `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let max_count = 2;
+/// assert!(many0_up_to(&parser, max_count)(&mut input).is_err());
+///
+/// // Succeeds on empty input if `max_count` is 0.
+/// let mut input = Input::new_from_chars("".chars(), None);
+/// let max_count = 0;
+/// assert_eq!(many0_up_to(&parser, max_count)(&mut input), Ok(Vec::new()));
+/// ```
+pub fn many0_up_to<P, IT, O>(parser: &P, max_count: usize) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input, mut output| {
+	move |input| {
+		let mut output: Vec<O> = Vec::new();
+		match parser(input) {
+			Ok(_) if max_count == 0 => {
+				let position = input.position();
+				let expected = "no occurrences".to_string();
+				let found = "at least one occurrence".to_string();
+				let mismatch = Mismatch::new(expected, found);
+				Err(Error::UnexpectedToken(
+					input.source_name(),
+					position,
+					Some(mismatch),
+				))
+			}
+			Ok(token) => {
+				output.push(token);
+				// One occurence has been consumed, so request `max_count - 1`.
+				many(parser, Some(max_count - 1))(input, output)
+			}
+			Err(_) => Ok(output),
+		}
+	}
+}
+
+/// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur.
+///
+/// # Outcome
+///
+/// This combinator succeeds if the argument parser succeeds between 1 and up to (and including)
+/// `max_count` times. In that case, it returns a vector of matches of its argument parser.
+///
+/// It fails if the argument parser:
+/// - Never succeeds.
+/// - Matches more than `max_count` times.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many0_up_to`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to be applied multiple times.
+/// - `max_count`: The (inclusive) maximum number of times that the argument parser should succeed.
+///   Must be greater than 0, otherwise this function panics.
+///
+/// # Panics
+///
+/// This function panics if `max_count` is equal to 0. Check [`many0_up_to`] if you would like to
+/// cover this case.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::{Input, is, many1_up_to};
+///
+/// // Succeeds if the parser matches exactly `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let max_count = 2;
+/// assert_eq!(
+/// 	many1_up_to(&parser, max_count)(&mut input),
+/// 	Ok("11".chars().collect())
+/// );
+///
+/// // Succeeds if the parser matches less than `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let max_count = 5;
+/// assert_eq!(
+/// 	many1_up_to(&parser, max_count)(&mut input),
+/// 	Ok("11".chars().collect())
+/// );
+///
+/// // Fails if the parser matches more than `max_count` times.
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let max_count = 2;
+/// assert!(many1_up_to(&parser, max_count)(&mut input).is_err());
+/// ```
+pub fn many1_up_to<P, IT, O>(parser: &P, max_count: usize) -> impl Parser<IT, Vec<O>>
+where
+	P: Parser<IT, O>,
+	IT: InputToken,
+{
+	if max_count == 0 {
+		panic!("max_count must be greater than 0");
+	}
+	move |input| {
+		let mut output: Vec<O> = Vec::new();
+		// Parse manually once to ensure that at least one occurrence of the parser succeeds.
+		match parser(input) {
+			Ok(token) => {
+				output.push(token);
+				// One occurence has been consumed, so request `max_count - 1`.
+				many(parser, Some(max_count - 1))(input, output)
+			}
+			Err(e) => Err(e),
+		}
+	}
+}
+
+fn many<P, IT, O>(
+	parser: &P,
+	max_count: Option<usize>,
+) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
+where
+	P: Parser<IT, O>,
+	IT: InputToken,
+{
+	move |input, mut output| {
+		let mut total_count = 0;
 		let mut previous_count: Option<usize> = None;
 		loop {
 			match parser(input) {
@@ -148,8 +343,28 @@ where
 					}
 					output.push(token);
 					previous_count = Some(new_count);
+					total_count += 1;
 				}
-				Err(_) => return Ok(output),
+				Err(_) => {
+					return match max_count {
+						None => Ok(output),
+						Some(max_count) => {
+							if total_count <= max_count {
+								Ok(output)
+							} else {
+								let position = input.position();
+								let expected = format!("at most {max_count} occurrences");
+								let found = format!("{total_count} occurrences");
+								let mismatch = Mismatch::new(expected, found);
+								Err(Error::UnexpectedToken(
+									input.source_name(),
+									position,
+									Some(mismatch),
+								))
+							}
+						}
+					};
+				}
 			}
 		}
 	}
