@@ -616,4 +616,235 @@ mod tests {
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
 	}
+
+	mod many0_up_to {
+		use crate::*;
+
+		#[test]
+		fn empty() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 1);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+		}
+
+		#[test]
+		fn empty_shortcut() {
+			let parser = is('h').many0_up_to(1);
+			let mut input = Input::new_from_chars("".chars(), None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+		}
+
+		#[test]
+		fn no_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 1);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn no_match_shortcut() {
+			let parser = is('h').many0_up_to(1);
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn one_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 1);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h']);
+			assert_eq!(input.consumed_count(), 1);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn less_than_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 3);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h', 'h']);
+			assert_eq!(input.consumed_count(), 2);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn equal_to_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhhello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 3);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h', 'h', 'h']);
+			assert_eq!(input.consumed_count(), 3);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn more_than_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhhhello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 3);
+			let output = parser_up_to(&mut input);
+			assert!(output.is_err());
+		}
+
+		#[test]
+		fn zero_empty() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 0);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+			assert_eq!(input.consumed_count(), 0);
+		}
+
+		#[test]
+		fn zero_success() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("ello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 0);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output.len(), 0);
+			assert_eq!(input.consumed_count(), 0);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn zero_fail() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser_up_to = many0_up_to(&parser, 0);
+			let output = parser_up_to(&mut input);
+			assert!(output.is_err());
+			assert_eq!(input.consumed_count(), 1);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+	}
+
+	mod many1_up_to {
+		use crate::combinators::many::many1_up_to;
+		use crate::input::Position;
+		use crate::*;
+
+		#[test]
+		fn empty() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 1);
+			assert_eq!(
+				parser_up_to(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
+		}
+
+		#[test]
+		fn empty_shortcut() {
+			let parser = is('h').many1_up_to(1);
+			let mut input = Input::new_from_chars("".chars(), None);
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
+		}
+
+		#[test]
+		fn no_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 1);
+			let mismatch = Mismatch::new('h', 'j');
+			assert_eq!(
+				parser_up_to(&mut input),
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
+			);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn no_match_shortcut() {
+			let parser = is('h').many1_up_to(1);
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let mismatch = Mismatch::new('h', 'j');
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
+			);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn one_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 1);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h']);
+			assert_eq!(input.consumed_count(), 1);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn less_than_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhello".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 3);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h', 'h']);
+			assert_eq!(input.consumed_count(), 2);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn equal_to_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhhello".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 3);
+			let output = parser_up_to(&mut input).unwrap();
+			assert_eq!(output, vec!['h', 'h', 'h']);
+			assert_eq!(input.consumed_count(), 3);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('e'));
+		}
+
+		#[test]
+		fn more_than_max_count() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhhhello".chars(), None);
+			let parser_up_to = many1_up_to(&parser, 3);
+			let output = parser_up_to(&mut input);
+			assert!(output.is_err());
+		}
+
+		#[test]
+		#[should_panic]
+		fn zero_panics() {
+			let parser = is::<CharToken>('h');
+			let _ = many1_up_to(&parser, 0);
+		}
+	}
 }
