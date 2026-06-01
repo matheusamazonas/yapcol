@@ -1,4 +1,4 @@
-use crate::{Error, Input, InputToken, Mismatch, Parser};
+use crate::{Error, InputToken, Mismatch, Parser};
 
 /// Applies `parser` zero or more times.
 ///
@@ -55,10 +55,7 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input| {
-		let output: Vec<O> = Vec::new();
-		many(parser, None)(input, output)
-	}
+	many(parser, 0, None)
 }
 
 /// Applies `parser` one or more times.
@@ -114,17 +111,7 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input| {
-		let mut output: Vec<O> = Vec::new();
-		// Parse manually once to ensure that at least one occurrence of the parser succeeds.
-		match parser(input) {
-			Ok(token) => {
-				output.push(token);
-				many(parser, None)(input, output)
-			}
-			Err(e) => Err(e),
-		}
-	}
+	many(parser, 1, None)
 }
 
 /// Applies `parser` between 0 and a given number of times, ensuring that no more matches occur.
@@ -200,28 +187,7 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input| {
-		let mut output: Vec<O> = Vec::new();
-		match parser(input) {
-			Ok(_) if max_count == 0 => {
-				let position = input.position();
-				let expected = "no occurrences".to_string();
-				let found = "at least one occurrence".to_string();
-				let mismatch = Mismatch::new(expected, found);
-				Err(Error::UnexpectedToken(
-					input.source_name(),
-					position,
-					Some(mismatch),
-				))
-			}
-			Ok(token) => {
-				output.push(token);
-				// One occurence has been consumed, so request `max_count - 1`.
-				many(parser, Some(max_count - 1))(input, output)
-			}
-			Err(_) => Ok(output),
-		}
-	}
+	many(parser, 0, Some(max_count))
 }
 
 /// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur.
@@ -303,34 +269,37 @@ where
 	if max_count == 0 {
 		panic!("max_count must be greater than 0");
 	}
-	move |input| {
-		let mut output: Vec<O> = Vec::new();
-		// Parse manually once to ensure that at least one occurrence of the parser succeeds.
-		match parser(input) {
-			Ok(token) => {
-				output.push(token);
-				// One occurence has been consumed, so request `max_count - 1`.
-				many(parser, Some(max_count - 1))(input, output)
-			}
-			Err(e) => Err(e),
-		}
-	}
+	many(parser, 1, Some(max_count))
 }
 
-fn many<P, IT, O>(
-	parser: &P,
-	max_count: Option<usize>,
-) -> impl Fn(&mut Input<IT>, Vec<O>) -> Result<Vec<O>, Error>
+fn many<P, IT, O>(parser: &P, min_count: usize, max_count: Option<usize>) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input, mut output| {
+	move |input| {
+		let mut matches: Vec<O> = Vec::new();
 		let mut total_count = 0;
 		let mut previous_count: Option<usize> = None;
 		loop {
-			match parser(input) {
-				Ok(token) => {
+			let previous_position = input.position();
+			let parse_outcome = parser(input);
+			match (parse_outcome, max_count) {
+				(Ok(_), Some(max_count)) if max_count == total_count => {
+					// Matched too many times.
+					total_count += 1;
+					let expected = format!("at most {max_count} occurrences");
+					let found = format!("{total_count} occurrences");
+					let mismatch = Mismatch::new(expected, found);
+					return Err(Error::UnexpectedToken(
+						input.source_name(),
+						previous_position,
+						Some(mismatch),
+					));
+				}
+				(Ok(token), _) => {
+					// Valid match.
+					total_count += 1;
 					let new_count = input.consumed_count();
 					// Check if non-consuming parser. If so, it would cause an infinite loop.
 					if let Some(previous) = previous_count
@@ -341,28 +310,14 @@ where
 							input.position(),
 						));
 					}
-					output.push(token);
+					matches.push(token);
 					previous_count = Some(new_count);
-					total_count += 1;
 				}
-				Err(_) => {
-					return match max_count {
-						None => Ok(output),
-						Some(max_count) => {
-							if total_count <= max_count {
-								Ok(output)
-							} else {
-								let position = input.position();
-								let expected = format!("at most {max_count} occurrences");
-								let found = format!("{total_count} occurrences");
-								let mismatch = Mismatch::new(expected, found);
-								Err(Error::UnexpectedToken(
-									input.source_name(),
-									position,
-									Some(mismatch),
-								))
-							}
-						}
+				(Err(e), _) => {
+					return if total_count >= min_count {
+						Ok(matches)
+					} else {
+						Err(e)
 					};
 				}
 			}
@@ -372,6 +327,37 @@ where
 
 #[cfg(test)]
 mod tests {
+	use crate::Error;
+	use crate::input::Position;
+	use std::fmt::Debug;
+
+	fn assert_unexpected_error<T>(
+		value: Result<T, Error>,
+		position: Position,
+		expected: &str,
+		found: &str,
+	) where
+		T: Debug,
+	{
+		let error = value.unwrap_err();
+		if let Error::UnexpectedToken(_, error_pos, mismatch) = error {
+			if error_pos != position {
+				panic!("Expected error position to be {position}, but got {error_pos}");
+			}
+			let mismatch_message = mismatch.unwrap().to_string();
+			let mut split = mismatch_message.split("found:");
+			let expected_message = split.next().unwrap();
+			assert!(expected_message.contains(expected));
+			let found_message = split.next().unwrap();
+			assert!(found_message.contains(found));
+		} else {
+			panic!(
+				"Expected error to be of type UnexpectedToken, but got {:?}",
+				error
+			);
+		}
+	}
+
 	mod many0 {
 		use crate::input::Position;
 		use crate::*;
@@ -618,6 +604,8 @@ mod tests {
 	}
 
 	mod many0_up_to {
+		use super::assert_unexpected_error;
+		use crate::input::Position;
 		use crate::*;
 
 		#[test]
@@ -698,7 +686,8 @@ mod tests {
 			let mut input = Input::new_from_chars("hhhhello".chars(), None);
 			let parser_up_to = many0_up_to(&parser, 3);
 			let output = parser_up_to(&mut input);
-			assert!(output.is_err());
+			let position = Position::new(1, 4);
+			assert_unexpected_error(output, position, "3", "4");
 		}
 
 		#[test]
@@ -729,7 +718,8 @@ mod tests {
 			let mut input = Input::new_from_chars("hello".chars(), None);
 			let parser_up_to = many0_up_to(&parser, 0);
 			let output = parser_up_to(&mut input);
-			assert!(output.is_err());
+			let position = Position::new(1, 1);
+			assert_unexpected_error(output, position, "0", "1");
 			assert_eq!(input.consumed_count(), 1);
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 			assert_eq!(any()(&mut input), Ok('e'));
@@ -737,7 +727,7 @@ mod tests {
 	}
 
 	mod many1_up_to {
-		use crate::combinators::many::many1_up_to;
+		use super::assert_unexpected_error;
 		use crate::input::Position;
 		use crate::*;
 
@@ -767,15 +757,9 @@ mod tests {
 			let parser = is('h');
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
 			let parser_up_to = many1_up_to(&parser, 1);
-			let mismatch = Mismatch::new('h', 'j');
-			assert_eq!(
-				parser_up_to(&mut input),
-				Err(Error::UnexpectedToken(
-					None,
-					Position::new(1, 1),
-					Some(mismatch)
-				))
-			);
+			let output = parser_up_to(&mut input);
+			let position = Position::new(1, 1);
+			assert_unexpected_error(output, position, "h", "j");
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
 
@@ -783,15 +767,9 @@ mod tests {
 		fn no_match_shortcut() {
 			let parser = is('h').many1_up_to(1);
 			let mut input = Input::new_from_chars("jklmno".chars(), None);
-			let mismatch = Mismatch::new('h', 'j');
-			assert_eq!(
-				parser(&mut input),
-				Err(Error::UnexpectedToken(
-					None,
-					Position::new(1, 1),
-					Some(mismatch)
-				))
-			);
+			let output = parser(&mut input);
+			let position = Position::new(1, 1);
+			assert_unexpected_error(output, position, "h", "j");
 			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 		}
 
@@ -837,7 +815,8 @@ mod tests {
 			let mut input = Input::new_from_chars("hhhhello".chars(), None);
 			let parser_up_to = many1_up_to(&parser, 3);
 			let output = parser_up_to(&mut input);
-			assert!(output.is_err());
+			let position = Position::new(1, 4);
+			assert_unexpected_error(output, position, "3", "4");
 		}
 
 		#[test]
