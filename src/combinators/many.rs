@@ -272,24 +272,28 @@ where
 	many(parser, 1, Some(max_count))
 }
 
-fn many<P, IT, O>(parser: &P, min_count: usize, max_count: Option<usize>) -> impl Parser<IT, Vec<O>>
+fn many<P, IT, O>(
+	parser: &P,
+	min_match_count: usize,
+	max_match_count: Option<usize>,
+) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
 	move |input| {
 		let mut matches: Vec<O> = Vec::new();
-		let mut total_count = 0;
-		let mut previous_count: Option<usize> = None;
+		let mut total_match_count = 0;
+		let mut previous_consumed_count = input.consumed_count();
 		loop {
 			let previous_position = input.position();
-			let parse_outcome = parser(input);
-			match (parse_outcome, max_count) {
-				(Ok(_), Some(max_count)) if max_count == total_count => {
-					// Matched too many times.
-					total_count += 1;
+			let outcome = parser(input);
+			match (outcome, max_match_count) {
+				// Matched too many times.
+				(Ok(_), Some(max_count)) if max_count == total_match_count => {
+					total_match_count += 1;
 					let expected = format!("at most {max_count} occurrences");
-					let found = format!("{total_count} occurrences");
+					let found = format!("{total_match_count} occurrences");
 					let mismatch = Mismatch::new(expected, found);
 					return Err(Error::UnexpectedToken(
 						input.source_name(),
@@ -297,24 +301,22 @@ where
 						Some(mismatch),
 					));
 				}
+				// Valid match.
 				(Ok(token), _) => {
-					// Valid match.
-					total_count += 1;
-					let new_count = input.consumed_count();
+					total_match_count += 1;
+					let consumed_count = input.consumed_count();
 					// Check if non-consuming parser. If so, it would cause an infinite loop.
-					if let Some(previous) = previous_count
-						&& previous == new_count
-					{
+					if previous_consumed_count == consumed_count {
 						return Err(Error::NonConsumingLoop(
 							input.source_name(),
 							input.position(),
 						));
 					}
 					matches.push(token);
-					previous_count = Some(new_count);
+					previous_consumed_count = consumed_count;
 				}
 				(Err(e), _) => {
-					return if total_count >= min_count {
+					return if total_match_count >= min_match_count {
 						Ok(matches)
 					} else {
 						Err(e)
