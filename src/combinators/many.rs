@@ -219,7 +219,7 @@ where
 ///
 /// # Shortcut
 ///
-/// This combinator has a shortcut version: [`Parser::many0_up_to`].
+/// This combinator has a shortcut version: [`Parser::many1_up_to`].
 ///
 /// # Arguments
 ///
