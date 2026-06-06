@@ -278,6 +278,35 @@ where
 		}
 	}
 
+	/// Runs the current parser and discards its output, returning `()` on success.
+	///
+	/// This is a shortcut for `.map(|_| ())`. It is useful when the output of a parser is not
+	/// needed, but its side effect (consuming input) is.
+	///
+	/// # Parameters
+	/// - `self`: The current parser whose output is discarded on success.
+	///
+	/// # Returns
+	/// A new parser that runs the current parser, but returns `()` instead of the original output.
+	///
+	/// # Examples
+	/// ```rust
+	/// use yapcol::{Input, Parser, any};
+	///
+	/// let mut input = Input::new_from_chars("a".chars(), None);
+	/// let parser = any().discard();
+	/// assert_eq!(parser(&mut input), Ok(()));
+	/// ```
+	///
+	/// # Errors
+	/// If the current parser fails, its error is returned.
+	fn discard(self) -> impl Parser<IT, ()>
+	where
+		Self: Sized,
+	{
+		self.map(|_| ())
+	}
+
 	/// A shortcut for the [`attempt`] combinator.
 	fn attempt(self) -> impl Parser<IT, O>
 	where
@@ -614,6 +643,25 @@ mod tests {
 				parser(&mut input),
 				Err(Error::UnexpectedToken(None, position, Some(mismatch)))
 			);
+		}
+	}
+
+	mod discard {
+		use crate::*;
+
+		#[test]
+		fn success() {
+			let parser = is('a').discard();
+			let mut input = Input::new_from_chars("a".chars(), None);
+			assert_eq!(parser(&mut input).unwrap(), ());
+		}
+
+		#[test]
+		fn fail() {
+			let parser = is('a').discard();
+			let mut input = Input::new_from_chars("b".chars(), None);
+			let output = parser(&mut input);
+			assert!(output.is_err());
 		}
 	}
 }
