@@ -1,4 +1,10 @@
+use crate::combinators::many::ManyOutput::{Count, Matches};
 use crate::{Error, InputToken, Mismatch, Parser};
+
+enum ManyOutput<T> {
+	Matches(Vec<T>),
+	Count(usize),
+}
 
 /// Applies `parser` zero or more times.
 ///
@@ -23,6 +29,11 @@ use crate::{Error, InputToken, Mismatch, Parser};
 ///
 /// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
 /// fails.
+///
+/// # Performance
+///
+/// This combinator stores all the matches it finds. If you're not interested in the matches, but
+/// instead in how many times it matched, consider using [`many0_discard`].
 ///
 /// # Shortcut
 ///
@@ -55,7 +66,11 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	many(parser, 0, None)
+	|input| match many(parser, 0, None, true)(input) {
+		Ok(Matches(matches)) => Ok(matches),
+		Ok(Count(_)) => panic!("[many0] Expected Matches, but got Count."),
+		Err(e) => Err(e),
+	}
 }
 
 /// Applies `parser` one or more times.
@@ -79,6 +94,11 @@ where
 /// # Look-ahead and backtracking
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Performance
+///
+/// This combinator stores all the matches it finds. If you're not interested in the matches, but
+/// instead in how many times it matched, consider using [`many0_discard`].
 ///
 /// # Shortcut
 ///
@@ -111,7 +131,11 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	many(parser, 1, None)
+	|input| match many(parser, 1, None, true)(input) {
+		Ok(Matches(matches)) => Ok(matches),
+		Ok(Count(_)) => panic!("[many1] Expected Matches, but got Count."),
+		Err(e) => Err(e),
+	}
 }
 
 /// Applies `parser` between 0 and a given number of times, ensuring that no more matches occur.
@@ -187,7 +211,11 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	many(parser, 0, Some(max_count))
+	move |input| match many(parser, 0, Some(max_count), true)(input) {
+		Ok(Matches(matches)) => Ok(matches),
+		Ok(Count(_)) => panic!("[many0_up_to] Expected Matches, but got Count."),
+		Err(e) => Err(e),
+	}
 }
 
 /// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur.
@@ -269,20 +297,152 @@ where
 	if max_count == 0 {
 		panic!("max_count must be greater than 0");
 	}
-	many(parser, 1, Some(max_count))
+	move |input| match many(parser, 1, Some(max_count), true)(input) {
+		Ok(Matches(matches)) => Ok(matches),
+		Ok(Count(_)) => panic!("[many1_up_to] Expected Matches, but got Count."),
+		Err(e) => Err(e),
+	}
+}
+
+/// Applies `parser` zero or more time, without collecting possible matches.
+///
+/// # Outcome
+///
+/// This parser always succeeds, even if its argument parser doesn't. Unlike [`many0`], this
+/// combinator doesn't return its matches, but just how many times it matched.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
+/// fails.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many0_discard`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to possibly be applied many times.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::{Input, is, many0_discard};
+///
+/// // Matches multiple elements
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// assert_eq!(many0_discard(&parser)(&mut input), Ok(2));
+///
+/// // Returns an empty vector when no matches are found (never fails)
+/// let mut input = Input::new_from_chars("23".chars(), None);
+/// assert_eq!(many0_discard(&parser)(&mut input), Ok(0));
+///
+/// // Returns an empty vector on empty input (never fails)
+/// let mut input = Input::new_from_chars("".chars(), None);
+/// assert_eq!(many0_discard(&parser)(&mut input), Ok(0));
+/// ```
+pub fn many0_discard<P, IT, O>(parser: &P) -> impl Parser<IT, usize>
+where
+	P: Parser<IT, O>,
+	IT: InputToken,
+{
+	move |input| match many(parser, 0, None, false)(input) {
+		Ok(Matches(_)) => panic!("[many0_discard] Expected Count, but got Matches."),
+		Ok(Count(count)) => Ok(count),
+		Err(e) => Err(e),
+	}
+}
+
+/// Applies `parser` one or more time, without collecting possible matches.
+///
+/// # Outcome
+///
+/// Unlike [`many1`], if this combinator succeeds, it doesn't return its matches, but just how
+/// many times it matched.
+///
+/// # Input consumption
+///
+/// This parser consumes input if:
+/// - At least one occurrence of its argument parser succeeds.
+/// - If its argument parser consumes input upon failure, independent of this combinator's outcome.
+///
+/// # Error handling
+///
+/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
+/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
+/// being consumed.
+///
+/// # Look-ahead and backtracking
+///
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
+///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many1_discard`].
+///
+/// # Arguments
+///
+/// - `parser`: The parser to be applied many times.
+///
+/// # Examples
+///
+/// ```
+/// use yapcol::{Input, is, many1_discard};
+///
+/// // Matches multiple elements
+/// let parser = is('1');
+/// let mut input = Input::new_from_chars("112".chars(), None);
+/// assert_eq!(many1_discard(&parser)(&mut input), Ok(2));
+///
+/// // Fails when no matches are found
+/// let mut input = Input::new_from_chars("23".chars(), None);
+/// assert!(many1_discard(&parser)(&mut input).is_err());
+///
+/// // Fails on empty input
+/// let mut input = Input::new_from_chars("".chars(), None);
+/// assert!(many1_discard(&parser)(&mut input).is_err());
+/// ```
+pub fn many1_discard<P, IT, O>(parser: &P) -> impl Parser<IT, usize>
+where
+	P: Parser<IT, O>,
+	IT: InputToken,
+{
+	move |input| match many(parser, 1, None, false)(input) {
+		Ok(Matches(_)) => panic!("[many1_discard] Expected Count, but got Matches."),
+		Ok(Count(count)) => Ok(count),
+		Err(e) => Err(e),
+	}
 }
 
 fn many<P, IT, O>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
-) -> impl Parser<IT, Vec<O>>
+	store_matches: bool,
+) -> impl Parser<IT, ManyOutput<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
 	move |input| {
-		let mut matches: Vec<O> = Vec::new();
+		let mut output = if store_matches {
+			Matches(Vec::new())
+		} else {
+			Count(0)
+		};
 		let mut total_match_count = 0;
 		let mut previous_consumed_count = input.consumed_count();
 		loop {
@@ -312,12 +472,15 @@ where
 							input.position(),
 						));
 					}
-					matches.push(token);
+					match output {
+						Matches(ref mut matches) => matches.push(token),
+						Count(ref mut count) => *count += 1,
+					}
 					previous_consumed_count = consumed_count;
 				}
 				(Err(e), _) => {
 					return if total_match_count >= min_match_count {
-						Ok(matches)
+						Ok(output)
 					} else {
 						Err(e)
 					};
@@ -826,6 +989,248 @@ mod tests {
 		fn zero_panics() {
 			let parser = is::<CharToken>('h');
 			let _ = many1_up_to(&parser, 0);
+		}
+	}
+
+	mod many0_discard {
+		use crate::input::Position;
+		use crate::*;
+
+		#[test]
+		fn empty() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("".chars(), None);
+			let parser_many0 = many0_discard(&parser);
+			let output = parser_many0(&mut input).unwrap();
+			assert_eq!(output, 0);
+		}
+
+		#[test]
+		fn empty_shortcut() {
+			let parser = is('h').many0_discard();
+			let mut input = Input::new_from_chars("".chars(), None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output, 0);
+		}
+
+		#[test]
+		fn no_match_not_empty() {
+			let token_count = 100;
+			let parser = is('h');
+			let tokens = std::iter::repeat_n('j', token_count).collect::<Vec<_>>();
+			let mut input = Input::new_from_chars(tokens, None);
+			let parser_many0 = many0_discard(&parser);
+			let output = parser_many0(&mut input).unwrap();
+			assert_eq!(output, 0);
+			assert_eq!(input.consumed_count(), 0);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn no_match_not_empty_shortcut() {
+			let token_count = 100;
+			let parser = is('h').many0_discard();
+			let tokens = std::iter::repeat_n('j', token_count).collect::<Vec<_>>();
+			let mut input = Input::new_from_chars(tokens, None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output, 0);
+			assert_eq!(input.consumed_count(), 0);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn match_not_empty() {
+			let token_count = 100;
+			let parser = is('h');
+			let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
+			let mut input = Input::new_from_chars(tokens, None);
+			let parser_many0 = many0_discard(&parser);
+			let output = parser_many0(&mut input).unwrap();
+			assert_eq!(output, token_count);
+			assert_eq!(input.consumed_count(), token_count);
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
+
+		#[test]
+		fn match_not_empty_shortcut() {
+			let token_count = 100;
+			let parser = is('h').many0_discard();
+			let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
+			let mut input = Input::new_from_chars(tokens, None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output, token_count);
+			assert_eq!(input.consumed_count(), token_count);
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
+
+		#[test]
+		fn partial_match_then_stop() {
+			let parser = is('#');
+			let mut input = Input::new_from_chars("#####Hello".chars(), None);
+			let parser_many0 = many0_discard(&parser);
+			let output = parser_many0(&mut input).unwrap();
+			assert_eq!(output, 5);
+			assert_eq!(input.consumed_count(), 5);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('H'));
+		}
+
+		#[test]
+		fn non_consuming_parser_does_not_loop() {
+			let parser = success(1); // Non-consuming parser.
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser = parser.many0_discard();
+			let output = parser(&mut input);
+			let position = Position::new(1, 1);
+			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
+		}
+
+		#[test]
+		fn match_consuming_upon_failure() {
+			// Parser that consumes input upon failure:
+			let parser = |input: &mut StringInput| {
+				let o1 = is('#')(input)?;
+				let o2 = is('a')(input)?;
+				Ok((o1, o2))
+			};
+			let mut input = Input::new_from_chars("#a#e".chars(), None);
+			let many_parser = parser.many0_discard();
+			let output = many_parser(&mut input).unwrap();
+			assert_eq!(output, 1);
+			assert_eq!(input.consumed_count(), 3); // The second attempt failed while consuming.
+			assert_eq!(any()(&mut input), Ok('e'));
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
+	}
+
+	mod many1_discard {
+		use crate::input::Position;
+		use crate::*;
+
+		#[test]
+		fn empty() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("".chars(), None);
+			let parser_many1 = many1_discard(&parser);
+			assert_eq!(
+				parser_many1(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
+		}
+
+		#[test]
+		fn empty_shortcut() {
+			let parser = is('h').many1_discard();
+			let mut input = Input::new_from_chars("".chars(), None);
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(Some(Box::new('h'))))
+			);
+		}
+
+		#[test]
+		fn no_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let parser_many1 = many1_discard(&parser);
+			let mismatch = Mismatch::new('h', 'j');
+			assert_eq!(
+				parser_many1(&mut input),
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
+			);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn no_match_shortcut() {
+			let parser = is('h').many1_discard();
+			let mut input = Input::new_from_chars("jklmno".chars(), None);
+			let mismatch = Mismatch::new('h', 'j');
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::UnexpectedToken(
+					None,
+					Position::new(1, 1),
+					Some(mismatch)
+				))
+			);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn one_match() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hallo".chars(), None);
+			let parser_many1 = many1_discard(&parser);
+			let output = parser_many1(&mut input).unwrap();
+			assert_eq!(output, 1);
+			assert_eq!(input.consumed_count(), 1);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn one_match_shortcut() {
+			let parser = is('h').many1_discard();
+			let mut input = Input::new_from_chars("hallo".chars(), None);
+			let output = parser(&mut input).unwrap();
+			assert_eq!(output, 1);
+			assert_eq!(input.consumed_count(), 1);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		}
+
+		#[test]
+		fn multiple_matches() {
+			let token_count = 100;
+			let parser = is('h');
+			let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
+			let mut input = Input::new_from_chars(tokens, None);
+			let parser_many1 = many1_discard(&parser);
+			let output = parser_many1(&mut input).unwrap();
+			assert_eq!(output, token_count);
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
+		}
+
+		#[test]
+		fn partial_match_then_stop() {
+			let parser = is('h');
+			let mut input = Input::new_from_chars("hhjklmnop".chars(), None);
+			let parser_many1 = many1_discard(&parser);
+			let output = parser_many1(&mut input).unwrap();
+			assert_eq!(output, 2);
+			assert_eq!(input.consumed_count(), 2);
+			assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+			assert_eq!(any()(&mut input), Ok('j'));
+		}
+
+		#[test]
+		fn non_consuming_parser_does_not_loop() {
+			let parser = success(1); // Non-consuming parser.
+			let mut input = Input::new_from_chars("hello".chars(), None);
+			let parser = parser.many1_discard();
+			let output = parser(&mut input);
+			let position = Position::new(1, 1);
+			assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
+		}
+
+		#[test]
+		fn match_consuming_upon_failure() {
+			// Parser that consumes input upon failure:
+			let parser = |input: &mut StringInput| {
+				let o1 = is('#')(input)?;
+				let o2 = is('a')(input)?;
+				Ok((o1, o2))
+			};
+			let mut input = Input::new_from_chars("#a#e".chars(), None);
+			let many_parser = parser.many1_discard();
+			let output = many_parser(&mut input).unwrap();
+			assert_eq!(output, 1);
+			assert_eq!(input.consumed_count(), 3); // The second attempt failed while consuming.
+			assert_eq!(any()(&mut input), Ok('e'));
+			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
 	}
 }
