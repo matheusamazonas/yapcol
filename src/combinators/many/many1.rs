@@ -1,4 +1,4 @@
-use super::core::{ManyOutput, many};
+use super::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
 /// Applies `parser` one or more times.
@@ -59,7 +59,7 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input| match many(parser, 1, None, true)(input) {
+	|input| match many_no_end(parser, 1, None, true)(input) {
 		Ok(ManyOutput::Matches(matches)) => Ok(matches),
 		Ok(ManyOutput::Count(_)) => panic!("[many1] Expected Matches, but got Count."),
 		Err(e) => Err(e),

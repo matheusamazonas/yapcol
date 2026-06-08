@@ -1,4 +1,4 @@
-use super::core::{ManyOutput, many};
+use super::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
 /// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur.
@@ -80,7 +80,7 @@ where
 	if max_count == 0 {
 		panic!("max_count must be greater than 0");
 	}
-	move |input| match many(parser, 1, Some(max_count), true)(input) {
+	move |input| match many_no_end(parser, 1, Some(max_count), true)(input) {
 		Ok(ManyOutput::Matches(matches)) => Ok(matches),
 		Ok(ManyOutput::Count(_)) => panic!("[many1_up_to] Expected Matches, but got Count."),
 		Err(e) => Err(e),

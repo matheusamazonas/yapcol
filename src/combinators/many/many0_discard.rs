@@ -1,4 +1,4 @@
-use super::core::{ManyOutput, many};
+use super::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
 /// Applies `parser` zero or more time, without collecting possible matches.
@@ -56,7 +56,7 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input| match many(parser, 0, None, false)(input) {
+	move |input| match many_no_end(parser, 0, None, false)(input) {
 		Ok(ManyOutput::Matches(_)) => panic!("[many0_discard] Expected Count, but got Matches."),
 		Ok(ManyOutput::Count(count)) => Ok(count),
 		Err(e) => Err(e),

@@ -1,4 +1,5 @@
-use crate::{Error, InputToken, Mismatch, Parser};
+use crate::input::Position;
+use crate::{Error, Input, InputToken, Mismatch, Parser};
 use ManyOutput::{Count, Matches};
 
 pub enum ManyOutput<T> {
@@ -6,7 +7,11 @@ pub enum ManyOutput<T> {
 	Count(usize),
 }
 
-pub fn many<P, IT, O>(
+fn fail<IT>(_: &mut Input<IT>) -> Result<(), Error> {
+	Err(Error::UnexpectedToken(None, Position::new(0, 0), None))
+}
+
+pub fn many_no_end<P, IT, O>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
@@ -17,6 +22,53 @@ where
 	IT: InputToken,
 {
 	move |input| {
+		many(
+			parser,
+			min_match_count,
+			max_match_count,
+			store_matches,
+			false,
+			&fail,
+		)(input)
+	}
+}
+
+pub fn many_with_end<P, PE, IT, O, OE>(
+	parser: &P,
+	min_match_count: usize,
+	max_match_count: Option<usize>,
+	store_matches: bool,
+	end_parser: &PE,
+) -> impl Parser<IT, ManyOutput<O>>
+where
+	P: Parser<IT, O>,
+	PE: Parser<IT, OE>,
+	IT: InputToken,
+{
+	many(
+		parser,
+		min_match_count,
+		max_match_count,
+		store_matches,
+		true,
+		end_parser,
+	)
+}
+
+fn many<P, PS, IT, O, OP>(
+	parser: &P,
+	min_match_count: usize,
+	max_match_count: Option<usize>,
+	store_matches: bool,
+	fail_on_error: bool,
+	end_parser: &PS,
+) -> impl Parser<IT, ManyOutput<O>>
+where
+	P: Parser<IT, O>,
+	PS: Parser<IT, OP>,
+	IT: InputToken,
+{
+	move |input| {
 		let mut output = if store_matches {
 			Matches(Vec::new())
 		} else {
@@ -24,7 +76,7 @@ where
 		};
 		let mut total_match_count = 0;
 		let mut previous_consumed_count = input.consumed_count();
-		loop {
+		while end_parser(input).is_err() {
 			let previous_position = input.position();
 			let outcome = parser(input);
 			match (outcome, max_match_count) {
@@ -57,14 +109,11 @@ where
 					}
 					previous_consumed_count = consumed_count;
 				}
-				(Err(e), _) => {
-					return if total_match_count >= min_match_count {
-						Ok(output)
-					} else {
-						Err(e)
-					};
-				}
+				(Err(e), _) if fail_on_error => return Err(e),
+				(Err(_), _) if total_match_count >= min_match_count => return Ok(output),
+				(Err(e), _) => return Err(e),
 			}
 		}
+		Ok(output)
 	}
 }
