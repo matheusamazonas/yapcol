@@ -1,7 +1,7 @@
 use super::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
-/// Applies `parser` one or more time, without collecting possible matches.
+/// Applies `parser` one or more times, without collecting possible matches.
 ///
 /// # Outcome
 ///
@@ -56,7 +56,7 @@ where
 	IT: InputToken,
 {
 	move |input| match many_no_end(parser, 1, None, false)(input) {
-		Ok(ManyOutput::Matches(_)) => panic!("[many1_discard] Expected Count, but got Matches."),
+		Ok(ManyOutput::Matches(_)) => panic!("Expected Count, but got Matches."),
 		Ok(ManyOutput::Count(count)) => Ok(count),
 		Err(e) => Err(e),
 	}

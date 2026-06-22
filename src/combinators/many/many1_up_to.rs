@@ -82,7 +82,7 @@ where
 	}
 	move |input| match many_no_end(parser, 1, Some(max_count), true)(input) {
 		Ok(ManyOutput::Matches(matches)) => Ok(matches),
-		Ok(ManyOutput::Count(_)) => panic!("[many1_up_to] Expected Matches, but got Count."),
+		Ok(ManyOutput::Count(_)) => panic!("Expected Matches, but got Count."),
 		Err(e) => Err(e),
 	}
 }

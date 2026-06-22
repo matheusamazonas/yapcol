@@ -57,7 +57,7 @@ where
 	IT: InputToken,
 {
 	move |input| match many_no_end(parser, 0, None, false)(input) {
-		Ok(ManyOutput::Matches(_)) => panic!("[many0_discard] Expected Count, but got Matches."),
+		Ok(ManyOutput::Matches(_)) => panic!("Expected Count, but got Matches."),
 		Ok(ManyOutput::Count(count)) => Ok(count),
 		Err(e) => Err(e),
 	}

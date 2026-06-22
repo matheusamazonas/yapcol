@@ -29,7 +29,7 @@ pub use is::is;
 pub use look_ahead::look_ahead;
 pub use many::{
 	many_until, many0, many0_discard, many0_up_to, many0_up_to_discard, many1, many1_discard,
-	many1_up_to,
+	many1_up_to, many1_up_to_discard,
 };
 pub use maybe::maybe;
 pub use not_followed_by::not_followed_by;

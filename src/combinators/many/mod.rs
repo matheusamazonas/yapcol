@@ -6,6 +6,7 @@ mod many0_up_to_discard;
 mod many1;
 mod many1_discard;
 mod many1_up_to;
+mod many1_up_to_discard;
 mod many_until;
 #[cfg(test)]
 mod test_utils;
@@ -18,3 +19,4 @@ pub use many0_up_to_discard::many0_up_to_discard;
 pub use many1::many1;
 pub use many1_discard::many1_discard;
 pub use many1_up_to::many1_up_to;
+pub use many1_up_to_discard::many1_up_to_discard;
