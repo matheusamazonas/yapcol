@@ -339,6 +339,54 @@ where
 		move |input| many1(&self)(input)
 	}
 
+	// A shortcut for the [`many0_up_to`] combinator
+	fn many0_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many0_up_to(&self, max_count)(input)
+	}
+
+	// A shortcut for the [`many1_up_to`] combinator
+	fn many1_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many1_up_to(&self, max_count)(input)
+	}
+
+	/// A shortcut for the [`many0_discard`] combinator.
+	fn many0_discard(self) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+	{
+		move |input| many0_discard(&self)(input)
+	}
+
+	/// A shortcut for the [`many1_discard`] combinator.
+	fn many1_discard(self) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+	{
+		move |input| many1_discard(&self)(input)
+	}
+
+	/// A shortcut for the [`many0_up_to_discard`] combinator.
+	fn many0_up_to_discard(self, max_count: usize) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+	{
+		move |input| many0_up_to_discard(&self, max_count)(input)
+	}
+
+	/// A shortcut for the [`many1_up_to_discard`] combinator.
+	fn many1_up_to_discard(self, max_count: usize) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+	{
+		move |input| many1_up_to_discard(&self, max_count)(input)
+	}
+
 	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
 	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
 	where
@@ -355,22 +403,6 @@ where
 		Self: Sized,
 	{
 		move |input| count(&self, c)(input)
-	}
-
-	// A shortcut for the [`many0_up_to`] combinator
-	fn many0_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| many0_up_to(&self, max_count)(input)
-	}
-
-	// A shortcut for the [`many1_up_to`] combinator
-	fn many1_up_to(self, max_count: usize) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| many1_up_to(&self, max_count)(input)
 	}
 }
 

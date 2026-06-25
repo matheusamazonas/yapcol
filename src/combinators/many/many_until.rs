@@ -1,4 +1,5 @@
-use crate::{Error, InputToken, Parser};
+use super::core::{ManyOutput, many_with_end};
+use crate::{InputToken, Parser};
 
 /// Parses zero or more instances of `parser`, until `end` succeeds.
 ///
@@ -18,9 +19,9 @@ use crate::{Error, InputToken, Parser};
 ///
 /// # Error handling
 ///
-/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
-/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
-/// being consumed.
+/// This combinator fails with [`crate::Error::NonConsumingLoop`] if the argument parser does not
+/// consume input upon success. This behavior is there to prevent an infinite loop caused by the
+/// input never being consumed.
 ///
 /// # Look-ahead and backtracking
 ///
@@ -53,26 +54,10 @@ where
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
-	|input| {
-		let mut matches = Vec::new();
-		let mut previous_count: Option<usize> = None;
-		while end(input).is_err() {
-			let token = parser(input)?;
-			let new_count = input.consumed_count();
-			// Check if non-consuming parser. If so, it would cause an infinite loop.
-			if let Some(previous) = previous_count
-				&& previous == new_count
-			{
-				return Err(Error::NonConsumingLoop(
-					input.source_name(),
-					input.position(),
-				));
-			}
-
-			matches.push(token);
-			previous_count = Some(new_count);
-		}
-		Ok(matches)
+	|input| match many_with_end(parser, 0, None, true, end)(input) {
+		Ok(ManyOutput::Matches(matches)) => Ok(matches),
+		Ok(ManyOutput::Count(_)) => panic!("[many_until] Expected Matches, but got Count."),
+		Err(e) => Err(e),
 	}
 }
 
@@ -106,8 +91,8 @@ mod tests {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("Hello world #".chars(), None);
-		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input).unwrap();
+		let many_parser = many_until(&any_parser, &end_comment_parser);
+		let output = many_parser(&mut input).unwrap();
 		assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
 	}
 
@@ -116,8 +101,8 @@ mod tests {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
-		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input);
+		let many_parser = many_until(&any_parser, &end_comment_parser);
+		let output = many_parser(&mut input);
 		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,
