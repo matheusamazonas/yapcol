@@ -387,6 +387,14 @@ where
 		move |input| many1_up_to_discard(&self, max_count)(input)
 	}
 
+	/// A shortcut for the [`many_at_least_discard`] combinator.
+	fn many_at_least_discard(self, min_count: usize) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+	{
+		move |input| many_at_least_discard(&self, min_count)(input)
+	}
+
 	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
 	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
 	where
