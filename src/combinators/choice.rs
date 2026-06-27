@@ -81,8 +81,7 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('e');
 		let parser3 = is('l');
-		let parsers: Vec<Box<dyn Parser<_, _>>> =
-			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
 		// 1, success.
 		let mut input = Input::new_from_chars("h".chars(), None);
@@ -118,8 +117,7 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('e');
 		let parser3 = is('l');
-		let parsers: Vec<Box<dyn Parser<_, _>>> =
-			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
 		let mut input = Input::new_from_chars("x".chars(), None);
 		let output = parser_choice(&mut input);
@@ -140,8 +138,7 @@ mod tests {
 		let parser1 = is('h');
 		let parser2 = is('e');
 		let parser3 = is('l');
-		let parsers: Vec<Box<dyn Parser<_, _>>> =
-			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
+		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
 		let mut input = Input::new_from_chars("".chars(), None);
 		let output = parser_choice(&mut input);
