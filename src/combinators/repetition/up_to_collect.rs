@@ -1,16 +1,15 @@
 use super::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
-/// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur.
+/// Applies `parser` between 0 and a given number of times, ensuring that no more matches occur and
+/// collecting all matches.
 ///
 /// # Outcome
 ///
-/// This combinator succeeds if the argument parser succeeds between 1 and up to (and including)
+/// This combinator succeeds if the argument parser succeeds between 0 and up to (and including)
 /// `max_count` times. In that case, it returns a vector of matches of its argument parser.
 ///
-/// It fails if the argument parser:
-/// - Never succeeds.
-/// - Matches more than `max_count` times.
+/// It fails if the argument parser matches more than `max_count` times.
 ///
 /// # Input consumption
 ///
@@ -28,32 +27,31 @@ use crate::{InputToken, Parser};
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
+/// # Performance
+///
+/// This combinator stores all the matches it finds. If you're not interested in the matches, but
+/// instead in how many times it matched, consider using [`crate::up_to`].
+///
 /// # Shortcut
 ///
-/// This combinator has a shortcut version: [`Parser::many1_up_to`].
+/// This combinator has a shortcut version: [`Parser::up_to_collect`].
 ///
 /// # Arguments
 ///
 /// - `parser`: The parser to be applied multiple times.
 /// - `max_count`: The (inclusive) maximum number of times that the argument parser should succeed.
-///   Must be greater than 0, otherwise this function panics.
-///
-/// # Panics
-///
-/// This function panics if `max_count` is equal to 0. Check [`crate::many0_up_to`] if you would
-/// like to cover this case.
 ///
 /// # Examples
 ///
 /// ```
-/// use yapcol::{Input, is, many1_up_to};
+/// use yapcol::{Input, is, up_to_collect};
 ///
 /// // Succeeds if the parser matches exactly `max_count` times.
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("112".chars(), None);
 /// let max_count = 2;
 /// assert_eq!(
-/// 	many1_up_to(&parser, max_count)(&mut input),
+/// 	up_to_collect(&parser, max_count)(&mut input),
 /// 	Ok("11".chars().collect())
 /// );
 ///
@@ -62,7 +60,7 @@ use crate::{InputToken, Parser};
 /// let mut input = Input::new_from_chars("112".chars(), None);
 /// let max_count = 5;
 /// assert_eq!(
-/// 	many1_up_to(&parser, max_count)(&mut input),
+/// 	up_to_collect(&parser, max_count)(&mut input),
 /// 	Ok("11".chars().collect())
 /// );
 ///
@@ -70,17 +68,22 @@ use crate::{InputToken, Parser};
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("1112".chars(), None);
 /// let max_count = 2;
-/// assert!(many1_up_to(&parser, max_count)(&mut input).is_err());
+/// assert!(up_to_collect(&parser, max_count)(&mut input).is_err());
+///
+/// // Succeeds on empty input if `max_count` is 0.
+/// let mut input = Input::new_from_chars("".chars(), None);
+/// let max_count = 0;
+/// assert_eq!(
+/// 	up_to_collect(&parser, max_count)(&mut input),
+/// 	Ok(Vec::new())
+/// );
 /// ```
-pub fn many1_up_to<P, IT, O>(parser: &P, max_count: usize) -> impl Parser<IT, Vec<O>>
+pub fn up_to_collect<P, IT, O>(parser: &P, max_count: usize) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	if max_count == 0 {
-		panic!("max_count must be greater than 0");
-	}
-	move |input| match many_no_end(parser, 1, Some(max_count), true)(input) {
+	move |input| match many_no_end(parser, 0, Some(max_count), true)(input) {
 		Ok(ManyOutput::Matches(matches)) => Ok(matches),
 		Ok(ManyOutput::Count(_)) => panic!("Expected Matches, but got Count."),
 		Err(e) => Err(e),
@@ -89,8 +92,7 @@ where
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::combinators::many::test_utils::assert_unexpected_error;
+	use crate::combinators::repetition::test_utils::assert_unexpected_error;
 	use crate::input::Position;
 	use crate::*;
 
@@ -98,41 +100,35 @@ mod tests {
 	fn empty() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 1);
-		assert_eq!(
-			parser_up_to(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
-		);
+		let parser_up_to = up_to_collect(&parser, 1);
+		let output = parser_up_to(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
 	}
 
 	#[test]
 	fn empty_shortcut() {
-		let parser = is('h').many1_up_to(1);
+		let parser = is('h').up_to_collect(1);
 		let mut input = Input::new_from_chars("".chars(), None);
-		assert_eq!(
-			parser(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
-		);
+		let output = parser(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
 	}
 
 	#[test]
 	fn no_match() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jklmno".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 1);
-		let output = parser_up_to(&mut input);
-		let position = Position::new(1, 1);
-		assert_unexpected_error(output, position, "h", "j");
+		let parser_up_to = up_to_collect(&parser, 1);
+		let output = parser_up_to(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}
 
 	#[test]
 	fn no_match_shortcut() {
-		let parser = is('h').many1_up_to(1);
+		let parser = is('h').up_to_collect(1);
 		let mut input = Input::new_from_chars("jklmno".chars(), None);
-		let output = parser(&mut input);
-		let position = Position::new(1, 1);
-		assert_unexpected_error(output, position, "h", "j");
+		let output = parser(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
 	}
 
@@ -140,7 +136,7 @@ mod tests {
 	fn one_match() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("hello".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 1);
+		let parser_up_to = up_to_collect(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h']);
 		assert_eq!(input.consumed_count(), 1);
@@ -152,7 +148,7 @@ mod tests {
 	fn less_than_max_count() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("hhello".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 3);
+		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h', 'h']);
 		assert_eq!(input.consumed_count(), 2);
@@ -164,7 +160,7 @@ mod tests {
 	fn equal_to_max_count() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("hhhello".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 3);
+		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h', 'h', 'h']);
 		assert_eq!(input.consumed_count(), 3);
@@ -176,16 +172,44 @@ mod tests {
 	fn more_than_max_count() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("hhhhello".chars(), None);
-		let parser_up_to = many1_up_to(&parser, 3);
+		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 4);
 		assert_unexpected_error(output, position, "3", "4");
 	}
 
 	#[test]
-	#[should_panic]
-	fn zero_panics() {
-		let parser = is::<CharToken>('h');
-		let _ = many1_up_to(&parser, 0);
+	fn zero_empty() {
+		let parser = is('h');
+		let mut input = Input::new_from_chars("".chars(), None);
+		let parser_up_to = up_to_collect(&parser, 0);
+		let output = parser_up_to(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
+		assert_eq!(input.consumed_count(), 0);
+	}
+
+	#[test]
+	fn zero_success() {
+		let parser = is('h');
+		let mut input = Input::new_from_chars("ello".chars(), None);
+		let parser_up_to = up_to_collect(&parser, 0);
+		let output = parser_up_to(&mut input).unwrap();
+		assert_eq!(output.len(), 0);
+		assert_eq!(input.consumed_count(), 0);
+		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		assert_eq!(any()(&mut input), Ok('e'));
+	}
+
+	#[test]
+	fn zero_fail() {
+		let parser = is('h');
+		let mut input = Input::new_from_chars("hello".chars(), None);
+		let parser_up_to = up_to_collect(&parser, 0);
+		let output = parser_up_to(&mut input);
+		let position = Position::new(1, 1);
+		assert_unexpected_error(output, position, "0", "1");
+		assert_eq!(input.consumed_count(), 1);
+		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
+		assert_eq!(any()(&mut input), Ok('e'));
 	}
 }
