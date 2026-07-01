@@ -1,6 +1,7 @@
+use crate::combinators::repetition::core::{ManyOutput, many_no_end};
 use crate::{InputToken, Parser};
 
-/// Creates a parser that applies the given parser exactly `count` times.
+/// Creates a parser that applies the given parser exactly `count` times, collecting the matches.
 ///
 /// # Outcome
 ///
@@ -24,7 +25,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Shortcut
 ///
-/// This combinator has a shortcut version: [`Parser::count`].
+/// This combinator has a shortcut version: [`Parser::count_collect`].
 ///
 /// # Arguments
 ///
@@ -34,40 +35,38 @@ use crate::{InputToken, Parser};
 /// # Examples
 ///
 /// ```
-/// use yapcol::{Input, any, count, is};
+/// use yapcol::{Input, any, count_collect, is};
 ///
 /// // Succeeds when the parser matches exactly `count` times.
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("1112".chars(), None);
-/// assert_eq!(count(&parser, 3)(&mut input), Ok("111".chars().collect()));
+/// assert_eq!(
+/// 	count_collect(&parser, 3)(&mut input),
+/// 	Ok("111".chars().collect())
+/// );
 /// assert_eq!(any()(&mut input), Ok('2')); // Remaining input after consuming 3 tokens.
 ///
 /// // Fails when there are not enough matching tokens
 /// let mut input = Input::new_from_chars("123".chars(), None);
-/// assert!(count(&parser, 3)(&mut input).is_err());
+/// assert!(count_collect(&parser, 3)(&mut input).is_err());
 ///
 /// // Succeeds with count = 0, returning an empty vector
 /// let mut input = Input::new_from_chars("123".chars(), None);
-/// assert_eq!(count(&parser, 0)(&mut input), Ok(vec![]));
+/// assert_eq!(count_collect(&parser, 0)(&mut input), Ok(vec![]));
 ///
 /// // Fails on empty input when count > 0
 /// let mut input = Input::new_from_chars("".chars(), None);
-/// assert!(count(&parser, 1)(&mut input).is_err());
+/// assert!(count_collect(&parser, 1)(&mut input).is_err());
 /// ```
-pub fn count<P, IT, O>(parser: &P, count: usize) -> impl Parser<IT, Vec<O>>
+pub fn count_collect<P, IT, O>(parser: &P, count: usize) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input| {
-		let mut output = Vec::with_capacity(count);
-		for _ in 0..count {
-			match parser(input) {
-				Ok(token) => output.push(token),
-				Err(e) => return Err(e),
-			}
-		}
-		Ok(output)
+	move |input| match many_no_end(parser, count, Some(count), true)(input) {
+		Ok(ManyOutput::Matches(matches)) => Ok(matches),
+		Ok(ManyOutput::Count(_)) => panic!("Expected Matches, but got Count."),
+		Err(e) => Err(e),
 	}
 }
 
@@ -80,14 +79,14 @@ mod tests {
 	fn count_zero_empty() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("".chars(), None);
-		let parser = count(&parser, 0);
+		let parser = count_collect(&parser, 0);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
 	}
 
 	#[test]
 	fn count_zero_empty_shortcut() {
-		let parser = is('h').count(0);
+		let parser = is('h').count_collect(0);
 		let mut input = Input::new_from_chars("".chars(), None);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
@@ -97,14 +96,14 @@ mod tests {
 	fn count_0_not_empty() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jello".chars(), None);
-		let parser = count(&parser, 0);
+		let parser = count_collect(&parser, 0);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
 	}
 
 	#[test]
 	fn count_0_not_empty_shortcut() {
-		let parser = is('h').count(0);
+		let parser = is('h').count_collect(0);
 		let mut input = Input::new_from_chars("jello".chars(), None);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
@@ -116,7 +115,7 @@ mod tests {
 		let repeat_count: usize = 500;
 		let tokens: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
 		let mut input = Input::new_from_chars(tokens, None);
-		let parser = count(&parser, repeat_count);
+		let parser = count_collect(&parser, repeat_count);
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output.len(), repeat_count); // The count matched the request.
 		assert!(output.iter().all(|x| *x == 'h')); // All values match the parser's.
@@ -132,7 +131,7 @@ mod tests {
 		let mut tail: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
 		tokens.append(&mut tail);
 		let mut input = Input::new_from_chars(tokens, None);
-		let parser = count(&parser, repeat_count);
+		let parser = count_collect(&parser, repeat_count);
 		let output = parser(&mut input).unwrap();
 		assert!(output.iter().all(|x| *x == 'h')); // All values match the parser's.
 		assert_eq!(input.consumed_count(), repeat_count); // Input was left intact.
@@ -146,7 +145,7 @@ mod tests {
 		tokens.push('x');
 		tokens.push('y');
 		let mut input = Input::new_from_chars(tokens, None);
-		let parser = count(&parser, 4); // The 4th element is "x", so this should fail.
+		let parser = count_collect(&parser, 4); // The 4th element is "x", so this should fail.
 		let output = parser(&mut input);
 		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
@@ -161,7 +160,7 @@ mod tests {
 
 	#[test]
 	fn count_not_enough_shortcut() {
-		let parser = is('h').count(4);
+		let parser = is('h').count_collect(4);
 		let mut tokens: Vec<_> = std::iter::repeat_n('h', 3).collect();
 		tokens.push('x');
 		tokens.push('y');

@@ -5,7 +5,6 @@ mod attempt;
 mod between;
 mod chain;
 mod choice;
-mod count;
 mod either;
 mod end_of_input;
 mod is;
@@ -22,13 +21,13 @@ pub use attempt::attempt;
 pub use between::between;
 pub use chain::{chain_left, chain_right};
 pub use choice::choice;
-pub use count::count;
 pub use either::either;
 pub use end_of_input::end_of_input;
 pub use is::is;
 pub use look_ahead::look_ahead;
 pub use maybe::maybe;
 pub use not_followed_by::not_followed_by;
+pub use repetition::count_collect::count_collect;
 pub use repetition::{
 	at_least, many, many_collect, many_until_collect, once_or_more, once_or_more_collect,
 	once_up_to, once_up_to_collect, up_to, up_to_collect,

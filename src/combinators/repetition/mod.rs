@@ -1,5 +1,6 @@
 mod at_least;
 mod core;
+pub mod count_collect;
 mod many;
 mod many_collect;
 mod many_until_collect;

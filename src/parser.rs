@@ -405,12 +405,12 @@ where
 		move |input| between(open, &self, close)(input)
 	}
 
-	/// A shortcut for the [`count`] combinator.
-	fn count(self, c: usize) -> impl Parser<IT, Vec<O>>
+	/// A shortcut for the [`count_collect`] combinator.
+	fn count_collect(self, c: usize) -> impl Parser<IT, Vec<O>>
 	where
 		Self: Sized,
 	{
-		move |input| count(&self, c)(input)
+		move |input| count_collect(&self, c)(input)
 	}
 }
 
