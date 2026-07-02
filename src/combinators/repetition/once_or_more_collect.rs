@@ -1,4 +1,4 @@
-use super::core::{ManyOutput, many_no_end};
+use super::core::{RepetitionOutput, repeat_no_end};
 use crate::{InputToken, Parser};
 
 /// Applies `parser` one or more times, collecting all the matches.
@@ -62,9 +62,9 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	|input| match many_no_end(parser, 1, None, true)(input) {
-		Ok(ManyOutput::Matches(matches)) => Ok(matches),
-		Ok(ManyOutput::Count(_)) => {
+	|input| match repeat_no_end(parser, 1, None, true)(input) {
+		Ok(RepetitionOutput::Matches(matches)) => Ok(matches),
+		Ok(RepetitionOutput::Count(_)) => {
 			panic!("Expected Matches, but got Count.")
 		}
 		Err(e) => Err(e),

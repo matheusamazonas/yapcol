@@ -1,8 +1,8 @@
 use crate::input::Position;
 use crate::{Error, Input, InputToken, Mismatch, Parser};
-use ManyOutput::{Count, Matches};
+use RepetitionOutput::{Count, Matches};
 
-pub enum ManyOutput<T> {
+pub enum RepetitionOutput<T> {
 	Matches(Vec<T>),
 	Count(usize),
 }
@@ -11,18 +11,18 @@ fn fail<IT>(_: &mut Input<IT>) -> Result<(), Error> {
 	Err(Error::UnexpectedToken(None, Position::new(0, 0), None))
 }
 
-pub fn many_no_end<P, IT, O>(
+pub fn repeat_no_end<P, IT, O>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
 	store_matches: bool,
-) -> impl Parser<IT, ManyOutput<O>>
+) -> impl Parser<IT, RepetitionOutput<O>>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
 	move |input| {
-		many(
+		repeat(
 			parser,
 			min_match_count,
 			max_match_count,
@@ -33,19 +33,19 @@ where
 	}
 }
 
-pub fn many_with_end<P, PE, IT, O, OE>(
+pub fn repeat_with_end<P, PE, IT, O, OE>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
 	store_matches: bool,
 	end_parser: &PE,
-) -> impl Parser<IT, ManyOutput<O>>
+) -> impl Parser<IT, RepetitionOutput<O>>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
-	many(
+	repeat(
 		parser,
 		min_match_count,
 		max_match_count,
@@ -55,14 +55,14 @@ where
 	)
 }
 
-fn many<P, PS, IT, O, OP>(
+fn repeat<P, PS, IT, O, OP>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
 	store_matches: bool,
 	fail_on_error: bool,
 	end_parser: &PS,
-) -> impl Parser<IT, ManyOutput<O>>
+) -> impl Parser<IT, RepetitionOutput<O>>
 where
 	P: Parser<IT, O>,
 	PS: Parser<IT, OP>,

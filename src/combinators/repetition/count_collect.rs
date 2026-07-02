@@ -1,4 +1,4 @@
-use crate::combinators::repetition::core::{ManyOutput, many_no_end};
+use crate::combinators::repetition::core::{RepetitionOutput, repeat_no_end};
 use crate::{InputToken, Parser};
 
 /// Creates a parser that applies the given parser exactly `count` times, collecting the matches.
@@ -66,9 +66,9 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input| match many_no_end(parser, count, Some(count), true)(input) {
-		Ok(ManyOutput::Matches(matches)) => Ok(matches),
-		Ok(ManyOutput::Count(_)) => panic!("Expected Matches, but got Count."),
+	move |input| match repeat_no_end(parser, count, Some(count), true)(input) {
+		Ok(RepetitionOutput::Matches(matches)) => Ok(matches),
+		Ok(RepetitionOutput::Count(_)) => panic!("Expected Matches, but got Count."),
 		Err(e) => Err(e),
 	}
 }
