@@ -1,79 +1,102 @@
 use crate::input::Position;
 use crate::{Error, Input, InputToken, Mismatch, Parser};
-use RepetitionOutput::{Count, Matches};
+use std::marker::PhantomData;
 
-pub enum RepetitionOutput<T> {
-	Matches(Vec<T>),
-	Count(usize),
+pub trait RepetitionAccumulator<I, O> {
+	fn new() -> Self;
+	fn add(&mut self, value: I);
+	fn value(self) -> O;
+}
+
+pub struct MatchesAccumulator<T> {
+	matches: Vec<T>,
+}
+
+impl<T> RepetitionAccumulator<T, Vec<T>> for MatchesAccumulator<T> {
+	fn new() -> Self {
+		MatchesAccumulator {
+			matches: Vec::new(),
+		}
+	}
+
+	fn add(&mut self, value: T) {
+		self.matches.push(value);
+	}
+
+	fn value(self) -> Vec<T> {
+		self.matches
+	}
+}
+
+pub struct CountAccumulator<T> {
+	count: usize,
+	phantom: PhantomData<T>,
+}
+
+impl<T> RepetitionAccumulator<T, usize> for CountAccumulator<T> {
+	fn new() -> Self {
+		CountAccumulator {
+			count: 0,
+			phantom: PhantomData,
+		}
+	}
+
+	fn add(&mut self, _: T) {
+		self.count += 1;
+	}
+
+	fn value(self) -> usize {
+		self.count
+	}
 }
 
 fn fail<IT>(_: &mut Input<IT>) -> Result<(), Error> {
 	Err(Error::UnexpectedToken(None, Position::new(0, 0), None))
 }
 
-pub fn repeat_no_end<P, IT, O>(
+pub fn repeat_no_end<P, IT, O, A, AO>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
-	store_matches: bool,
-) -> impl Parser<IT, RepetitionOutput<O>>
+) -> impl Parser<IT, A>
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
+	A: RepetitionAccumulator<O, AO>,
 {
-	move |input| {
-		repeat(
-			parser,
-			min_match_count,
-			max_match_count,
-			store_matches,
-			false,
-			&fail,
-		)(input)
-	}
+	move |input| repeat(parser, min_match_count, max_match_count, false, &fail)(input)
 }
 
-pub fn repeat_with_end<P, PE, IT, O, OE>(
+pub fn repeat_with_end<P, PE, IT, O, OE, A, AO>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
-	store_matches: bool,
 	end_parser: &PE,
-) -> impl Parser<IT, RepetitionOutput<O>>
+) -> impl Parser<IT, A>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
+	A: RepetitionAccumulator<O, AO>,
 {
-	repeat(
-		parser,
-		min_match_count,
-		max_match_count,
-		store_matches,
-		true,
-		end_parser,
-	)
+	repeat(parser, min_match_count, max_match_count, true, end_parser)
 }
 
-fn repeat<P, PS, IT, O, OP>(
+fn repeat<P, PS, IT, O, OP, A, AO>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
-	store_matches: bool,
 	fail_on_error: bool,
 	end_parser: &PS,
-) -> impl Parser<IT, RepetitionOutput<O>>
+) -> impl Parser<IT, A>
 where
 	P: Parser<IT, O>,
 	PS: Parser<IT, OP>,
 	IT: InputToken,
+	A: RepetitionAccumulator<O, AO>,
 {
 	move |input| {
-		let mut output = if store_matches {
-			Matches(Vec::new())
-		} else {
-			Count(0)
-		};
+		let mut accumulator = A::new();
 		let mut total_match_count = 0;
 		let mut previous_consumed_count = input.consumed_count();
 		while end_parser(input).is_err() {
@@ -103,17 +126,14 @@ where
 							input.position(),
 						));
 					}
-					match output {
-						Matches(ref mut matches) => matches.push(token),
-						Count(ref mut count) => *count += 1,
-					}
+					accumulator.add(token);
 					previous_consumed_count = consumed_count;
 				}
 				(Err(e), _) if fail_on_error => return Err(e),
-				(Err(_), _) if total_match_count >= min_match_count => return Ok(output),
+				(Err(_), _) if total_match_count >= min_match_count => return Ok(accumulator),
 				(Err(e), _) => return Err(e),
 			}
 		}
-		Ok(output)
+		Ok(accumulator)
 	}
 }

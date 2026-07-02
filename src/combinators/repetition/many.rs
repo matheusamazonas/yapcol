@@ -1,4 +1,4 @@
-use super::core::{RepetitionOutput, repeat_no_end};
+use super::core::{CountAccumulator, RepetitionAccumulator, repeat_no_end};
 use crate::{InputToken, Parser};
 
 /// Applies `parser` zero or more time.
@@ -57,10 +57,9 @@ where
 	P: Parser<IT, O>,
 	IT: InputToken,
 {
-	move |input| match repeat_no_end(parser, 0, None, false)(input) {
-		Ok(RepetitionOutput::Matches(_)) => panic!("Expected Count, but got Matches."),
-		Ok(RepetitionOutput::Count(count)) => Ok(count),
-		Err(e) => Err(e),
+	move |input| {
+		let accumulator: CountAccumulator<O> = repeat_no_end(parser, 0, None)(input)?;
+		Ok(accumulator.value())
 	}
 }
 
