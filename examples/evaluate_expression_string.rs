@@ -2,7 +2,7 @@ use expression::{Expression, Operator, evaluate};
 use std::io;
 use yapcol::{
 	Error, Input, Mismatch, Parser, StringParser, attempt, between, chain_left, chain_right,
-	either, is, many1, satisfy,
+	either, is, once_or_more_collect, satisfy,
 };
 mod expression;
 
@@ -20,7 +20,7 @@ fn parse_digit() -> impl StringParser<char> {
 fn parse_number() -> impl StringExpressionParser {
 	|input| {
 		let parse_digit = parse_digit();
-		let digits = many1(&parse_digit)(input)?;
+		let digits = once_or_more_collect(&parse_digit)(input)?;
 		let digits: String = digits.iter().collect();
 		match digits.parse::<i32>() {
 			Ok(number) => Ok(Expression::Number(number)),
