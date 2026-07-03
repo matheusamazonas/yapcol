@@ -28,8 +28,9 @@ pub use look_ahead::look_ahead;
 pub use maybe::maybe;
 pub use not_followed_by::not_followed_by;
 pub use repetition::{
-	at_least, count, count_collect, many, many_collect, many_until, many_until_collect,
-	once_or_more, once_or_more_collect, once_up_to, once_up_to_collect, up_to, up_to_collect,
+	at_least, at_least_collect, count, count_collect, many, many_collect, many_until,
+	many_until_collect, once_or_more, once_or_more_collect, once_up_to, once_up_to_collect, up_to,
+	up_to_collect,
 };
 pub use satisfy::satisfy;
 pub use separated_by::{separated_by0, separated_by1};

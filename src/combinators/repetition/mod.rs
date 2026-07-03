@@ -1,4 +1,5 @@
 mod at_least;
+mod at_least_collect;
 mod core;
 mod count;
 mod count_collect;
@@ -16,6 +17,7 @@ mod up_to;
 mod up_to_collect;
 
 pub use at_least::at_least;
+pub use at_least_collect::at_least_collect;
 pub use count::count;
 pub use count_collect::count_collect;
 pub use many::many;

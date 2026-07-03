@@ -395,6 +395,14 @@ where
 		move |input| at_least(&self, min_count)(input)
 	}
 
+	/// A shortcut for the [`at_least_collect`] combinator.
+	fn at_least_collect(self, min_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| at_least_collect(&self, min_count)(input)
+	}
+
 	/// A shortcut for the [`count`] combinator.
 	fn count(self, c: usize) -> impl Parser<IT, usize>
 	where

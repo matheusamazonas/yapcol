@@ -1,7 +1,7 @@
 use super::core::{CountAccumulator, RepetitionAccumulator, repeat_no_end};
 use crate::{InputToken, Parser};
 
-/// Applies `parser` between 0 and a given number of times, ensuring that no more matches.
+/// Applies `parser` between 0 and a given number of times, ensuring that no more matches occur.
 ///
 /// # Outcome
 ///
