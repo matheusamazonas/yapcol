@@ -323,44 +323,20 @@ where
 		move |input| maybe(&self)(input)
 	}
 
-	/// A shortcut for the [`many_collect`] combinator.
-	fn many_collect(self) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| many_collect(&self)(input)
-	}
-
-	/// A shortcut for the [`once_or_more_collect`] combinator.
-	fn once_or_more_collect(self) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| once_or_more_collect(&self)(input)
-	}
-
-	// A shortcut for the [`up_to_collect`] combinator
-	fn up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| up_to_collect(&self, max_count)(input)
-	}
-
-	// A shortcut for the [`once_up_to_collect`] combinator
-	fn once_up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
-	where
-		Self: Sized,
-	{
-		move |input| once_up_to_collect(&self, max_count)(input)
-	}
-
 	/// A shortcut for the [`many`] combinator.
 	fn many(self) -> impl Parser<IT, usize>
 	where
 		Self: Sized,
 	{
 		move |input| many(&self)(input)
+	}
+
+	/// A shortcut for the [`many_collect`] combinator.
+	fn many_collect(self) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| many_collect(&self)(input)
 	}
 
 	/// A shortcut for the [`once_or_more`] combinator.
@@ -371,12 +347,28 @@ where
 		move |input| once_or_more(&self)(input)
 	}
 
+	/// A shortcut for the [`once_or_more_collect`] combinator.
+	fn once_or_more_collect(self) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| once_or_more_collect(&self)(input)
+	}
+
 	/// A shortcut for the [`up_to`] combinator.
 	fn up_to(self, max_count: usize) -> impl Parser<IT, usize>
 	where
 		Self: Sized,
 	{
 		move |input| up_to(&self, max_count)(input)
+	}
+
+	// A shortcut for the [`up_to_collect`] combinator
+	fn up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| up_to_collect(&self, max_count)(input)
 	}
 
 	/// A shortcut for the [`once_up_to`] combinator.
@@ -387,22 +379,20 @@ where
 		move |input| once_up_to(&self, max_count)(input)
 	}
 
+	// A shortcut for the [`once_up_to_collect`] combinator
+	fn once_up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+	{
+		move |input| once_up_to_collect(&self, max_count)(input)
+	}
+
 	/// A shortcut for the [`at_least`] combinator.
 	fn at_least(self, min_count: usize) -> impl Parser<IT, usize>
 	where
 		Self: Sized,
 	{
 		move |input| at_least(&self, min_count)(input)
-	}
-
-	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
-	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
-	where
-		PO: Parser<IT, OO>,
-		PC: Parser<IT, OC>,
-		Self: Sized,
-	{
-		move |input| between(open, &self, close)(input)
 	}
 
 	/// A shortcut for the [`count`] combinator.
@@ -419,6 +409,16 @@ where
 		Self: Sized,
 	{
 		move |input| count_collect(&self, c)(input)
+	}
+
+	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
+	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
+	where
+		PO: Parser<IT, OO>,
+		PC: Parser<IT, OC>,
+		Self: Sized,
+	{
+		move |input| between(open, &self, close)(input)
 	}
 }
 
