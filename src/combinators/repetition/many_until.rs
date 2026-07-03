@@ -1,10 +1,12 @@
-use crate::{Error, InputToken, Parser};
+use super::core::{CountAccumulator, RepetitionAccumulator, repeat_with_end};
+use crate::{InputToken, Parser};
 
 /// Parses zero or more instances of `parser`, until `end` succeeds.
 ///
 /// # Outcome
 ///
-/// If it succeeds, this combinator returns a vector of matches of its `parser` argument.
+/// If successful, unlike [`crate::many_until_collect`], this combinator doesn't return its matches,
+/// but just how many times it matched.
 ///
 /// # Input consumption
 ///
@@ -18,9 +20,9 @@ use crate::{Error, InputToken, Parser};
 ///
 /// # Error handling
 ///
-/// This combinator fails with [`Error::NonConsumingLoop`] if the argument parser does not consume
-/// input upon success. This behavior is there to prevent an infinite loop caused by the input never
-/// being consumed.
+/// This combinator fails with [`crate::Error::NonConsumingLoop`] if the argument parser does not
+/// consume input upon success. This behavior is there to prevent an infinite loop caused by the
+/// input never being consumed.
 ///
 /// # Look-ahead and backtracking
 ///
@@ -43,36 +45,19 @@ use crate::{Error, InputToken, Parser};
 /// 	open(input)?;
 /// 	many_until(&any, &close)(input)
 /// };
-/// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
+/// let mut input = Input::new_from_chars("#12345$".chars(), None);
 /// let output = comments_parser(&mut input);
-/// assert_eq!(output, Ok("this is a comment".chars().collect()));
+/// assert_eq!(output, Ok(5));
 /// ```
-pub fn many_until<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
+pub fn many_until<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, usize>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
-	|input| {
-		let mut matches = Vec::new();
-		let mut previous_count: Option<usize> = None;
-		while end(input).is_err() {
-			let token = parser(input)?;
-			let new_count = input.consumed_count();
-			// Check if non-consuming parser. If so, it would cause an infinite loop.
-			if let Some(previous) = previous_count
-				&& previous == new_count
-			{
-				return Err(Error::NonConsumingLoop(
-					input.source_name(),
-					input.position(),
-				));
-			}
-
-			matches.push(token);
-			previous_count = Some(new_count);
-		}
-		Ok(matches)
+	move |input| {
+		let accumulator: CountAccumulator<O> = repeat_with_end(parser, 0, None, end)(input)?;
+		Ok(accumulator.value())
 	}
 }
 
@@ -98,17 +83,17 @@ mod tests {
 		let mut input = Input::new_from_chars("#".chars(), None);
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input).unwrap();
-		assert_eq!(output, Vec::<char>::new());
+		assert_eq!(output, 0);
 	}
 
 	#[test]
 	fn success_multiple() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("Hello world #".chars(), None);
-		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input).unwrap();
-		assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
+		let mut input = Input::new_from_chars("123456#".chars(), None);
+		let many_parser = many_until(&any_parser, &end_comment_parser);
+		let output = many_parser(&mut input).unwrap();
+		assert_eq!(output, 6);
 	}
 
 	#[test]
@@ -116,8 +101,8 @@ mod tests {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
-		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input);
+		let many_parser = many_until(&any_parser, &end_comment_parser);
+		let output = many_parser(&mut input);
 		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,

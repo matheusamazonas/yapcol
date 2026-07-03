@@ -12,7 +12,7 @@
 //! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
 //!   tracking capabilities.
 //! - Combinators: Functions that take one or more parsers and return a new, more complex
-//!   parser. Examples: [`is()`], [`many0()`], [`either()`], [`chain_left()`].
+//!   parser. Examples: [`is()`], [`many`], [`either()`], [`chain_left()`].
 //!
 //! # Features
 //!
@@ -26,13 +26,13 @@
 //! # Quick Start
 //!
 //! ```
-//! use yapcol::{Input, is, many0};
+//! use yapcol::{Input, is, many_collect};
 //!
 //! let mut input = Input::new_from_chars("aaab".chars(), None);
 //!
-//! // Combine `is` and `many0` to parse multiple 'a's
+//! // Combine `is` and `many_collect` to parse multiple 'a's and collect the matches.
 //! let is_a = is('a');
-//! let parser = many0(&is_a);
+//! let parser = many_collect(&is_a);
 //!
 //! let result = parser(&mut input);
 //! assert_eq!(result, Ok(vec!['a', 'a', 'a']));
@@ -53,7 +53,7 @@
 //!
 //! ```
 //! use yapcol::input::Position;
-//! use yapcol::{Error, Input, Mismatch, any, is, many0, success};
+//! use yapcol::{Error, Input, Mismatch, any, is, many, success};
 //!
 //! let source_name = Some(String::from("file.txt"));
 //! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
@@ -74,12 +74,12 @@
 //! is('a')(&mut input).unwrap();
 //! assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 //!
-//! // The `success` combinator always succeeds without consuming any input, so `many0` detects the
+//! // The `success` combinator always succeeds without consuming any input, so `many` detects the
 //! // loop.
 //! let parser = success(());
 //! let mut input = Input::new_from_chars("abc".chars(), None);
 //! assert_eq!(
-//! 	many0(&parser)(&mut input),
+//! 	many(&parser)(&mut input),
 //! 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
 //! );
 //! ```

@@ -17,7 +17,7 @@ powerful features like arbitrary lookahead and nested parsers.
 Add YAPCoL to your `Cargo.toml`:
 ```toml
 [dependencies]
-yapcol = "0.2.0"
+yapcol = "0.5.0"
 ```
 
 Or use `cargo add`:
@@ -31,9 +31,9 @@ cargo add yapcol
 
 - Basic: `is`, `satisfy`, `any`, `end_of_input`, `success`.
 - Choice and Optional: `choice`, `maybe`, `either`.
-- Repetition: `many0`, `many0_up_to`, `many1`, `many1_up_to`, `count`, `many_until`, `separated_by0`, `separated_by1`.
+- Repetition: `at_least`, `count`, `many`, `many_until`, `once_or_more`, `once_up_to`, `up_to`, and variations that collect the matches.
 - Lookahead and Backtracking: `attempt`, `look_ahead`, `not_followed_by`.
-- Grouping: `between`.
+- Grouping: `between`, `separated_by0`, `separated_by1`.
 - Associativity: `chain_left`, `chain_right`.
 
 ## Usage
@@ -44,20 +44,20 @@ The most convenient approach to YAPCoL is to use the built-in combinators to cre
 
 ```rust
 use yapcol::{Input, Parser};
-use yapcol::{is, many0};
+use yapcol::{is, many_collect};
 
 let mut input = Input::new_from_chars("aaab".chars(), None);
 
-// Combine 'is' and 'many0' to parse multiple 'a's
+// Combine 'is' and 'many_collect' to parse multiple 'a's
 let is_a = is('a');
-let parser = many0(&is_a);
+let parser = many_collect(&is_a);
 
 let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 
 // Shortcuts methods are available for some combinators:
 let mut input = Input::new_from_chars("aaab".chars(), None);
-let parser = is('a').many0();
+let parser = is('a').many_collect();
 let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 ```
@@ -96,7 +96,7 @@ defined in the `yapcol::error::Error` enum:
 The code below showcases all error variants in a simple character-based parsing example:
 ```rust
 use yapcol::input::Position;
-use yapcol::{Error, Input, Mismatch, any, is, many0, success};
+use yapcol::{Error, Input, Mismatch, any, is, many, success};
 
 let source_name = Some(String::from("file.txt"));
 let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
@@ -119,12 +119,12 @@ assert_eq!(
 is('a')(&mut input).unwrap();
 assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 
-// The `success` combinator always succeeds without consuming any input, so `many0` detects the
+// The `success` combinator always succeeds without consuming any input, so `many_collect` detects the
 // loop.
 let parser = success(());
 let mut input = Input::new_from_chars("abc".chars(), None);
 assert_eq!(
-	many0(&parser)(&mut input),
+	many(&parser)(&mut input),
 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
 );
 ```
