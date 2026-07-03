@@ -137,3 +137,43 @@ where
 		Ok(accumulator)
 	}
 }
+
+#[cfg(test)]
+mod count_accumulator_tests {
+	use super::*;
+
+	#[test]
+	fn new_value_is_zero() {
+		let accumulator = CountAccumulator::<()>::new();
+		let count = accumulator.value();
+		assert_eq!(count, 0);
+	}
+
+	#[test]
+	fn add_once_is_one() {
+		let mut accumulator = CountAccumulator::<()>::new();
+		accumulator.add(());
+		let count = accumulator.value();
+		assert_eq!(count, 1);
+	}
+}
+
+#[cfg(test)]
+mod matches_accumulator_tests {
+	use super::*;
+
+	#[test]
+	fn new_value_is_zero() {
+		let accumulator = MatchesAccumulator::<()>::new();
+		let count = accumulator.value();
+		assert_eq!(count, vec![]);
+	}
+
+	#[test]
+	fn add_once_has_item() {
+		let mut accumulator = MatchesAccumulator::<usize>::new();
+		accumulator.add(42);
+		let count = accumulator.value();
+		assert_eq!(count, vec![42]);
+	}
+}
