@@ -17,7 +17,7 @@ powerful features like arbitrary lookahead and nested parsers.
 Add YAPCoL to your `Cargo.toml`:
 ```toml
 [dependencies]
-yapcol = "0.4.0"
+yapcol = "0.5.0"
 ```
 
 Or use `cargo add`:
