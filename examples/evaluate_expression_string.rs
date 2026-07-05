@@ -100,8 +100,8 @@ fn main() {
 			Ok(_) => {
 				let mut input = Input::new_from_chars(input.chars(), Some("stdin".to_string()));
 				match parse_expression().exhaustive()(&mut input) {
-					Ok(e) => println!("Success: {:?}", evaluate(e)),
-					Err(e) => println!("Failed to parse expression: {e}"),
+					Ok(expression) => println!("Success: {:?}", evaluate(expression)),
+					Err(error) => println!("Failed to parse expression: {error}"),
 				}
 			}
 			Err(_) => println!("Failed to read input."),
