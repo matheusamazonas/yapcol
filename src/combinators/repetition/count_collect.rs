@@ -36,8 +36,8 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to apply repeatedly.
-/// - `count`: The exact number of times to apply the parser.
+/// - `parser`: the parser to apply repeatedly.
+/// - `count`: the exact number of times to apply the parser.
 ///
 /// # Examples
 ///

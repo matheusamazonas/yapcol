@@ -66,7 +66,7 @@ mod tests {
 	use crate::*;
 
 	#[test]
-	fn empty() {
+	fn empty_fails() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("".chars(), None);
@@ -76,7 +76,7 @@ mod tests {
 	}
 
 	#[test]
-	fn success_none() {
+	fn no_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("#".chars(), None);
@@ -86,7 +86,7 @@ mod tests {
 	}
 
 	#[test]
-	fn success_multiple() {
+	fn multiple_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("Hello world #".chars(), None);
@@ -96,7 +96,7 @@ mod tests {
 	}
 
 	#[test]
-	fn fail() {
+	fn no_end_fails() {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
