@@ -339,6 +339,24 @@ where
 		move |input| many_collect(&self)(input)
 	}
 
+	/// A shortcut for the [`many_until`] combinator.
+	fn many_until<PE, OE>(self, end: &PE) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+		PE: Parser<IT, OE>,
+	{
+		move |input| many_until(&self, end)(input)
+	}
+
+	/// A shortcut for the [`many_until_collect`] combinator.
+	fn many_until_collect<PE, OE>(self, end: &PE) -> impl Parser<IT, Vec<O>>
+	where
+		Self: Sized,
+		PE: Parser<IT, OE>,
+	{
+		move |input| many_until_collect(&self, end)(input)
+	}
+
 	/// A shortcut for the [`once_or_more`] combinator.
 	fn once_or_more(self) -> impl Parser<IT, usize>
 	where
