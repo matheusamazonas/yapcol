@@ -12,7 +12,7 @@ use crate::{InputToken, Parser};
 /// This parser consumes input if:
 /// - It succeeds, and:
 ///   - Its `end` argument parser consumes upon success, or;
-///   - Its `parser` argument was applied at least once.
+///   - Its `parser` argument succeeded at least once.
 /// - It fails, and:
 ///   - Its `end` argument parser consumes upon failure, or;
 ///   - Its `parser` argument consumes upon failure, *and* it was applied at least once.
