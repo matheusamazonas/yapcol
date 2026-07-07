@@ -10,6 +10,7 @@ mod many_until_collect;
 mod once_or_more;
 mod once_or_more_collect;
 mod once_or_more_until;
+mod once_or_more_until_collect;
 mod once_up_to;
 mod once_up_to_collect;
 #[cfg(test)]
@@ -28,6 +29,7 @@ pub use many_until_collect::many_until_collect;
 pub use once_or_more::once_or_more;
 pub use once_or_more_collect::once_or_more_collect;
 pub use once_or_more_until::once_or_more_until;
+pub use once_or_more_until_collect::once_or_more_until_collect;
 pub use once_up_to::once_up_to;
 pub use once_up_to_collect::once_up_to_collect;
 pub use up_to::up_to;
