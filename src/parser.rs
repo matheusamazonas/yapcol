@@ -437,6 +437,15 @@ where
 		move |input| count_collect(&self, c)(input)
 	}
 
+	/// A shortcut for the [`once_or_more_until`] combinator.
+	fn once_or_more_until<PE, OE>(self, end: &PE) -> impl Parser<IT, usize>
+	where
+		Self: Sized,
+		PE: Parser<IT, OE>,
+	{
+		move |input| once_or_more_until(&self, end)(input)
+	}
+
 	/// A shortcut for the [`between`] combinator where the callee parser is the one in between.
 	fn between<PO, PC, OO, OC>(self, open: &PO, close: &PC) -> impl Parser<IT, O>
 	where

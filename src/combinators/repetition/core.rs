@@ -143,7 +143,7 @@ where
 			Err(Error::UnexpectedToken(
 				input.source_name(),
 				input.position(),
-				Some(mismatch)
+				Some(mismatch),
 			))
 		}
 	}
