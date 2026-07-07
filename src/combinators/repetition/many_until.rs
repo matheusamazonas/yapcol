@@ -28,6 +28,10 @@ use crate::{InputToken, Parser};
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many_until`].
+///
 /// # Arguments
 ///
 /// - `parser`: the parser to possibly be applied many times.
