@@ -27,7 +27,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to make optional.
+/// - `parser`: the parser to make optional.
 ///
 /// # Examples
 ///

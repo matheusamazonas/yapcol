@@ -13,7 +13,7 @@ use crate::{InputToken, Parser};
 /// This parser consumes input if:
 /// - It succeeds, and:
 ///   - Its `end` argument parser consumes upon success, or;
-///   - Its `parser` argument was applied at least once.
+///   - Its `parser` argument succeeded at least once.
 /// - It fails, and:
 ///   - Its `end` argument parser consumes upon failure, or;
 ///   - Its `parser` argument consumes upon failure, *and* it was applied at least once.
@@ -28,9 +28,13 @@ use crate::{InputToken, Parser};
 ///
 /// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
+/// # Shortcut
+///
+/// This combinator has a shortcut version: [`Parser::many_until`].
+///
 /// # Arguments
 ///
-/// - `parser`: the parser for the elements to be collected until the end is reached.
+/// - `parser`: the parser to possibly be applied many times.
 /// - `end`: the parser that delimits the end.
 ///
 /// # Examples
@@ -67,7 +71,7 @@ mod tests {
 	use crate::*;
 
 	#[test]
-	fn empty() {
+	fn empty_fails() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("".chars(), None);
@@ -77,7 +81,7 @@ mod tests {
 	}
 
 	#[test]
-	fn success_none() {
+	fn no_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("#".chars(), None);
@@ -87,7 +91,7 @@ mod tests {
 	}
 
 	#[test]
-	fn success_multiple() {
+	fn multiple_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("123456#".chars(), None);
@@ -97,7 +101,7 @@ mod tests {
 	}
 
 	#[test]
-	fn fail() {
+	fn no_end_fails() {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);

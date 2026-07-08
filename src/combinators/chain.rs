@@ -20,9 +20,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parses operands that will be combined into a final value, in a
+/// - `operand_parser`: parses operands that will be combined into a final value, in a
 ///   left-associative manner.
-/// - `operator_parser`: Operator's parser, which consumes input and returns a function that
+/// - `operator_parser`: operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
 ///
 /// # Examples
@@ -81,9 +81,9 @@ where
 ///
 /// # Arguments
 ///
-/// - `operand_parser`: Parses operands that will be combined into a final value, in a
+/// - `operand_parser`: parses operands that will be combined into a final value, in a
 ///   right-associative manner.
-/// - `operator_parser`: Operator's parser, which consumes input and returns a function that
+/// - `operator_parser`: operator's parser, which consumes input and returns a function that
 ///   combines output values into one.
 ///
 /// # Examples

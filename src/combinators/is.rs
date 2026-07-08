@@ -17,7 +17,7 @@ use crate::{Error, InputToken, Mismatch, Parser};
 ///
 /// # Arguments
 ///
-/// - `token`: A reference to the token to match against.
+/// - `token`: a reference to the token to match against.
 ///
 /// # Examples
 ///

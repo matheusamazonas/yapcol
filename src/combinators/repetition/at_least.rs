@@ -33,8 +33,8 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to be applied multiple times.
-/// - `min_count`: The minimum number of times that the argument parser should succeed.
+/// - `parser`: the parser to be applied multiple times.
+/// - `min_count`: the minimum number of times that the argument parser should succeed.
 ///
 /// # Examples
 ///

@@ -134,7 +134,18 @@ where
 				(Err(e), _) => return Err(e),
 			}
 		}
-		Ok(accumulator)
+		if total_match_count >= min_match_count {
+			Ok(accumulator)
+		} else {
+			let expected = format!("at least {min_match_count} occurrences");
+			let found = format!("{total_match_count} occurrences");
+			let mismatch = Mismatch::new(expected, found);
+			Err(Error::UnexpectedToken(
+				input.source_name(),
+				input.position(),
+				Some(mismatch),
+			))
+		}
 	}
 }
 

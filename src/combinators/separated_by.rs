@@ -12,7 +12,7 @@ use crate::{Error, Input, InputToken, Parser};
 /// This parser consumes input if:
 /// - It succeeds, and:
 ///   - Its `parser` argument consumes upon success, or;
-///   - Its `separator` argument parser consumes upon success, *and* it was applied at least once.
+///   - Its `separator` argument parser consumes upon success, *and* it succeeded at least once.
 /// - It fails, and:
 ///   - Its `parser` argument consumes upon failure, or;
 ///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
@@ -23,8 +23,8 @@ use crate::{Error, Input, InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser whose occurrences we're collecting.
-/// - `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: the parser whose occurrences we're collecting.
+/// - `separator`: the separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///
@@ -65,7 +65,7 @@ where
 /// This parser consumes input if:
 /// - It succeeds, and:
 ///   - Its `parser` argument consumes upon success, or;
-///   - Its `separator` argument parser consumes upon success, *and* it was applied at least once.
+///   - Its `separator` argument parser consumes upon success, *and* it succeeded at least once.
 /// - It fails, and:
 ///   - Its `parser` argument consumes upon failure, or;
 ///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
@@ -76,8 +76,8 @@ where
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser whose occurrences we're collecting.
-/// - `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: the parser whose occurrences we're collecting.
+/// - `separator`: the separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///
