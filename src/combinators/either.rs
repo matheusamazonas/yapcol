@@ -28,8 +28,8 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser1`: The first parser to try.
-/// - `parser2`: The fallback parser, applied only if `parser1` fails without consuming input.
+/// - `parser1`: the first parser to try.
+/// - `parser2`: the fallback parser, applied only if `parser1` fails without consuming input.
 ///
 /// # Examples
 ///

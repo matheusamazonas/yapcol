@@ -115,8 +115,8 @@ impl<'a> StringInput<'a> {
 	///
 	/// # Arguments
 	///
-	/// - `chars`: Any value that can be turned into a `char` iterator, such as [`str::chars`].
-	/// - `source_name`: An optional name for the source (e.g. a file path), to be included in
+	/// - `chars`: any value that can be turned into a `char` iterator, such as [`str::chars`].
+	/// - `source_name`: an optional name for the source (e.g. a file path), to be included in
 	///   error messages.
 	///
 	/// # Examples

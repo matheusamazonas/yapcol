@@ -1,7 +1,7 @@
 use super::core::{MatchesAccumulator, RepetitionAccumulator, repeat_with_end};
 use crate::{InputToken, Parser};
 
-/// Parses zero or more instances of `parser`, until `end` succeeds, collecting all the matches.
+/// Applies `parser` one or more times, until `end` succeeds, collecting all the matches.
 ///
 /// # Outcome
 ///
@@ -30,41 +30,47 @@ use crate::{InputToken, Parser};
 /// # Performance
 ///
 /// This combinator stores all the matches it finds. If you're not interested in the matches, but
-/// instead in how many times it matched, consider using [`crate::many_until`].
+/// instead in how many times it matched, consider using [`crate::once_or_more_until`].
 ///
 /// # Shortcut
 ///
-/// This combinator has a shortcut version: [`Parser::many_until_collect`].
+/// This combinator has a shortcut version: [`Parser::once_or_more_until_collect`].
 ///
 /// # Arguments
 ///
-/// - `parser`: the parser for the elements to be collected until the end is reached.
+/// - `parser`: the parser to be applied one or more times.
 /// - `end`: the parser that delimits the end.
 ///
 /// # Examples
 ///
 /// ```
-/// use yapcol::{Error, Input, any, is, many_until_collect};
+/// use yapcol::{Error, Input, any, is, once_or_more_until_collect};
 ///
 /// let comments_parser = |input: &mut Input<_>| {
 /// 	let open = is('#');
 /// 	let close = is('$');
 /// 	let any = any();
 /// 	open(input)?;
-/// 	many_until_collect(&any, &close)(input)
+/// 	once_or_more_until_collect(&any, &close)(input)
 /// };
-/// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
+/// // Success if there is at least one character before the end.
+/// let mut input = Input::new_from_chars("#12345$".chars(), None);
 /// let output = comments_parser(&mut input);
-/// assert_eq!(output, Ok("this is a comment".chars().collect()));
+/// assert_eq!(output, Ok(vec!['1', '2', '3', '4', '5']));
+///
+/// // Fails if there is no character before the end.
+/// let mut input = Input::new_from_chars("#$".chars(), None);
+/// let output = comments_parser(&mut input);
+/// assert!(output.is_err());
 /// ```
-pub fn many_until_collect<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
+pub fn once_or_more_until_collect<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O> = repeat_with_end(parser, 0, None, end)(input)?;
+		let accumulator: MatchesAccumulator<O> = repeat_with_end(parser, 1, None, end)(input)?;
 		Ok(accumulator.value())
 	}
 }
@@ -79,29 +85,37 @@ mod tests {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("".chars(), None);
-		let not_followed_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let not_followed_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
 		assert_eq!(output, Err(Error::EndOfInput(None)));
 	}
 
 	#[test]
-	fn no_matches_succeeds() {
+	fn no_match_fails() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("#".chars(), None);
-		let not_followed_parser = many_until_collect(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input).unwrap();
-		assert_eq!(output, Vec::<char>::new());
+		let not_followed_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
+		let output = not_followed_parser(&mut input);
+		let mismatch = Mismatch::new("at least 1 occurrences", "0 occurrences");
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 1),
+				Some(mismatch)
+			))
+		);
 	}
 
 	#[test]
 	fn multiple_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("Hello world #".chars(), None);
-		let many_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let mut input = Input::new_from_chars("123456#".chars(), None);
+		let many_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
 		let output = many_parser(&mut input).unwrap();
-		assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
+		assert_eq!(output, vec!['1', '2', '3', '4', '5', '6']);
 	}
 
 	#[test]
@@ -109,7 +123,7 @@ mod tests {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
-		let many_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let many_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
 		let output = many_parser(&mut input);
 		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
@@ -128,7 +142,7 @@ mod tests {
 		let non_consuming = success(1); // Non-consuming parser.
 		let mut input = Input::new_from_chars("hello#".chars(), None);
 		let end_parser = is('#');
-		let parser = many_until_collect(&non_consuming, &end_parser);
+		let parser = once_or_more_until_collect(&non_consuming, &end_parser);
 		let output = parser(&mut input);
 		let position = Position::new(1, 1);
 		assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));

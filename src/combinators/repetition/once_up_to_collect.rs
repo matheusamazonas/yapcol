@@ -40,8 +40,8 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to be applied multiple times.
-/// - `max_count`: The (inclusive) maximum number of times that the argument parser should succeed.
+/// - `parser`: the parser to be applied one or more times.
+/// - `max_count`: the (inclusive) maximum number of times that the argument parser should succeed.
 ///   Must be greater than 0, otherwise this function panics.
 ///
 /// # Panics

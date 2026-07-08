@@ -17,7 +17,7 @@ use crate::{Error, InputToken, Mismatch, Parser};
 ///
 /// # Arguments
 ///
-/// - `f`: A predicate that takes a reference to a token and returns `Some` on success or
+/// - `f`: a predicate that takes a reference to a token and returns `Some` on success or
 ///   `None` on failure.
 ///
 /// # Examples

@@ -172,11 +172,11 @@ fn main() {
 					Ok(tokens) => {
 						let mut input = Input::new_from_tokens(tokens, Some("stdin".to_string()));
 						match parse_expression().exhaustive()(&mut input) {
-							Ok(e) => println!("Success: {:?}", evaluate(e)),
-							Err(e) => println!("Failed to parse expression: {e}"),
+							Ok(expression) => println!("Success: {:?}", evaluate(expression)),
+							Err(error) => println!("Failed to parse expression: {error}"),
 						}
 					}
-					Err(e) => println!("Failed to tokenize: {e}"),
+					Err(error) => println!("Failed to tokenize: {error}"),
 				}
 			}
 			Err(_) => println!("Failed to read input."),

@@ -23,9 +23,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `open`: The parser that "opens" the between.
-/// - `parser`: The parser that goes between `open` and `close`, whose content we're interested in.
-/// - `close`: The parser that "closes" the between.
+/// - `open`: the parser that "opens" the between.
+/// - `parser`: the parser that goes between `open` and `close`, whose content we're interested in.
+/// - `close`: the parser that "closes" the between.
 ///
 /// # Examples
 ///

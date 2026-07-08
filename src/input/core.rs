@@ -14,7 +14,7 @@ use std::fmt::{Debug, Display};
 ///
 /// # Type Parameters
 ///
-/// - `Token`: The underlying token value type.
+/// - `Token`: the underlying token value type.
 pub trait InputToken: Clone {
 	/// The underlying token, without any extra parsing-related data.
 	type Token: PartialEq + Clone + Display + Debug;
@@ -82,8 +82,8 @@ where
 	///
 	/// # Arguments
 	///
-	/// - `source`: Any value that can be turned into an iterator of [`InputToken`] items.
-	/// - `source_name`: An optional name for the source (e.g. a file path), included in
+	/// - `source`: any value that can be turned into an iterator of [`InputToken`] items.
+	/// - `source_name`: an optional name for the source (e.g. a file path), included in
 	///   error messages.
 	pub fn new_from_tokens<S, I>(source: S, source_name: Option<String>) -> Input<'a, IT>
 	where
@@ -222,10 +222,10 @@ where
 	///
 	/// # Arguments
 	///
-	/// - `handler`: Handler used to stop the lookahead operation. This handler *must* belong to the
+	/// - `handler`: handler used to stop the lookahead operation. This handler *must* belong to the
 	///   latest lookahead operation, enforcing the lookahead rule that only the most recent
 	///   operation might be stopped. The function will panic if this invariant is not respected.
-	/// - `backtrack`: Whether the input should backtrack. If `true`, all tokens fetched during the
+	/// - `backtrack`: whether the input should backtrack. If `true`, all tokens fetched during the
 	///   lookahead operation will remain cached, and later fetching will return them. In order
 	///   words, it pretends that all the fetching that happened during the lookahead operation
 	///   did not happen. If `false`, it discards the tokens fetched during the lookahead

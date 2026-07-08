@@ -17,7 +17,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to look ahead.
+/// - `parser`: the parser to look ahead.
 ///
 /// # Examples
 ///
