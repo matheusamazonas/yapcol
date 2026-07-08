@@ -25,7 +25,7 @@ use crate::{Error, InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parsers`: An iterator that contains all parsers to attempt until a success.
+/// - `parsers`: an iterator that contains all parsers to attempt until a success.
 ///
 /// # Examples
 ///

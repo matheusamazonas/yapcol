@@ -7,11 +7,11 @@
 //!
 //! # Core Concepts
 //!
-//! - [`Parser`]: The central trait of the crate. Any function that takes a mutable reference
+//! - [`Parser`]: the central trait of the crate. Any function that takes a mutable reference
 //!   to an [`Input`] and returns a `Result<Output, Error>` is a parser.
-//! - [`Input`]: A wrapper around an iterator that provides buffering, lookahead, and position
+//! - [`Input`]: a wrapper around an iterator that provides buffering, lookahead, and position
 //!   tracking capabilities.
-//! - Combinators: Functions that take one or more parsers and return a new, more complex
+//! - Combinators: functions that take one or more parsers and return a new, more complex
 //!   parser. Examples: [`is()`], [`many`], [`either()`], [`chain_left()`].
 //!
 //! # Features

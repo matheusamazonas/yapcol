@@ -34,7 +34,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser to attempt.
+/// - `parser`: the parser to attempt.
 ///
 /// # Examples
 ///

@@ -41,8 +41,8 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 ///
 /// # Type Parameters
 ///
-/// - `IT`: The parser's input token, which implements the [`InputToken`] trait.
-/// - `O`: The type of the value produced by the parser on success.
+/// - `IT`: the parser's input token, which implements the [`InputToken`] trait.
+/// - `O`: the type of the value produced by the parser on success.
 ///
 /// # Examples
 ///
@@ -82,8 +82,8 @@ where
 	/// error messages.
 	///
 	/// # Parameters
-	/// - `self`: The current parser.
-	/// - `expectation`: The value to use as the new expectation in any error produced by the
+	/// - `self`: the current parser.
+	/// - `expectation`: the value to use as the new expectation in any error produced by the
 	///   current parser.
 	///
 	/// # Returns
@@ -133,8 +133,8 @@ where
 	/// Transforms the output of the current parser using the provided function.
 	///
 	/// # Parameters
-	/// - `self`: The current parser.
-	/// - `f`: A closure or function that maps the previous output of the parser to a new output
+	/// - `self`: the current parser.
+	/// - `f`: a closure or function that maps the previous output of the parser to a new output
 	///   type.
 	///
 	/// # Returns
@@ -173,8 +173,8 @@ where
 	/// previous one.
 	///
 	/// # Parameters
-	/// - `self`: The current parser.
-	/// - `f`: A closure or function that takes the output of the current parser and returns a new
+	/// - `self`: the current parser.
+	/// - `f`: a closure or function that takes the output of the current parser and returns a new
 	///   parser.
 	///
 	/// # Returns
@@ -216,8 +216,8 @@ where
 	/// caring about its value and then continue parsing with a second parser.
 	///
 	/// # Parameters
-	/// - `self`: The current parser whose output is discarded on success.
-	/// - `other`: The parser to run after `self` succeeds.
+	/// - `self`: the current parser whose output is discarded on success.
+	/// - `other`: the parser to run after `self` succeeds.
 	///
 	/// # Returns
 	/// A new parser that first runs `self`, discards its output, then runs `other` on the same
@@ -284,7 +284,7 @@ where
 	/// needed, but its side effect (consuming input) is.
 	///
 	/// # Parameters
-	/// - `self`: The current parser whose output is discarded on success.
+	/// - `self`: the current parser whose output is discarded on success.
 	///
 	/// # Returns
 	/// A new parser that runs the current parser, but returns `()` instead of the original output.

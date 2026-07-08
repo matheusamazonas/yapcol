@@ -23,8 +23,8 @@ use crate::{Error, Input, InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser whose occurrences we're collecting.
-/// - `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: the parser whose occurrences we're collecting.
+/// - `separator`: the separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///
@@ -76,8 +76,8 @@ where
 ///
 /// # Arguments
 ///
-/// - `parser`: The parser whose occurrences we're collecting.
-/// - `separator`: The separator parser, whose content we're not interested in.
+/// - `parser`: the parser whose occurrences we're collecting.
+/// - `separator`: the separator parser, whose content we're not interested in.
 ///
 /// # Examples
 ///

@@ -16,7 +16,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Arguments
 ///
-/// - `success`: The value to return when the parser is applied.
+/// - `success`: the value to return when the parser is applied.
 ///
 /// # Examples
 ///
