@@ -5,7 +5,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Outcome
 ///
-/// If it succeeds, this combinator returns a vector of matches of its `parser` argument.
+/// If it succeeds, this combinator returns a tuple containing:
+///  - A vector of matches of its `parser` argument.
+///  - The match of its `end` argument parser.
 ///
 /// # Input consumption
 ///
@@ -54,18 +56,20 @@ use crate::{InputToken, Parser};
 /// 	many_until_collect(&any, &close)(input)
 /// };
 /// let mut input = Input::new_from_chars("#this is a comment$".chars(), None);
-/// let output = comments_parser(&mut input);
-/// assert_eq!(output, Ok("this is a comment".chars().collect()));
+/// let (matches, end) = comments_parser(&mut input).unwrap();
+/// assert_eq!(matches, "this is a comment".chars().collect::<Vec<char>>());
+/// assert_eq!(end, '$');
 /// ```
-pub fn many_until_collect<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
+pub fn many_until_collect<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, (Vec<O>, OE)>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O> = repeat_with_end(parser, 0, None, end)(input)?;
-		Ok(accumulator.value())
+		let accumulator: MatchesAccumulator<O, OE> = repeat_with_end(parser, 0, None, end)(input)?;
+		let (count, end) = accumulator.result();
+		Ok((count, end.expect("End parser value is missing.")))
 	}
 }
 
@@ -79,8 +83,8 @@ mod tests {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("".chars(), None);
-		let not_followed_parser = many_until_collect(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input);
+		let many_until_collect_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let output = many_until_collect_parser(&mut input);
 		assert_eq!(output, Err(Error::EndOfInput(None)));
 	}
 
@@ -89,9 +93,10 @@ mod tests {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("#".chars(), None);
-		let not_followed_parser = many_until_collect(&any_parser, &end_comment_parser);
-		let output = not_followed_parser(&mut input).unwrap();
-		assert_eq!(output, Vec::<char>::new());
+		let many_until_collect_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let (matches, end) = many_until_collect_parser(&mut input).unwrap();
+		assert_eq!(matches, Vec::<char>::new());
+		assert_eq!(end, '#');
 	}
 
 	#[test]
@@ -99,9 +104,10 @@ mod tests {
 		let any_parser = any();
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("Hello world #".chars(), None);
-		let many_parser = many_until_collect(&any_parser, &end_comment_parser);
-		let output = many_parser(&mut input).unwrap();
-		assert_eq!(output, "Hello world ".chars().collect::<Vec<_>>());
+		let many_until_collect_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let (matches, end) = many_until_collect_parser(&mut input).unwrap();
+		assert_eq!(matches, "Hello world ".chars().collect::<Vec<_>>());
+		assert_eq!(end, '#');
 	}
 
 	#[test]
@@ -109,8 +115,8 @@ mod tests {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
-		let many_parser = many_until_collect(&any_parser, &end_comment_parser);
-		let output = many_parser(&mut input);
+		let many_until_collect_parser = many_until_collect(&any_parser, &end_comment_parser);
+		let output = many_until_collect_parser(&mut input);
 		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,
@@ -128,8 +134,8 @@ mod tests {
 		let non_consuming = success(1); // Non-consuming parser.
 		let mut input = Input::new_from_chars("hello#".chars(), None);
 		let end_parser = is('#');
-		let parser = many_until_collect(&non_consuming, &end_parser);
-		let output = parser(&mut input);
+		let many_until_collect_parser = many_until_collect(&non_consuming, &end_parser);
+		let output = many_until_collect_parser(&mut input);
 		let position = Position::new(1, 1);
 		assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
 	}

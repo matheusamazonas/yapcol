@@ -5,7 +5,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Outcome
 ///
-/// If it succeeds, this combinator returns a vector of matches of its `parser` argument.
+/// If it succeeds, this combinator returns a tuple containing:
+///  - A vector of matches of its `parser` argument.
+///  - The match of its `end` argument parser.
 ///
 /// # Input consumption
 ///
@@ -55,23 +57,28 @@ use crate::{InputToken, Parser};
 /// };
 /// // Success if there is at least one character before the end.
 /// let mut input = Input::new_from_chars("#12345$".chars(), None);
-/// let output = comments_parser(&mut input);
-/// assert_eq!(output, Ok(vec!['1', '2', '3', '4', '5']));
+/// let (matches, end) = comments_parser(&mut input).unwrap();
+/// assert_eq!(matches, vec!['1', '2', '3', '4', '5']);
+/// assert_eq!(end, '$');
 ///
 /// // Fails if there is no character before the end.
 /// let mut input = Input::new_from_chars("#$".chars(), None);
 /// let output = comments_parser(&mut input);
 /// assert!(output.is_err());
 /// ```
-pub fn once_or_more_until_collect<P, PE, IT, O, OE>(parser: &P, end: &PE) -> impl Parser<IT, Vec<O>>
+pub fn once_or_more_until_collect<P, PE, IT, O, OE>(
+	parser: &P,
+	end: &PE,
+) -> impl Parser<IT, (Vec<O>, OE)>
 where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O> = repeat_with_end(parser, 1, None, end)(input)?;
-		Ok(accumulator.value())
+		let accumulator: MatchesAccumulator<O, OE> = repeat_with_end(parser, 1, None, end)(input)?;
+		let (count, end) = accumulator.result();
+		Ok((count, end.expect("End parser value is missing.")))
 	}
 }
 
@@ -114,8 +121,9 @@ mod tests {
 		let end_comment_parser = is('#');
 		let mut input = Input::new_from_chars("123456#".chars(), None);
 		let many_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
-		let output = many_parser(&mut input).unwrap();
-		assert_eq!(output, vec!['1', '2', '3', '4', '5', '6']);
+		let (matches, end) = many_parser(&mut input).unwrap();
+		assert_eq!(matches, vec!['1', '2', '3', '4', '5', '6']);
+		assert_eq!(end, '#');
 	}
 
 	#[test]

@@ -2,51 +2,71 @@ use crate::input::Position;
 use crate::{Error, Input, InputToken, Mismatch, Parser};
 use std::marker::PhantomData;
 
-pub trait RepetitionAccumulator<I, O> {
+pub trait RepetitionAccumulator<I, O, E> {
 	fn new() -> Self;
 	fn add(&mut self, value: I);
-	fn value(self) -> O;
+	fn end(&mut self, value: Option<E>);
+	fn result(self) -> (O, Option<E>);
 }
 
-pub struct MatchesAccumulator<T> {
+pub struct MatchesAccumulator<T, E> {
 	matches: Vec<T>,
+	end: Option<E>,
 }
 
-impl<T> RepetitionAccumulator<T, Vec<T>> for MatchesAccumulator<T> {
+impl<T, E> RepetitionAccumulator<T, Vec<T>, E> for MatchesAccumulator<T, E> {
 	fn new() -> Self {
 		MatchesAccumulator {
 			matches: Vec::new(),
+			end: None,
 		}
 	}
 
 	fn add(&mut self, value: T) {
+		if self.end.is_some() {
+			panic!("Cannot add more matches after the end of the repetition.");
+		}
 		self.matches.push(value);
 	}
 
-	fn value(self) -> Vec<T> {
-		self.matches
+	fn end(&mut self, value: Option<E>) {
+		self.end = value;
+	}
+
+	fn result(self) -> (Vec<T>, Option<E>) {
+		(self.matches, self.end)
 	}
 }
 
-pub struct CountAccumulator<T> {
+pub struct CountAccumulator<T, E> {
 	count: usize,
 	phantom: PhantomData<T>,
+	end: Option<E>,
 }
 
-impl<T> RepetitionAccumulator<T, usize> for CountAccumulator<T> {
+impl<T, E> RepetitionAccumulator<T, usize, E> for CountAccumulator<T, E> {
 	fn new() -> Self {
 		CountAccumulator {
 			count: 0,
 			phantom: PhantomData,
+			end: None,
 		}
 	}
 
 	fn add(&mut self, _: T) {
+		if self.end.is_some() {
+			panic!("Cannot add more matches after the end of the repetition.");
+		}
 		self.count += 1;
 	}
 
-	fn value(self) -> usize {
-		self.count
+	fn end(&mut self, end: Option<E>) {
+		// The end if not used, but it's useful to detect wrong calls to `add`.
+		self.end = end
+	}
+
+	fn result(self) -> (usize, Option<E>) {
+		(self.count, None)
 	}
 }
 
@@ -62,7 +82,7 @@ pub fn repeat_no_end<P, IT, O, A, AO>(
 where
 	P: Parser<IT, O>,
 	IT: InputToken,
-	A: RepetitionAccumulator<O, AO>,
+	A: RepetitionAccumulator<O, AO, ()>,
 {
 	move |input| repeat(parser, min_match_count, max_match_count, false, &fail)(input)
 }
@@ -77,29 +97,30 @@ where
 	P: Parser<IT, O>,
 	PE: Parser<IT, OE>,
 	IT: InputToken,
-	A: RepetitionAccumulator<O, AO>,
+	A: RepetitionAccumulator<O, AO, OE>,
 {
 	repeat(parser, min_match_count, max_match_count, true, end_parser)
 }
 
-fn repeat<P, PS, IT, O, OP, A, AO>(
+fn repeat<P, PE, IT, O, OE, A, AO>(
 	parser: &P,
 	min_match_count: usize,
 	max_match_count: Option<usize>,
 	fail_on_error: bool,
-	end_parser: &PS,
+	end_parser: &PE,
 ) -> impl Parser<IT, A>
 where
 	P: Parser<IT, O>,
-	PS: Parser<IT, OP>,
+	PE: Parser<IT, OE>,
 	IT: InputToken,
-	A: RepetitionAccumulator<O, AO>,
+	A: RepetitionAccumulator<O, AO, OE>,
 {
 	move |input| {
 		let mut accumulator = A::new();
 		let mut total_match_count = 0;
 		let mut previous_consumed_count = input.consumed_count();
-		while end_parser(input).is_err() {
+		let mut end_output = end_parser(input);
+		while end_output.is_err() {
 			let previous_position = input.position();
 			let outcome = parser(input);
 			match (outcome, max_match_count) {
@@ -133,8 +154,10 @@ where
 				(Err(_), _) if total_match_count >= min_match_count => return Ok(accumulator),
 				(Err(e), _) => return Err(e),
 			}
+			end_output = end_parser(input);
 		}
 		if total_match_count >= min_match_count {
+			accumulator.end(end_output.ok());
 			Ok(accumulator)
 		} else {
 			let expected = format!("at least {min_match_count} occurrences");
@@ -155,17 +178,17 @@ mod count_accumulator_tests {
 
 	#[test]
 	fn new_value_is_zero() {
-		let accumulator = CountAccumulator::<()>::new();
-		let count = accumulator.value();
-		assert_eq!(count, 0);
+		let accumulator = CountAccumulator::<(), ()>::new();
+		let result = accumulator.result();
+		assert_eq!(result, (0, None));
 	}
 
 	#[test]
 	fn add_once_is_one() {
-		let mut accumulator = CountAccumulator::<()>::new();
+		let mut accumulator = CountAccumulator::<(), ()>::new();
 		accumulator.add(());
-		let count = accumulator.value();
-		assert_eq!(count, 1);
+		let result = accumulator.result();
+		assert_eq!(result, (1, None));
 	}
 }
 
@@ -175,16 +198,25 @@ mod matches_accumulator_tests {
 
 	#[test]
 	fn new_value_is_zero() {
-		let accumulator = MatchesAccumulator::<()>::new();
-		let count = accumulator.value();
-		assert_eq!(count, vec![]);
+		let accumulator = MatchesAccumulator::<(), ()>::new();
+		let result = accumulator.result();
+		assert_eq!(result, (vec![], None));
 	}
 
 	#[test]
 	fn add_once_has_item() {
-		let mut accumulator = MatchesAccumulator::<usize>::new();
+		let mut accumulator = MatchesAccumulator::<usize, ()>::new();
 		accumulator.add(42);
-		let count = accumulator.value();
-		assert_eq!(count, vec![42]);
+		let result = accumulator.result();
+		assert_eq!(result, (vec![42], None));
+	}
+
+	#[test]
+	fn end_match() {
+		let mut accumulator = MatchesAccumulator::<usize, bool>::new();
+		accumulator.add(42);
+		accumulator.end(Some(true));
+		let result = accumulator.result();
+		assert_eq!(result, (vec![42], Some(true)));
 	}
 }
