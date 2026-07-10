@@ -84,8 +84,10 @@ where
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O> = repeat_no_end(parser, 0, Some(max_count))(input)?;
-		Ok(accumulator.value())
+		let accumulator: MatchesAccumulator<O, _> =
+			repeat_no_end(parser, 0, Some(max_count))(input)?;
+		let (count, _) = accumulator.result();
+		Ok(count)
 	}
 }
 

@@ -60,8 +60,9 @@ where
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: CountAccumulator<O> = repeat_with_end(parser, 0, None, end)(input)?;
-		Ok(accumulator.value())
+		let accumulator: CountAccumulator<O, OE> = repeat_with_end(parser, 0, None, end)(input)?;
+		let (count, _) = accumulator.result();
+		Ok(count)
 	}
 }
 

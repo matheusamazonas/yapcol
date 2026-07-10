@@ -349,7 +349,7 @@ where
 	}
 
 	/// A shortcut for the [`many_until_collect`] combinator.
-	fn many_until_collect<PE, OE>(self, end: &PE) -> impl Parser<IT, Vec<O>>
+	fn many_until_collect<PE, OE>(self, end: &PE) -> impl Parser<IT, (Vec<O>, OE)>
 	where
 		Self: Sized,
 		PE: Parser<IT, OE>,
@@ -447,7 +447,7 @@ where
 	}
 
 	/// A shortcut for the [`once_or_more_until_collect`] combinator.
-	fn once_or_more_until_collect<PE, OE>(self, end: &PE) -> impl Parser<IT, Vec<O>>
+	fn once_or_more_until_collect<PE, OE>(self, end: &PE) -> impl Parser<IT, (Vec<O>, OE)>
 	where
 		Self: Sized,
 		PE: Parser<IT, OE>,
