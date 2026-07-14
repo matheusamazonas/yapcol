@@ -1,4 +1,4 @@
-use super::core::{MatchesAccumulator, RepetitionAccumulator, repeat_no_end};
+use super::core::repeat_no_end_collect;
 use crate::{InputToken, Parser};
 
 /// Applies `parser` between 1 and a given number of times, ensuring that no more matches occur and
@@ -87,9 +87,7 @@ where
 		panic!("max_count must be greater than 0");
 	}
 	move |input| {
-		let accumulator: MatchesAccumulator<O, _> =
-			repeat_no_end(parser, 1, Some(max_count))(input)?;
-		let (count, _) = accumulator.result();
+		let (count, _) = repeat_no_end_collect(parser, 1, Some(max_count))(input)?;
 		Ok(count)
 	}
 }
