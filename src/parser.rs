@@ -315,6 +315,14 @@ where
 		move |input| attempt(&self)(input)
 	}
 
+	/// A shortcut for the [`look_ahead`] combinator.
+	fn look_ahead(self) -> impl Parser<IT, O>
+	where
+		Self: Sized,
+	{
+		move |input| look_ahead(&self)(input)
+	}
+
 	/// A shortcut for the [`maybe`] combinator.
 	fn maybe(self) -> impl Parser<IT, Option<O>>
 	where
