@@ -148,6 +148,29 @@ mod tests {
 	}
 
 	#[test]
+	fn attempt_with_look_ahead_does_not_consume() {
+		let parser = is('h').and(is('e')).look_ahead();
+		let mut input = Input::new_from_chars("hallo".chars(), None);
+		let output = attempt(&parser)(&mut input);
+		let mismatch = Mismatch::new('e', 'a');
+		assert_eq!(
+			output,
+			Err(Error::UnexpectedToken(
+				None,
+				Position::new(1, 2),
+				Some(mismatch)
+			))
+		);
+		// Input should still be intact.
+		assert_eq!(any()(&mut input), Ok('h'));
+		assert_eq!(any()(&mut input), Ok('a'));
+		assert_eq!(any()(&mut input), Ok('l'));
+		assert_eq!(any()(&mut input), Ok('l'));
+		assert_eq!(any()(&mut input), Ok('o'));
+		assert!(end_of_input()(&mut input).is_ok());
+	}
+
+	#[test]
 	fn parse_does_not_consume_on_failure() {
 		let parser = is('h');
 		let mut input = Input::new_from_chars("jello".chars(), None);

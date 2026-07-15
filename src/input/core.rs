@@ -111,7 +111,7 @@ where
 						self.last_token_position = token.position();
 						let cloned = token.clone();
 						self.look_ahead_buffer.push_back(token);
-						frame.increment();
+						frame.add_count(1);
 						self.consumed_count += 1;
 						Some(cloned)
 					}
@@ -132,7 +132,7 @@ where
 			TokenLocation::BufferTail => {
 				let frame = self.look_ahead_frames.last_mut().unwrap();
 				let token = self.look_ahead_buffer.get(frame.next_token_ix()).unwrap();
-				frame.increment();
+				frame.add_count(1);
 				self.next_location = if frame.next_token_ix() == self.look_ahead_buffer.len() {
 					TokenLocation::StreamLookingAhead
 				} else {
@@ -147,7 +147,7 @@ where
 
 	/// Peeks into the input, returning a reference to the next token. Calling this method does not
 	/// mutate the input, and calling it repeatedly will return the same item over and over.
-	pub(crate) fn peek(&mut self) -> Option<&IT> {
+	pub fn peek(&mut self) -> Option<&IT> {
 		match self.next_location {
 			TokenLocation::Stream => self.source.peek(),
 			TokenLocation::StreamLookingAhead => self.source.peek(),
@@ -244,9 +244,13 @@ where
 		if backtrack {
 			self.consumed_count -= frame.length();
 		} else {
-			let buffer_length = self.look_ahead_buffer.len();
-			self.look_ahead_buffer
-				.truncate(buffer_length - frame.length());
+			if let Some(previous_frame) = self.look_ahead_frames.last_mut() {
+				previous_frame.add_count(frame.length())
+			} else {
+				let buffer_length = self.look_ahead_buffer.len();
+				self.look_ahead_buffer
+					.truncate(buffer_length - frame.length());
+			}
 		}
 
 		self.next_location = if self.look_ahead_frames.is_empty() {
@@ -278,10 +282,15 @@ mod tests {
 	#[test]
 	fn lookahead_no_backtracking() {
 		let mut input = Input::new_from_chars("12".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler, false);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		assert!(input.look_ahead_buffer.is_empty());
 		assert_eq!(input.consumed_count(), 2);
 		assert_eq!(input.look_ahead_frames.len(), 0);
@@ -291,10 +300,13 @@ mod tests {
 	#[test]
 	fn lookahead_backtracking() {
 		let mut input = Input::new_from_chars("12".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
 		input.stop_look_ahead(handler, true);
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
 		assert!(!input.look_ahead_buffer.is_empty());
 		assert_eq!(input.consumed_count(), 0);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
@@ -359,53 +371,92 @@ mod tests {
 	#[test]
 	fn nested_lookahead_backtrack() {
 		let mut input = Input::new_from_chars("12345".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		let handler2 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler2, true);
+		assert_eq!(input.next_location, TokenLocation::BufferTail);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler1, true);
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::Stream);
 	}
 
 	#[test]
 	fn nested_lookahead_no_backtrack() {
 		let mut input = Input::new_from_chars("12345".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		let handler2 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler2, false);
 		assert_eq!(input.next_token().unwrap().token_owned(), '3');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler1, false);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		assert_eq!(input.next_token().unwrap().token_owned(), '4');
 	}
 
 	#[test]
 	fn nested_look_ahead_backtrack_first() {
 		let mut input = Input::new_from_chars("12345".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		let handler2 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler2, true);
+		assert_eq!(input.next_location, TokenLocation::BufferTail);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler1, false);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		assert_eq!(input.next_token().unwrap().token_owned(), '3');
 	}
 
 	#[test]
 	fn nested_look_ahead_backtrack_second() {
 		let mut input = Input::new_from_chars("12345".chars(), None);
+		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		let handler2 = input.start_look_ahead();
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler2, false);
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '3');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler1, true);
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '3');
+		assert_eq!(input.next_location, TokenLocation::Stream);
 	}
 
 	#[test]
