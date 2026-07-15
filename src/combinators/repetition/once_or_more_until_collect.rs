@@ -1,4 +1,4 @@
-use super::core::{MatchesAccumulator, RepetitionAccumulator, repeat_with_end};
+use super::core::repeat_with_end_collect;
 use crate::{InputToken, Parser};
 
 /// Applies `parser` one or more times, until `end` succeeds, collecting all the matches.
@@ -76,8 +76,7 @@ where
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O, OE> = repeat_with_end(parser, 1, None, end)(input)?;
-		let (count, end) = accumulator.result();
+		let (count, end) = repeat_with_end_collect(parser, 1, None, end)(input)?;
 		Ok((count, end.expect("End parser value is missing.")))
 	}
 }

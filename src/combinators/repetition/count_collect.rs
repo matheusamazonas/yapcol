@@ -1,4 +1,4 @@
-use super::core::{MatchesAccumulator, RepetitionAccumulator, repeat_no_end};
+use super::core::repeat_no_end_collect;
 use crate::{InputToken, Parser};
 
 /// Creates a parser that applies the given parser exactly `count` times, collecting the matches.
@@ -67,9 +67,7 @@ where
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: MatchesAccumulator<O, _> =
-			repeat_no_end(parser, count, Some(count))(input)?;
-		let (count, _) = accumulator.result();
+		let (count, _) = repeat_no_end_collect(parser, count, Some(count))(input)?;
 		Ok(count)
 	}
 }

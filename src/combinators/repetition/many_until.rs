@@ -1,4 +1,4 @@
-use super::core::{CountAccumulator, RepetitionAccumulator, repeat_with_end};
+use super::core::repeat_with_end;
 use crate::{InputToken, Parser};
 
 /// Parses zero or more instances of `parser`, until `end` succeeds.
@@ -60,8 +60,7 @@ where
 	IT: InputToken,
 {
 	move |input| {
-		let accumulator: CountAccumulator<O, OE> = repeat_with_end(parser, 0, None, end)(input)?;
-		let (count, _) = accumulator.result();
+		let count = repeat_with_end(parser, 0, None, end)(input)?;
 		Ok(count)
 	}
 }

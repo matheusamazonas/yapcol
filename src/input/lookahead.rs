@@ -26,8 +26,8 @@ impl LookAheadFrame {
 	}
 
 	/// Increments the number of tokens placed in this frame.
-	pub fn increment(&mut self) {
-		self.length += 1;
+	pub fn add_count(&mut self, count: usize) {
+		self.length += count;
 	}
 }
 
@@ -53,6 +53,7 @@ impl LookAheadHandler {
 }
 
 /// Possible locations where the next input token might be.
+#[derive(Debug, PartialEq)]
 pub enum TokenLocation {
 	/// The next token will be fetched directly from the underlying source stream.
 	Stream,
