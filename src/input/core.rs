@@ -247,9 +247,7 @@ where
 			if let Some(previous_frame) = self.look_ahead_frames.last_mut() {
 				previous_frame.add_count(frame.length())
 			} else {
-				let buffer_length = self.look_ahead_buffer.len();
-				self.look_ahead_buffer
-					.truncate(buffer_length - frame.length());
+				self.look_ahead_buffer.drain(0..frame.length());
 			}
 		}
 
@@ -420,17 +418,26 @@ mod tests {
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		let handler2 = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
-		assert_eq!(input.next_token().unwrap().token_owned(), '2');
+		assert_eq!(input.next_token().unwrap().token_owned(), '3');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '4');
+		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '5');
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
 		input.stop_look_ahead(handler2, true);
 		assert_eq!(input.next_location, TokenLocation::BufferTail);
-		assert_eq!(input.next_token().unwrap().token_owned(), '2');
-		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
-		input.stop_look_ahead(handler1, false);
-		assert_eq!(input.next_location, TokenLocation::Stream);
 		assert_eq!(input.next_token().unwrap().token_owned(), '3');
+		assert_eq!(input.next_location, TokenLocation::BufferTail);
+		input.stop_look_ahead(handler1, false);
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '4');
+		assert_eq!(input.next_location, TokenLocation::BufferHead);
+		assert_eq!(input.next_token().unwrap().token_owned(), '5');
+		assert_eq!(input.next_location, TokenLocation::Stream);
 	}
 
 	#[test]
