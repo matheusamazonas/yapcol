@@ -17,7 +17,7 @@ powerful features like arbitrary lookahead and nested parsers.
 Add YAPCoL to your `Cargo.toml`:
 ```toml
 [dependencies]
-yapcol = "0.5.0"
+yapcol = "0.8.0"
 ```
 
 Or use `cargo add`:
@@ -31,7 +31,7 @@ cargo add yapcol
 
 - Basic: `is`, `satisfy`, `any`, `end_of_input`, `success`.
 - Choice and Optional: `choice`, `maybe`, `either`.
-- Repetition: `at_least`, `count`, `many`, `many_until`, `once_or_more`, `once_up_to`, `up_to`, and variations that collect the matches.
+- Repetition: `at_least`, `count`, `many`, `many_until`, `once_or_more`, `once_or_more_until`, `once_up_to`, `up_to`, and variations that collect the matches.
 - Lookahead and Backtracking: `attempt`, `look_ahead`, `not_followed_by`.
 - Grouping: `between`, `separated_by0`, `separated_by1`.
 - Associativity: `chain_left`, `chain_right`.
