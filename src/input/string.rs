@@ -83,9 +83,13 @@ where
 	}
 
 	fn next_token(&mut self) -> Option<CharToken> {
-		let token = self.source.next()?;
-		let token = CharToken::new(token, self.position);
-		self.position.advance_column();
+		let char = self.source.next()?;
+		let token = CharToken::new(char, self.position);
+		if char == '\n' {
+			self.position.advance_line();
+		} else {
+			self.position.advance_column();
+		}
 		Some(token)
 	}
 
@@ -131,5 +135,58 @@ impl<'a> StringInput<'a> {
 	{
 		let source = StringInputSource::new(chars, source_name);
 		Input::new(Box::new(source))
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn new_from_chars() {
+		let chars = "hello\nworld".chars();
+		let mut input = StringInput::new_from_chars(chars, None);
+		assert_eq!(input.position(), Position::new(1, 1));
+	}
+
+	#[test]
+	fn column_count() {
+		let chars = "hello".chars();
+		let mut input = StringInput::new_from_chars(chars, None);
+		assert_eq!(input.position(), Position::new(1, 1));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'h');
+		assert_eq!(input.position(), Position::new(1, 2));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'e');
+		assert_eq!(input.position(), Position::new(1, 3));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'l');
+		assert_eq!(input.position(), Position::new(1, 4));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'l');
+		assert_eq!(input.position(), Position::new(1, 5));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'o');
+		assert_eq!(input.position(), Position::new(1, 5)); // There are no more tokens.
+	}
+
+	#[test]
+	fn line_count() {
+		let chars = "hi\nworld".chars();
+		let mut input = StringInput::new_from_chars(chars, None);
+		assert_eq!(input.position(), Position::new(1, 1));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'h');
+		assert_eq!(input.position(), Position::new(1, 2));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'i');
+		assert_eq!(input.position(), Position::new(1, 3));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, '\n');
+		assert_eq!(input.position(), Position::new(2, 1));
+		let char_token = input.next_token().unwrap();
+		assert_eq!(char_token.token, 'w');
+		assert_eq!(input.position(), Position::new(2, 2));
 	}
 }

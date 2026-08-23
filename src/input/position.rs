@@ -33,10 +33,36 @@ impl Position {
 	pub fn advance_column(&mut self) {
 		self.column += 1;
 	}
+
+	/// Advances the line and resets the column.
+	pub fn advance_line(&mut self) {
+		self.line += 1;
+		self.column = 1;
+	}
 }
 
 impl Display for Position {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		write!(f, "{}:{}", self.line, self.column)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn advance_column() {
+		let mut pos = Position::new(1, 1);
+		pos.advance_column();
+		assert_eq!(pos, Position::new(1, 2));
+	}
+
+	#[test]
+	fn advance_line() {
+		let mut pos = Position::new(1, 1);
+		pos.advance_column();
+		pos.advance_line();
+		assert_eq!(pos, Position::new(2, 1));
 	}
 }

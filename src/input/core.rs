@@ -468,7 +468,7 @@ mod tests {
 
 	#[test]
 	#[should_panic]
-	fn wrong_token() {
+	fn wrong_handler() {
 		let mut input = Input::new_from_chars("12345".chars(), None);
 		let handler1 = input.start_look_ahead();
 		let _handler2 = input.start_look_ahead();
