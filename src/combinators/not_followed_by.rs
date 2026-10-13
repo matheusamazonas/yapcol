@@ -56,8 +56,9 @@ where
 				input.position(),
 				None,
 			)),
-			Err(Error::EndOfInput(oe)) => Err(Error::EndOfInput(oe)),
-			Err(_) => Ok(()),
+			Err(Error::UnexpectedToken(_, _, _)) => Ok(()),
+			Err(Error::EndOfInput(_)) => Ok(()),
+			Err(Error::NonConsumingLoop(s, p)) => Err(Error::NonConsumingLoop(s, p)),
 		}
 	}
 }
@@ -73,7 +74,7 @@ mod tests {
 		let mut input = Input::new_from_chars("".chars(), None);
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
+		assert_eq!(output, Ok(()));
 	}
 
 	#[test]
