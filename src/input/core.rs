@@ -5,12 +5,11 @@ use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display};
 
-/// Represents a single token in the input stream.
+/// A single token in the input stream.
 ///
-/// Every item produced by an input source must implement this trait. The blanket implementation
-/// means that in practice you only need to implement `InputToken` manually when building a custom
-/// input source; for character-based parsing the built-in [`crate::input::string::CharToken`] is
-/// used automatically.
+/// Every item produced by an input source must implement this trait. In practice, you only need to
+/// implement `InputToken` manually when building a custom input token type; for character-based
+/// parsing the built-in [`CharToken`](crate::input::string::CharToken) is used automatically.
 ///
 /// # Type Parameters
 ///
@@ -50,7 +49,7 @@ pub trait InputToken: Clone {
 ///
 /// `Input` supports arbitrary, nested lookahead. Tokens fetched during a lookahead operation
 /// are cached internally and can be replayed if the operation is rolled back. Lookahead is
-/// used internally by combinators such as [`crate::attempt()] and [`crate::look_ahead()`].
+/// used internally by combinators such as [`crate::attempt()`] and [`crate::look_ahead()`].
 pub struct Input<'a, IT> {
 	source: Box<dyn InputSource<Token = IT> + 'a>,
 	consumed_count: usize,
@@ -184,7 +183,7 @@ where
 	/// wasn't). During lookahead mode, tokens might be fetched, but they won't be consumed. This
 	/// implements arbitrary lookahead, where tokens will be cached internally, for as long as the
 	/// lookahead mode is enabled.
-	/// For more information on disabling lookahead mode, check [`stop_look_ahead`].
+	/// For more information on disabling lookahead mode, check [`Input::stop_look_ahead`].
 	///
 	/// This function returns a [`LookAheadHandler`], which *must* be used to stop the look ahead
 	/// operation. Failing to use this handler will trigger compilation warnings.

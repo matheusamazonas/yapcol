@@ -119,8 +119,8 @@ assert_eq!(
 is('a')(&mut input).unwrap();
 assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
 
-// The `success` combinator always succeeds without consuming any input, so `many_collect` detects the
-// loop.
+// The `success` combinator always succeeds without consuming any input,
+// so `many` detects the loop.
 let parser = success(());
 let mut input = Input::new_from_chars("abc".chars(), None);
 assert_eq!(

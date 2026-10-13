@@ -5,8 +5,13 @@ use crate::{InputToken, Parser};
 ///
 /// # Outcome
 ///
-/// This parser always succeeds, even if its argument parser doesn't. It returns a vector of
-/// matches of its argument parser, which might be empty in case no matches were found.
+/// This parser succeeds if:
+/// - Its argument parser succeeds at least once.
+/// - Its argument parser fails with an error different from
+///   [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop).
+///
+/// This combinator returns a vector of matches of its argument parser, which might be empty in
+/// case no matches were found.
 ///
 /// # Input consumption
 ///
@@ -16,9 +21,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Error handling
 ///
-/// This combinator fails with [`crate::Error::NonConsumingLoop`] if the argument parser does not
-/// consume input upon success. This behavior is there to prevent an infinite loop caused by the
-/// input never being consumed.
+/// This combinator fails with [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop) if the
+/// argument parser does not consume input upon success. This behavior is there to prevent an
+/// infinite loop caused by the input never being consumed.
 ///
 /// # Look-ahead and backtracking
 ///
@@ -28,7 +33,7 @@ use crate::{InputToken, Parser};
 /// # Performance
 ///
 /// This combinator stores all the matches it finds. If you're not interested in the matches, but
-/// instead in how many times it matched, consider using [`crate::many`].
+/// instead in how many times it matched, consider using [`many`](crate::many).
 ///
 /// # Shortcut
 ///

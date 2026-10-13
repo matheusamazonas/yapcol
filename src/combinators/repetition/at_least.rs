@@ -53,11 +53,11 @@ use crate::{InputToken, Parser};
 /// let min_count = 2;
 /// assert_eq!(at_least(&parser, min_count)(&mut input), Ok(3));
 ///
-/// // Fails if the parser matches more than `max_count` times.
+/// // Fails if the parser matches fewer than `min_count` times.
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("1".chars(), None);
-/// let max_count = 2;
-/// assert!(at_least(&parser, max_count)(&mut input).is_err());
+/// let min_count = 2;
+/// assert!(at_least(&parser, min_count)(&mut input).is_err());
 /// ```
 pub fn at_least<P, IT, O>(parser: &P, min_count: usize) -> impl Parser<IT, usize>
 where

@@ -29,7 +29,7 @@ use crate::{InputToken, Parser};
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as left-associative.
-/// use yapcol::{Error, Input, chain_left, satisfy};
+/// use yapcol::{Input, chain_left, satisfy};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///
@@ -90,7 +90,7 @@ where
 ///
 /// ```
 /// // Implements evaluation of the subtraction ('-') operator as right-associative.
-/// use yapcol::{Error, Input, chain_right, satisfy};
+/// use yapcol::{Input, chain_right, satisfy};
 ///
 /// let operand = satisfy(|c: &char| c.to_digit(10));
 ///

@@ -58,11 +58,11 @@ use crate::{InputToken, Parser};
 /// 	Ok(vec!['1', '1', '1'])
 /// );
 ///
-/// // Fails if the parser matches more than `max_count` times.
+/// // Fails if the parser matches fewer than `min_count` times.
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("1".chars(), None);
-/// let max_count = 2;
-/// assert!(at_least_collect(&parser, max_count)(&mut input).is_err());
+/// let min_count = 2;
+/// assert!(at_least_collect(&parser, min_count)(&mut input).is_err());
 /// ```
 pub fn at_least_collect<P, IT, O>(parser: &P, min_count: usize) -> impl Parser<IT, Vec<O>>
 where

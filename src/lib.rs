@@ -41,7 +41,7 @@
 //! # Error Handling
 //!
 //! Every parser returns a `Result<Output, Error>`. When parsing fails, the `Err` variant contains
-//! one of two possible errors, defined in the [`Error`] enum:
+//! one of the following possible errors, defined in the [`Error`] enum:
 //!
 //! - [`Error::UnexpectedToken`]: the parser encountered a token that did not satisfy its
 //!   requirements.
@@ -49,7 +49,7 @@
 //! - [`Error::NonConsumingLoop`]: a repetition parser detected that the inner parser succeeded
 //!   without consuming any input, which would cause an infinite loop.
 //!
-//! The code below showcases both error variants in a simple character-based parsing example:
+//! The code below showcases all error variants in a simple character-based parsing example:
 //!
 //! ```
 //! use yapcol::input::Position;

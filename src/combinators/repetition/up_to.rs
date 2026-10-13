@@ -44,7 +44,7 @@ use crate::{InputToken, Parser};
 /// // Succeeds if the parser matches exactly `max_count` times.
 /// let parser = is('1');
 /// let mut input = Input::new_from_chars("112".chars(), None);
-/// let max_count = 5;
+/// let max_count = 2;
 /// assert_eq!(up_to(&parser, max_count)(&mut input), Ok(2));
 ///
 /// // Succeeds if the parser matches less than `max_count` times.

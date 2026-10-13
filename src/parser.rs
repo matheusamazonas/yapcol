@@ -37,7 +37,7 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 /// of type `O` or an [`Error`].
 ///
 /// This trait is automatically implemented for any function with the signature
-/// `Fn(&mut Input<I>) -> Result<Output, Error>`.
+/// `Fn(&mut Input<IT>) -> Result<Output, Error>`.
 ///
 /// # Type Parameters
 ///
@@ -49,7 +49,6 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 /// You can define a custom parser as a function:
 ///
 /// ```
-/// use std::str::Chars;
 /// use yapcol::{Error, Input, StringInput, is};
 ///
 /// fn my_uppercase_parser(input: &mut StringInput) -> Result<char, Error> {
@@ -142,7 +141,7 @@ where
 	///
 	/// # Examples
 	/// ```rust
-	/// use yapcol::{Input, Parser, any, satisfy};
+	/// use yapcol::{Input, Parser, satisfy};
 	///
 	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None };
 	/// let parser = satisfy(is_digit).map(|c| c.to_digit(10));
@@ -389,7 +388,7 @@ where
 		move |input| up_to(&self, max_count)(input)
 	}
 
-	// A shortcut for the [`up_to_collect`] combinator
+	/// A shortcut for the [`up_to_collect`] combinator.
 	fn up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
 	where
 		Self: Sized,
@@ -405,7 +404,7 @@ where
 		move |input| once_up_to(&self, max_count)(input)
 	}
 
-	// A shortcut for the [`once_up_to_collect`] combinator
+	/// A shortcut for the [`once_up_to_collect`] combinator.
 	fn once_up_to_collect(self, max_count: usize) -> impl Parser<IT, Vec<O>>
 	where
 		Self: Sized,

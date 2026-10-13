@@ -5,9 +5,13 @@ use crate::{InputToken, Parser};
 ///
 /// # Outcome
 ///
-/// This parser always succeeds, even if its argument parser doesn't. Unlike
-/// [`crate::many_collect`], this combinator doesn't return its matches, but just how many times
-/// it matched.
+/// This parser succeeds if:
+/// - Its argument parser succeeds at least once.
+/// - Its argument parser fails with an error different from
+///   [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop).
+///
+/// Unlike [`many_collect`](crate::many_collect), this combinator doesn't return its matches, but
+/// just how many times it matched.
 ///
 /// # Input consumption
 ///
@@ -17,9 +21,9 @@ use crate::{InputToken, Parser};
 ///
 /// # Error handling
 ///
-/// This combinator fails with [`crate::Error::NonConsumingLoop`] if the argument parser does not
-/// consume input upon success. This behavior is there to prevent an infinite loop caused by the
-/// input never being consumed.
+/// This combinator fails with [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop) if the
+/// argument parser does not consume input upon success. This behavior is there to prevent an
+/// infinite loop caused by the input never being consumed.
 ///
 /// # Look-ahead and backtracking
 ///
@@ -44,11 +48,11 @@ use crate::{InputToken, Parser};
 /// let mut input = Input::new_from_chars("112".chars(), None);
 /// assert_eq!(many(&parser)(&mut input), Ok(2));
 ///
-/// // Returns an empty vector when no matches are found (never fails)
+/// // Returns 0 when no matches are found (never fails)
 /// let mut input = Input::new_from_chars("23".chars(), None);
 /// assert_eq!(many(&parser)(&mut input), Ok(0));
 ///
-/// // Returns an empty vector on empty input (never fails)
+/// // Returns 0 on empty input (never fails)
 /// let mut input = Input::new_from_chars("".chars(), None);
 /// assert_eq!(many(&parser)(&mut input), Ok(0));
 /// ```

@@ -13,7 +13,8 @@
 //! # Tokens
 //!
 //! A token is any type that implements [`InputToken`]. The trait requires [`Clone`] and an
-//! associated `Token` type that implements [`PartialEq`] and [`Clone`].
+//! associated `Token` type that implements [`PartialEq`], [`Clone`], [`Display`](std::fmt::Display)
+//! and [`Debug`](std::fmt::Debug).
 //!
 //! # Creating an input stream
 //!

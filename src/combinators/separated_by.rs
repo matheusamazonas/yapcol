@@ -4,8 +4,8 @@ use crate::{Error, Input, InputToken, Parser};
 ///
 /// # Outcome
 ///
-/// This parser always succeeds, even if its `parser` argument doesn't. It returns a vector of
-/// matches of its `parser` argument, which might be empty in case no matches were found.
+/// If it succeeds, this combinator returns a vector of matches of its `parser` argument, which
+/// might be empty in case no matches were found.
 ///
 /// # Input consumption
 ///
@@ -15,7 +15,12 @@ use crate::{Error, Input, InputToken, Parser};
 ///   - Its `separator` argument parser consumes upon success, *and* it succeeded at least once.
 /// - It fails, and:
 ///   - Its `parser` argument consumes upon failure, or;
-///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
+///   - Its `separator` argument parser consumes upon failure *and* it was applied at least once.
+///
+/// # Error handling
+///
+/// This combinator fails if its `parser` argument fails after at least one occurrence of its
+/// `separator` argument parser.
 ///
 /// # Look-ahead and backtracking
 ///
@@ -68,7 +73,13 @@ where
 ///   - Its `separator` argument parser consumes upon success, *and* it succeeded at least once.
 /// - It fails, and:
 ///   - Its `parser` argument consumes upon failure, or;
-///   - Its `separator` argument parser consumes upon failure, *and* it was applied at least once.
+///   - Its `separator` argument parser consumes upon failure *and* it was applied at least once.
+///
+/// # Error handling
+///
+/// This combinator fails if one of the following happens:
+/// - Its `parser` argument never succeeds.
+/// - Its `parser` argument fails after at least one occurrence of its `separator` argument parser.
 ///
 /// # Look-ahead and backtracking
 ///

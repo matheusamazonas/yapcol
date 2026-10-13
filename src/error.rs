@@ -22,10 +22,10 @@ impl PartialEq for dyn MismatchElement {
 
 /// Describes a mismatch between what was expected and what was found during parsing.
 ///
-/// A `Mismatch` is carried by [`Error::UnexpectedToken`] and [`Error::EndOfInput`] to provide
-/// human-readable context about why a parser failed. Both the `expected` and `found` fields are
-/// optional: use [`Mismatch::new`] when both are known, [`Mismatch::without_found`] when only the
-/// expectation is known, and [`Mismatch::without_expectation`] when only the found value is known.
+/// A `Mismatch` is carried by [`Error::UnexpectedToken`] to provide human-readable context about
+/// why a parser failed. Both the `expected` and `found` fields are optional: use [`Mismatch::new`]
+/// when both are known, [`Mismatch::without_found`] when only the expectation is known, and
+/// [`Mismatch::without_expectation`] when only the found value is known.
 #[derive(PartialEq, Debug)]
 pub struct Mismatch {
 	expected: Option<Box<dyn MismatchElement>>,
@@ -96,10 +96,6 @@ impl Display for Mismatch {
 }
 
 /// The error type returned by all parsers in this crate.
-///
-/// A parser returns `Err(Error::UnexpectedToken)` when the next token does not satisfy its
-/// requirements, and `Err(Error::EndOfInput)` when it needs more tokens but the input stream is
-/// exhausted.
 ///
 /// # Examples
 ///

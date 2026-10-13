@@ -12,7 +12,7 @@ use crate::input::core::InputToken;
 /// interface including lookahead and position tracking.
 ///
 /// Two built-in implementations are available:
-/// - [`crate::input::string::StringSource`]: used for string-based parsing, it wraps a `char`
+/// - [`crate::input::string::StringInputSource`]: used for string-based parsing, it wraps a `char`
 ///   iterator.
 /// - [`crate::input::token::TokenInputSource`]: used for token-based parsing, regardless of what
 ///   the underlying token type is (as long as it implements [`InputToken`]).

@@ -32,9 +32,9 @@ impl LookAheadFrame {
 }
 
 /// A handler used to enforce the following on lookahead operations:
-/// - That calls to [`Input::stop_look_ahead`] are only possible after a call to
-///   [`Input::start_look_ahead`].
-/// - That the right order of start/stop lookahead operations is performed.
+/// - Calls to [`crate::input::Input::stop_look_ahead`] are only possible after a call to
+///   [`crate::input::Input::start_look_ahead`].
+/// - The right order of start/stop lookahead operations is performed.
 #[must_use]
 pub(crate) struct LookAheadHandler {
 	id: usize,
