@@ -161,8 +161,10 @@ where
 				// Matched too many times.
 				(Ok(_), Some(max_count)) if max_count == total_match_count => {
 					total_match_count += 1;
-					let expected = format!("at most {max_count} occurrences");
-					let found = format!("{total_match_count} occurrences");
+					let expected_occurrences_text = get_occurrences_text(max_count);
+					let expected = format!("at most {max_count} {expected_occurrences_text}");
+					let found_occurrences_text = get_occurrences_text(total_match_count);
+					let found = format!("{total_match_count} {found_occurrences_text}");
 					let mismatch = Mismatch::new(expected, found);
 					return Err(Error::UnexpectedToken(
 						input.source_name(),
@@ -199,8 +201,10 @@ where
 			let end = end_output.ok();
 			Ok((result, end))
 		} else {
-			let expected = format!("at least {min_match_count} occurrences");
-			let found = format!("{total_match_count} occurrences");
+			let expected_occurrences_text = get_occurrences_text(min_match_count);
+			let expected = format!("at least {min_match_count} {expected_occurrences_text}");
+			let found_occurrences_text = get_occurrences_text(total_match_count);
+			let found = format!("{total_match_count} {found_occurrences_text}");
 			let mismatch = Mismatch::new(expected, found);
 			Err(Error::UnexpectedToken(
 				input.source_name(),
@@ -208,6 +212,14 @@ where
 				Some(mismatch),
 			))
 		}
+	}
+}
+
+fn get_occurrences_text(count: usize) -> &'static str {
+	if count == 1 {
+		"occurrence"
+	} else {
+		"occurrences"
 	}
 }
 

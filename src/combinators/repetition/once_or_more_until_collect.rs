@@ -103,7 +103,7 @@ mod tests {
 		let mut input = Input::new_from_chars("#".chars(), None);
 		let not_followed_parser = once_or_more_until_collect(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
-		let mismatch = Mismatch::new("at least 1 occurrences", "0 occurrences");
+		let mismatch = Mismatch::new("at least 1 occurrence", "0 occurrences");
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(

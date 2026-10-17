@@ -111,7 +111,7 @@ mod tests {
 		let parser = count(&parser, 0);
 		let output = parser(&mut input);
 		assert!(output.is_err());
-		let mismatch = Mismatch::new("at most 0 occurrences", "1 occurrences");
+		let mismatch = Mismatch::new("at most 0 occurrences", "1 occurrence");
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
