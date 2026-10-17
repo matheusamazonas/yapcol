@@ -25,12 +25,12 @@ use crate::{Error, InputToken, Mismatch, Parser};
 /// use yapcol::{Input, any, is};
 ///
 /// let tokens: Vec<char> = vec!['h', 'e', 'l', 'l', 'o'];
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// let parser = is('h');
 /// assert!(parser(&mut input).is_ok());
 ///
 /// let mut wrong: Vec<char> = vec!['w', 'o', 'r', 'l', 'd'];
-/// let mut input = Input::new_from_chars(wrong, None);
+/// let mut input = Input::new_from_chars(wrong, String::from("doctest.txt"));
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
@@ -57,7 +57,10 @@ where
 					))
 				}
 			}
-			None => Err(Error::EndOfInput(Some(Box::new(token.clone())))),
+			None => Err(Error::EndOfInput(
+				input.source_name(),
+				Some(Box::new(token.clone())),
+			)),
 		}
 	}
 }
@@ -70,7 +73,7 @@ mod tests {
 	#[test]
 	fn success() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		assert_eq!(parser(&mut input), Ok('h'));
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
@@ -78,12 +81,12 @@ mod tests {
 	#[test]
 	fn fail() {
 		let parser = is('j');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let mismatch = Mismatch::new('j', 'h');
 		assert_eq!(
 			parser(&mut input),
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))

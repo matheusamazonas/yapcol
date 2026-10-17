@@ -6,6 +6,7 @@
 
 use crate::input::Position;
 use std::fmt::{Debug, Display};
+use std::rc::Rc;
 
 /// A trait for types that can be used as elements in a [`Mismatch`].
 ///
@@ -104,8 +105,7 @@ impl Display for Mismatch {
 /// use yapcol::{Error, Input, Mismatch, any, is};
 ///
 /// let tokens = vec!['a'];
-/// let source_name = Some(String::from("file.txt"));
-/// let mut input = Input::new_from_chars(tokens, source_name.clone());
+/// let mut input = Input::new_from_chars(tokens, String::from("file.txt"));
 ///
 /// // Fails with UnexpectedToken when the token does not match.
 /// let output = is('b')(&mut input);
@@ -113,7 +113,7 @@ impl Display for Mismatch {
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
-/// 		source_name,
+/// 		input.source_name(),
 /// 		Position::new(1, 1),
 /// 		Some(mismatch)
 /// 	))
@@ -121,26 +121,27 @@ impl Display for Mismatch {
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
-/// assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+/// assert_eq!(any()(&mut input), Err(Error::EndOfInput(input.source_name(), None)));
 /// ```
 #[derive(Debug, PartialEq)]
 pub enum Error {
 	/// The next token was present but did not satisfy the parser's requirements.
 	///
-	/// The first field is the optional source name (e.g., a file name). The second is the
-	/// position (in the input source) where the unexpected token was found. The third field is an
-	/// optional mismatch, detailing what was found and what was expected.
-	UnexpectedToken(Option<String>, Position, Option<Mismatch>),
+	/// The first field is the source name (e.g., a file name). The second is the position (in the
+	/// input source) where the unexpected token was found. The third field is an optional mismatch,
+	/// detailing what was found and what was expected.
+	UnexpectedToken(Rc<String>, Position, Option<Mismatch>),
 	/// The input stream was exhausted before the parser could match.
 	///
-	/// It contains an optional mismatch element, describing what was expected.
-	EndOfInput(Option<Box<dyn MismatchElement>>),
+	/// The first field is the source name (e.g., a file name). The second one is an optional
+	/// mismatch element, describing what was expected.
+	EndOfInput(Rc<String>, Option<Box<dyn MismatchElement>>),
 	/// A repetition parser (e.g., [`crate::many`], [`crate::once_or_more`] or
 	/// [`crate::many_until_collect`]) detected that the inner parser succeeded without consuming
 	/// any input, which would cause an infinite loop.
 	///
-	/// The first field is the optional source name (e.g., a file name). The second field is the
-	/// position in the input where the loop was detected.
+	/// The first field is the source name (e.g., a file name). The second field is the position in
+	/// the input where the loop was detected.
 	///
 	/// A parser is said to be *non-consuming* when it matches successfully without advancing the
 	/// input position. When such a parser is used inside a repetition combinator, every iteration
@@ -155,36 +156,36 @@ pub enum Error {
 	///
 	/// // `success` always succeeds without consuming any input, so `many` detects the loop.
 	/// let parser = success(());
-	/// let mut input = Input::new_from_chars("abc".chars(), None);
+	/// let mut input = Input::new_from_chars("abc".chars(), String::from("file.txt"));
 	/// assert_eq!(
 	/// 	many(&parser)(&mut input),
-	/// 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+	/// 	Err(Error::NonConsumingLoop(input.source_name(), Position::new(1, 1)))
 	/// );
 	/// ```
-	NonConsumingLoop(Option<String>, Position),
+	NonConsumingLoop(Rc<String>, Position),
 }
 
 impl Display for Error {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		match self {
-			Error::UnexpectedToken(Some(source_name), pos, None) => {
+			Error::UnexpectedToken(source_name, pos, None) => {
 				write!(f, "Unexpected token at {}:{}.", source_name, pos)
 			}
-			Error::UnexpectedToken(Some(source_name), pos, Some(mismatch)) => {
+			Error::UnexpectedToken(source_name, pos, Some(mismatch)) => {
 				write!(f, "Unexpected token at {source_name}:{pos}. {mismatch}")
 			}
-			Error::UnexpectedToken(None, pos, None) => write!(f, "Unexpected token at {pos}."),
-			Error::UnexpectedToken(None, pos, Some(mismatch)) => {
-				write!(f, "Unexpected token at {pos}. {mismatch}")
+			Error::EndOfInput(source_name, Some(expected)) => {
+				write!(
+					f,
+					"End of input reached at {source_name} when expected {expected}."
+				)
 			}
-			Error::EndOfInput(Some(expected)) => {
-				write!(f, "End of input reached when expected {}.", expected)
+			Error::EndOfInput(source_name, None) => {
+				write!(f, "End of input reached at {source_name}.")
 			}
-			Error::EndOfInput(None) => write!(f, "End of input reached."),
-			Error::NonConsumingLoop(Some(source_name), pos) => {
+			Error::NonConsumingLoop(source_name, pos) => {
 				write!(f, "Non-consuming parser loop at {source_name}:{pos}.")
 			}
-			Error::NonConsumingLoop(None, pos) => write!(f, "Non-consuming parser loop at {pos}."),
 		}
 	}
 }

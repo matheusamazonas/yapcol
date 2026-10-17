@@ -36,15 +36,15 @@ use crate::{Error, InputToken, Parser};
 /// let p1 = is('1');
 /// let p2 = is('2');
 /// let parsers = vec![p1, p2];
-/// let mut input = Input::new_from_chars("23".chars(), None);
+/// let mut input = Input::new_from_chars("23".chars(), String::from("doctest.txt"));
 /// assert_eq!(choice(&parsers)(&mut input), Ok('2'));
 ///
 /// // Fails when no parser matches
-/// let mut input = Input::new_from_chars("34".chars(), None);
+/// let mut input = Input::new_from_chars("34".chars(), String::from("doctest.txt"));
 /// assert!(choice(&parsers)(&mut input).is_err());
 ///
 /// // Fails on empty input
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert!(choice(&parsers)(&mut input).is_err());
 /// ```
 pub fn choice<'a, P, IT, O, PI>(parsers: &'a PI) -> impl Parser<IT, O>
@@ -84,27 +84,27 @@ mod tests {
 		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
 		// 1, success.
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input).unwrap();
 		assert_eq!(output, 'h');
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		// 2, success.
-		let mut input = Input::new_from_chars("e".chars(), None);
+		let mut input = Input::new_from_chars("e".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input).unwrap();
 		assert_eq!(output, 'e');
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		// 3, success.
-		let mut input = Input::new_from_chars("l".chars(), None);
+		let mut input = Input::new_from_chars("l".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input).unwrap();
 		assert_eq!(output, 'l');
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		// 4, fail.
-		let mut input = Input::new_from_chars("u".chars(), None);
+		let mut input = Input::new_from_chars("u".chars(), test_utils::test_source_name());
 		let mismatch = Mismatch::new('h', 'u');
 		assert_eq!(
 			parser_choice(&mut input),
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -119,13 +119,13 @@ mod tests {
 		let parser3 = is('l');
 		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
-		let mut input = Input::new_from_chars("x".chars(), None);
+		let mut input = Input::new_from_chars("x".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input);
 		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -140,9 +140,12 @@ mod tests {
 		let parser3 = is('l');
 		let parsers: Vec<_> = vec![parser1, parser2, parser3];
 		let parser_choice = choice(&parsers);
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
+		assert_eq!(
+			output,
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
+		);
 	}
 
 	#[test]
@@ -157,13 +160,13 @@ mod tests {
 		let parsers: Vec<Box<dyn Parser<_, _>>> =
 			vec![Box::new(parser1), Box::new(parser2), Box::new(parser3)];
 		let parser_choice = choice(&parsers);
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input);
 		let mismatch = Mismatch::new('a', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -187,13 +190,13 @@ mod tests {
 			Box::new(parser3.attempt()),
 		];
 		let parser_choice = choice(&parsers);
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let output = parser_choice(&mut input);
 		let mismatch = Mismatch::new('a', 'e');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))

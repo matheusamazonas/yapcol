@@ -48,7 +48,7 @@ use crate::{InputToken, Parser};
 ///
 /// // Succeeds if the parser matches exactly `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// let max_count = 2;
 /// assert_eq!(
 /// 	up_to_collect(&parser, max_count)(&mut input),
@@ -57,7 +57,7 @@ use crate::{InputToken, Parser};
 ///
 /// // Succeeds if the parser matches less than `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// let max_count = 5;
 /// assert_eq!(
 /// 	up_to_collect(&parser, max_count)(&mut input),
@@ -66,12 +66,12 @@ use crate::{InputToken, Parser};
 ///
 /// // Fails if the parser matches more than `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let mut input = Input::new_from_chars("1112".chars(), String::from("doctest.txt"));
 /// let max_count = 2;
 /// assert!(up_to_collect(&parser, max_count)(&mut input).is_err());
 ///
 /// // Succeeds on empty input if `max_count` is 0.
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// let max_count = 0;
 /// assert_eq!(
 /// 	up_to_collect(&parser, max_count)(&mut input),
@@ -98,7 +98,7 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
@@ -107,7 +107,7 @@ mod tests {
 	#[test]
 	fn empty_shortcut() {
 		let parser = is('h').up_to_collect(1);
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
 	}
@@ -115,7 +115,7 @@ mod tests {
 	#[test]
 	fn no_match() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
@@ -125,7 +125,7 @@ mod tests {
 	#[test]
 	fn no_match_shortcut() {
 		let parser = is('h').up_to_collect(1);
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -134,7 +134,7 @@ mod tests {
 	#[test]
 	fn one_match() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h']);
@@ -146,7 +146,7 @@ mod tests {
 	#[test]
 	fn less_than_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhello".chars(), None);
+		let mut input = Input::new_from_chars("hhello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h', 'h']);
@@ -158,7 +158,7 @@ mod tests {
 	#[test]
 	fn equal_to_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, vec!['h', 'h', 'h']);
@@ -170,7 +170,7 @@ mod tests {
 	#[test]
 	fn more_than_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhhello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 3);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 4);
@@ -180,7 +180,7 @@ mod tests {
 	#[test]
 	fn zero_empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 0);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
@@ -190,7 +190,7 @@ mod tests {
 	#[test]
 	fn zero_success() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("ello".chars(), None);
+		let mut input = Input::new_from_chars("ello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 0);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output.len(), 0);
@@ -202,7 +202,7 @@ mod tests {
 	#[test]
 	fn zero_fail() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_up_to = up_to_collect(&parser, 0);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 1);

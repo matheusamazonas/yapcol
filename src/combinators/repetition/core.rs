@@ -50,8 +50,15 @@ impl<T> RepetitionAccumulator<T, usize> for CountAccumulator<T> {
 	}
 }
 
-fn fail<IT>(_: &mut Input<IT>) -> Result<(), Error> {
-	Err(Error::UnexpectedToken(None, Position::new(0, 0), None))
+fn fail<IT>(input: &mut Input<IT>) -> Result<(), Error>
+where
+	IT: InputToken,
+{
+	Err(Error::UnexpectedToken(
+		input.source_name(),
+		Position::new(0, 0),
+		None,
+	))
 }
 
 pub fn repeat_no_end<P, IT, O>(

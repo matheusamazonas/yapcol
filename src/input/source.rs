@@ -1,4 +1,5 @@
 use crate::input::core::InputToken;
+use std::rc::Rc;
 
 /// A low-level trait representing a source of input tokens.
 ///
@@ -19,11 +20,10 @@ use crate::input::core::InputToken;
 pub trait InputSource {
 	type Token: InputToken;
 
-	/// Returns the name of the underlying source, if any (e.g., a file path).
+	/// Returns the name of the underlying source.
 	///
-	/// The source name is included in [`crate::error::Error::UnexpectedToken`] to help
-	/// identify where in the input a parse failure occurred.
-	fn source_name(&self) -> Option<&String>;
+	/// The source name is included in errors to help identify where they occurred.
+	fn source_name(&self) -> Rc<String>;
 
 	/// Consumes and returns the next token from the source, or `None` if the source is
 	/// exhausted.

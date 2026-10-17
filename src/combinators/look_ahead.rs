@@ -26,7 +26,7 @@ use crate::{InputToken, Parser};
 /// use yapcol::{Error, Input, Mismatch, any, end_of_input, is, look_ahead};
 ///
 /// // Succeeds without consuming input.
-/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let mut input = Input::new_from_chars("123".chars(), String::from("doctest.txt"));
 /// let parser1 = is('1');
 /// assert_eq!(look_ahead(&parser1)(&mut input), Ok('1'));
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
@@ -34,12 +34,12 @@ use crate::{InputToken, Parser};
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input.
-/// let mut input = Input::new_from_chars("23".chars(), None);
+/// let mut input = Input::new_from_chars("23".chars(), String::from("doctest.txt"));
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 ///
 /// // Fails consuming input if the parser consumes.
-/// let mut input = Input::new_from_chars("13".chars(), None);
+/// let mut input = Input::new_from_chars("13".chars(), String::from("doctest.txt"));
 /// let consuming_parser = |input: &mut Input<_>| {
 /// 	let o1 = parser1(input)?;
 /// 	let o2 = parser1(input)?;
@@ -50,7 +50,7 @@ use crate::{InputToken, Parser};
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
-/// 		None,
+/// 		input.source_name(),
 /// 		Position::new(1, 2),
 /// 		Some(mismatch)
 /// 	))
@@ -58,7 +58,7 @@ use crate::{InputToken, Parser};
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was consumed.
 ///
 /// // Fails on empty input.
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert!(look_ahead(&parser1)(&mut input).is_err());
 /// ```
 pub fn look_ahead<P, IT, O>(parser: &P) -> impl Parser<IT, O>
@@ -82,18 +82,18 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parse_look_ahead = look_ahead(&parser)(&mut input);
 		assert_eq!(
 			parse_look_ahead,
-			Err(Error::EndOfInput(Some(Box::new('h'))))
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
 		);
 	}
 
 	#[test]
 	fn success_does_not_consume() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let output = look_ahead(&parser)(&mut input);
 		assert_eq!(output, Ok('h'));
 		// After look_ahead, input should still start with hello
@@ -108,13 +108,13 @@ mod tests {
 	#[test]
 	fn non_consuming_fail_does_not_consume() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("j".chars(), None);
+		let mut input = Input::new_from_chars("j".chars(), test_utils::test_source_name());
 		let output = look_ahead(&parser)(&mut input);
 		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -126,7 +126,7 @@ mod tests {
 
 	#[test]
 	fn consuming_fail_consumes() {
-		let mut input = Input::new_from_chars("he".chars(), None);
+		let mut input = Input::new_from_chars("he".chars(), test_utils::test_source_name());
 		let parser = |input: &mut Input<_>| {
 			let output1 = is('h')(input)?; // Success, therefore it consumed.
 			let output2 = is('a')(input)?; // Failed, so the whole parser fails while consuming.
@@ -137,7 +137,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -150,13 +150,13 @@ mod tests {
 	#[test]
 	fn attempt_with_look_ahead_does_not_consume() {
 		let parser = is('h').and(is('e')).look_ahead();
-		let mut input = Input::new_from_chars("hallo".chars(), None);
+		let mut input = Input::new_from_chars("hallo".chars(), test_utils::test_source_name());
 		let output = attempt(&parser)(&mut input);
 		let mismatch = Mismatch::new('e', 'a');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -173,13 +173,13 @@ mod tests {
 	#[test]
 	fn parse_does_not_consume_on_failure() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jello".chars(), None);
+		let mut input = Input::new_from_chars("jello".chars(), test_utils::test_source_name());
 		let result = look_ahead(&parser)(&mut input);
 		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			result,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -196,7 +196,7 @@ mod tests {
 	#[test]
 	fn parse_look_ahead_twice() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let first = look_ahead(&parser)(&mut input);
 		let second = look_ahead(&parser)(&mut input);
 		assert_eq!(first, Ok('h'));

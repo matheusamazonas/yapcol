@@ -46,7 +46,7 @@ The most convenient approach to YAPCoL is to use the built-in combinators to cre
 use yapcol::{Input, Parser};
 use yapcol::{is, many_collect};
 
-let mut input = Input::new_from_chars("aaab".chars(), None);
+let mut input = Input::new_from_chars("aaab".chars(), String::from("file.txt"));
 
 // Combine 'is' and 'many_collect' to parse multiple 'a's
 let is_a = is('a');
@@ -56,7 +56,7 @@ let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
 
 // Shortcuts methods are available for some combinators:
-let mut input = Input::new_from_chars("aaab".chars(), None);
+let mut input = Input::new_from_chars("aaab".chars(), String::from("file.txt"));
 let parser = is('a').many_collect();
 let result = parser(&mut input);
 assert_eq!(result, Ok(vec!['a', 'a', 'a']));
@@ -80,7 +80,7 @@ fn my_custom_parser(input: &mut StringInput) -> Result<String, Error> {
 	Ok(format!("{}{}", a, b))
 }
 
-let mut input = Input::new_from_chars("ab".chars(), None);
+let mut input = Input::new_from_chars("ab".chars(), String::from("file.txt"));
 assert_eq!(my_custom_parser(&mut input), Ok("ab".to_string()));
 ```
 
@@ -98,8 +98,7 @@ The code below showcases all error variants in a simple character-based parsing 
 use yapcol::input::Position;
 use yapcol::{Error, Input, Mismatch, any, is, many, success};
 
-let source_name = Some(String::from("file.txt"));
-let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
+let mut input = Input::new_from_chars(vec!['a'], String::from("file.txt"));
 let parser = is('b');
 let output = parser(&mut input);
 
@@ -109,7 +108,7 @@ let mismatch = Mismatch::new('b', 'a'); // The mismatch (expected, found).
 assert_eq!(
 	output,
 	Err(Error::UnexpectedToken(
-		source_name,
+		input.source_name(),
 		position,
 		Some(mismatch)
 	))
@@ -117,49 +116,48 @@ assert_eq!(
 
 // Consume the only token, then try to read more.
 is('a')(&mut input).unwrap();
-assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+assert_eq!(any()(&mut input), Err(Error::EndOfInput(input.source_name(), None)));
 
 // The `success` combinator always succeeds without consuming any input,
 // so `many` detects the loop.
 let parser = success(());
-let mut input = Input::new_from_chars("abc".chars(), None);
+let mut input = Input::new_from_chars("abc".chars(), String::from("file.txt"));
 assert_eq!(
 	many(&parser)(&mut input),
-	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+	Err(Error::NonConsumingLoop(input.source_name(), Position::new(1, 1)))
 );
 ```
 
 The `Error` type implements `Display`, so you can print human-readable error messages:
 
 ```rust
-use yapcol::input::Position;
+	use yapcol::input::Position;
 use yapcol::{Error, Mismatch};
 
-let source = "file.txt".to_string();
+let source_name = String::from("file.txt");
 let position = Position::new(3, 12); // The position of the error on the input.
 // UnexpectedToken with mismatch data
 let mismatch = Mismatch::new("expression", "operator"); // The mismatch (expected, found).
-let error = Error::UnexpectedToken(Some(source), position, Some(mismatch));
+let error = Error::UnexpectedToken(Rc::new(source_name.clone()), position, Some(mismatch));
 assert_eq!(
 	error.to_string(),
 	"Unexpected token at file.txt:3:12. Expected: expression, found: operator"
 );
 
 // UnexpectedToken without mismatch data
-let source = "file.txt".to_string();
-let error = Error::UnexpectedToken(Some(source), position, None);
+let error = Error::UnexpectedToken(Rc::new(source_name.clone()), position, None);
 assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 
 // EndOfInput
 let expected = Box::new("expression");
-let error = Error::EndOfInput(Some(expected));
+let error = Error::EndOfInput(Rc::new(source_name.clone()), Some(expected));
 assert_eq!(
 	error.to_string(),
-	"End of input reached when expected expression."
+	"End of input reached at file.txt when expected expression."
 );
 
 // NonConsumingLoop
-let error = Error::NonConsumingLoop(Some("file.txt".to_string()), Position::new(3, 12));
+let error = Error::NonConsumingLoop(Rc::new(source_name.clone()), Position::new(3, 12));
 assert_eq!(
 	error.to_string(),
 	"Non-consuming parser loop at file.txt:3:12."

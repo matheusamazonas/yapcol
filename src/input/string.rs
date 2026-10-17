@@ -2,6 +2,7 @@ use crate::input::core::{Input, InputToken};
 use crate::input::position::Position;
 use crate::input::source::InputSource;
 use std::iter::Peekable;
+use std::rc::Rc;
 
 /// A token produced when parsing a string (character stream) input.
 ///
@@ -50,7 +51,7 @@ where
 	I: Iterator<Item = char>,
 {
 	source: Peekable<I>,
-	source_name: Option<String>,
+	source_name: Rc<String>,
 	position: Position,
 	peeked_token: Option<CharToken>,
 }
@@ -59,13 +60,13 @@ impl<I> StringInputSource<I>
 where
 	I: Iterator<Item = char>,
 {
-	pub(crate) fn new<S>(source: S, source_name: Option<String>) -> Self
+	pub(crate) fn new<S>(source: S, source_name: String) -> Self
 	where
 		S: IntoIterator<Item = char, IntoIter = I>,
 	{
 		StringInputSource {
 			source: source.into_iter().peekable(),
-			source_name,
+			source_name: Rc::new(source_name),
 			position: Position::new(1, 1),
 			peeked_token: None,
 		}
@@ -78,8 +79,8 @@ where
 {
 	type Token = CharToken;
 
-	fn source_name(&self) -> Option<&String> {
-		self.source_name.as_ref()
+	fn source_name(&self) -> Rc<String> {
+		self.source_name.clone()
 	}
 
 	fn next_token(&mut self) -> Option<CharToken> {
@@ -110,7 +111,7 @@ where
 ///
 /// ```
 /// use yapcol::StringInput;
-/// let mut input = StringInput::new_from_chars("hello".chars(), Some("input.md".to_string()));
+/// let mut input = StringInput::new_from_chars("hello".chars(), String::from("input.md"));
 /// ```
 pub type StringInput<'a> = Input<'a, CharToken>;
 
@@ -127,9 +128,9 @@ impl<'a> StringInput<'a> {
 	///
 	/// ```
 	/// use yapcol::Input;
-	/// let mut input = Input::new_from_chars("hello".chars(), Some(String::from("in.txt")));
+	/// let mut input = Input::new_from_chars("hello".chars(), String::from("in.txt"));
 	/// ```
-	pub fn new_from_chars<S>(chars: S, source_name: Option<String>) -> Input<'a, CharToken>
+	pub fn new_from_chars<S>(chars: S, source_name: String) -> Input<'a, CharToken>
 	where
 		S: IntoIterator<Item = char, IntoIter: Iterator<Item = char> + 'a>,
 	{
@@ -141,18 +142,19 @@ impl<'a> StringInput<'a> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::test_utils;
 
 	#[test]
 	fn new_from_chars() {
 		let chars = "hello\nworld".chars();
-		let mut input = StringInput::new_from_chars(chars, None);
+		let mut input = StringInput::new_from_chars(chars, test_utils::test_source_name());
 		assert_eq!(input.position(), Position::new(1, 1));
 	}
 
 	#[test]
 	fn column_count() {
 		let chars = "hello".chars();
-		let mut input = StringInput::new_from_chars(chars, None);
+		let mut input = StringInput::new_from_chars(chars, test_utils::test_source_name());
 		assert_eq!(input.position(), Position::new(1, 1));
 		let char_token = input.next_token().unwrap();
 		assert_eq!(char_token.token, 'h');
@@ -174,7 +176,7 @@ mod tests {
 	#[test]
 	fn line_count() {
 		let chars = "hi\nworld".chars();
-		let mut input = StringInput::new_from_chars(chars, None);
+		let mut input = StringInput::new_from_chars(chars, test_utils::test_source_name());
 		assert_eq!(input.position(), Position::new(1, 1));
 		let char_token = input.next_token().unwrap();
 		assert_eq!(char_token.token, 'h');

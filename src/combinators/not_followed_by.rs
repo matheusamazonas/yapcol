@@ -29,16 +29,16 @@ use crate::{Error, InputToken, Parser};
 /// use yapcol::{Error, Input, is, not_followed_by};
 ///
 /// let parser = is('j');
-/// let mut input = Input::new_from_chars("hello".chars(), None);
+/// let mut input = Input::new_from_chars("hello".chars(), String::from("doctest.txt"));
 /// let not_followed_parser = not_followed_by(&parser);
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(output, Ok(()));
 ///
-/// let mut input = Input::new_from_chars("jello".chars(), None);
+/// let mut input = Input::new_from_chars("jello".chars(), String::from("doctest.txt"));
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+/// 	Err(Error::UnexpectedToken(input.source_name(), Position::new(1, 1), None))
 /// );
 /// ```
 pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>
@@ -57,7 +57,7 @@ where
 				None,
 			)),
 			Err(Error::UnexpectedToken(_, _, _)) => Ok(()),
-			Err(Error::EndOfInput(_)) => Ok(()),
+			Err(Error::EndOfInput(_, _)) => Ok(()),
 			Err(Error::NonConsumingLoop(s, p)) => Err(Error::NonConsumingLoop(s, p)),
 		}
 	}
@@ -71,7 +71,7 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
 		assert_eq!(output, Ok(()));
@@ -80,19 +80,23 @@ mod tests {
 	#[test]
 	fn followed() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				input.source_name(),
+				Position::new(1, 1),
+				None
+			))
 		);
 	}
 
 	#[test]
 	fn not_followed() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jello".chars(), None);
+		let mut input = Input::new_from_chars("jello".chars(), test_utils::test_source_name());
 		let not_followed_parser = not_followed_by(&parser);
 		let output = not_followed_parser(&mut input);
 		assert_eq!(output, Ok(()));
@@ -102,18 +106,22 @@ mod tests {
 	fn look_ahead_followed() {
 		// Inspiration: https://github.com/haskell/parsec/issues/8
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let lookahead_parser = look_ahead(&parser);
 		// Just ensure that it succeeds to prove a point.
 		let output = lookahead_parser(&mut input);
 		assert_eq!(output, Ok('h'));
 		// Actually test.
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let not_followed_parser = not_followed_by(&lookahead_parser);
 		let output = not_followed_parser(&mut input);
 		assert_eq!(
 			output,
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				input.source_name(),
+				Position::new(1, 1),
+				None
+			))
 		);
 	}
 }

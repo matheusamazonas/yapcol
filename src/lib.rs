@@ -28,7 +28,7 @@
 //! ```
 //! use yapcol::{Input, is, many_collect};
 //!
-//! let mut input = Input::new_from_chars("aaab".chars(), None);
+//! let mut input = Input::new_from_chars("aaab".chars(), String::from("doctest.txt"));
 //!
 //! // Combine `is` and `many_collect` to parse multiple 'a's and collect the matches.
 //! let is_a = is('a');
@@ -55,8 +55,7 @@
 //! use yapcol::input::Position;
 //! use yapcol::{Error, Input, Mismatch, any, is, many, success};
 //!
-//! let source_name = Some(String::from("file.txt"));
-//! let mut input = Input::new_from_chars(vec!['a'], source_name.clone());
+//! let mut input = Input::new_from_chars(vec!['a'], String::from("doctest.txt"));
 //!
 //! // Fails with UnexpectedToken when the token does not match.
 //! let output = is('b')(&mut input);
@@ -64,7 +63,7 @@
 //! assert_eq!(
 //! 	output,
 //! 	Err(Error::UnexpectedToken(
-//! 		source_name,
+//! 		input.source_name(),
 //! 		Position::new(1, 1),
 //! 		Some(mismatch)
 //! 	))
@@ -72,15 +71,15 @@
 //!
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();
-//! assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+//! assert_eq!(any()(&mut input), Err(Error::EndOfInput(input.source_name(), None)));
 //!
 //! // The `success` combinator always succeeds without consuming any input, so `many` detects the
 //! // loop.
 //! let parser = success(());
-//! let mut input = Input::new_from_chars("abc".chars(), None);
+//! let mut input = Input::new_from_chars("abc".chars(), String::from("doctest.txt"));
 //! assert_eq!(
 //! 	many(&parser)(&mut input),
-//! 	Err(Error::NonConsumingLoop(None, Position::new(1, 1)))
+//! 	Err(Error::NonConsumingLoop(input.source_name(), Position::new(1, 1)))
 //! );
 //! ```
 //!
@@ -88,16 +87,20 @@
 //! messages.
 //!
 //! ```
+//! use std::rc::Rc;
 //! use yapcol::Error;
 //! use yapcol::input::Position;
 //!
-//! let error = Error::UnexpectedToken(Some("file.txt".to_string()), Position::new(3, 12), None);
+//! let source_name = String::from("file.txt");
+//! let error = Error::UnexpectedToken(Rc::new(source_name), Position::new(3, 12), None);
 //! assert_eq!(error.to_string(), "Unexpected token at file.txt:3:12.");
 //!
-//! let error = Error::EndOfInput(None);
-//! assert_eq!(error.to_string(), "End of input reached.");
+//! let source_name = String::from("file.txt");
+//! let error = Error::EndOfInput(Rc::new(source_name), None);
+//! assert_eq!(error.to_string(), "End of input reached at file.txt.");
 //!
-//! let error = Error::NonConsumingLoop(Some("file.txt".to_string()), Position::new(3, 12));
+//! let source_name = String::from("file.txt");
+//! let error = Error::NonConsumingLoop(Rc::new(source_name), Position::new(3, 12));
 //! assert_eq!(
 //! 	error.to_string(),
 //! 	"Non-consuming parser loop at file.txt:3:12."
@@ -123,6 +126,7 @@ mod combinators;
 mod error;
 pub mod input;
 mod parser;
+mod test_utils;
 
 pub use combinators::*;
 pub use error::{Error, Mismatch};

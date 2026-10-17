@@ -29,7 +29,7 @@
 //! ```
 //! use yapcol::Input;
 //!
-//! let mut input = Input::new_from_chars("hello".chars(), None);
+//! let mut input = Input::new_from_chars("hello".chars(), String::from("file.txt"));
 //! ```
 //!
 //! ## Token-based parsing

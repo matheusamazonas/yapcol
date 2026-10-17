@@ -43,19 +43,19 @@ use crate::{InputToken, Parser};
 /// use yapcol::{Error, Input, Mismatch, any, attempt, end_of_input, is};
 ///
 /// // Succeeds consuming input.
-/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let mut input = Input::new_from_chars("123".chars(), String::from("doctest.txt"));
 /// let parser1 = is('1');
 /// assert_eq!(attempt(&parser1)(&mut input), Ok('1'));
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was consumed.
 ///
 /// // Fails without consuming input.
-/// let mut input = Input::new_from_chars("23".chars(), None);
+/// let mut input = Input::new_from_chars("23".chars(), String::from("doctest.txt"));
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('2')); // Input was not consumed.
 /// assert_eq!(any()(&mut input), Ok('3')); // Input was not consumed.
 ///
 /// // Fails without consuming input if the parser consumes.
-/// let mut input = Input::new_from_chars("13".chars(), None);
+/// let mut input = Input::new_from_chars("13".chars(), String::from("doctest.txt"));
 /// let consuming_parser = |input: &mut Input<_>| {
 /// 	let o1 = parser1(input)?;
 /// 	let o2 = parser1(input)?;
@@ -66,7 +66,7 @@ use crate::{InputToken, Parser};
 /// assert_eq!(
 /// 	output,
 /// 	Err(Error::UnexpectedToken(
-/// 		None,
+/// 		input.source_name(),
 /// 		Position::new(1, 2),
 /// 		Some(mismatch)
 /// 	))
@@ -74,7 +74,7 @@ use crate::{InputToken, Parser};
 /// assert_eq!(any()(&mut input), Ok('1')); // Input was not consumed.
 ///
 /// // Fails on empty input
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert!(attempt(&parser1)(&mut input).is_err());
 /// ```
 pub fn attempt<P, IT, O>(parser: &P) -> impl Parser<IT, O>
@@ -97,23 +97,29 @@ mod tests {
 
 	#[test]
 	fn empty() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
+		assert_eq!(
+			output,
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
+		);
 	}
 
 	#[test]
 	fn empty_shortcut() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser = is('h').attempt();
 		let output = parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('h')))));
+		assert_eq!(
+			output,
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
+		);
 	}
 
 	#[test]
 	fn success_consumes() {
-		let mut input = Input::new_from_chars("hel".chars(), None);
+		let mut input = Input::new_from_chars("hel".chars(), test_utils::test_source_name());
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
 		assert_eq!(output, Ok('h'));
@@ -125,7 +131,7 @@ mod tests {
 
 	#[test]
 	fn success_consumes_shortcut() {
-		let mut input = Input::new_from_chars("hel".chars(), None);
+		let mut input = Input::new_from_chars("hel".chars(), test_utils::test_source_name());
 		let parser = is('h').attempt();
 		let output = parser(&mut input);
 		assert_eq!(output, Ok('h'));
@@ -137,14 +143,14 @@ mod tests {
 
 	#[test]
 	fn non_consuming_fail_does_not_consume() {
-		let mut input = Input::new_from_chars("jello".chars(), None);
+		let mut input = Input::new_from_chars("jello".chars(), test_utils::test_source_name());
 		let parser = is('h');
 		let output = attempt(&parser)(&mut input);
 		let mismatch = Mismatch::new('h', 'j');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -155,7 +161,7 @@ mod tests {
 
 	#[test]
 	fn consuming_fail_does_not_consume() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let consuming_parser = |input: &mut Input<_>| {
 			let o1 = is('h')(input)?; // Success, consumes 'h'.
 			let o2 = is('x')(input)?; // Fails on  'x', consuming parser fails.
@@ -166,7 +172,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -182,7 +188,7 @@ mod tests {
 
 	#[test]
 	fn attempt_twice() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser = is('h');
 		let first = attempt(&parser)(&mut input);
 		assert_eq!(first, Ok('h'));
@@ -192,7 +198,7 @@ mod tests {
 		assert_eq!(
 			second,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -207,7 +213,7 @@ mod tests {
 
 	#[test]
 	fn either_with_attempt_succeeds_consuming() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_h = is('h');
 		let parser_e = is('e');
 		let parser_attempt_h = attempt(&parser_h);
@@ -224,7 +230,7 @@ mod tests {
 
 	#[test]
 	fn either_with_attempt_fails_not_consuming() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_e = is('e');
 		let parser_l = is('l');
 		let parser_attempt_e = attempt(&parser_e);
@@ -234,7 +240,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -250,7 +256,7 @@ mod tests {
 
 	#[test]
 	fn either_with_attempt_on_consuming_parser_succeeds_consuming() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		// Create two parsers that share a prefix.
 		let parser_h = is('h');
 		let parser_e = is('e');
@@ -280,7 +286,7 @@ mod tests {
 
 	#[test]
 	fn either_without_attempt_on_consuming_parser_fails_consuming() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		// Create two parsers that share a prefix.
 		let parser_h = is('h');
 		let parser_e = is('e');
@@ -304,7 +310,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))

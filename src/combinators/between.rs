@@ -32,7 +32,7 @@ use crate::{InputToken, Parser};
 /// ```
 /// use yapcol::{Input, between, is};
 ///
-/// let mut input = Input::new_from_chars("121".chars(), None);
+/// let mut input = Input::new_from_chars("121".chars(), String::from("doctest.txt"));
 /// let parser1 = is('1');
 /// let parser2 = is('2');
 /// let output = between(&parser1, &parser2, &parser1)(&mut input);
@@ -60,43 +60,55 @@ mod tests {
 
 	#[test]
 	fn empty() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = between(&is('('), &is('h'), &is(')'))(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('(')))));
+		assert_eq!(
+			output,
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('('))))
+		);
 	}
 
 	#[test]
 	fn empty_shortcut() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = is('h').between(&is('('), &is(')'))(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(Some(Box::new('(')))));
+		assert_eq!(
+			output,
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('('))))
+		);
 	}
 
 	#[test]
 	fn success() {
-		let mut input = Input::new_from_chars("(x)".chars(), None);
+		let mut input = Input::new_from_chars("(x)".chars(), test_utils::test_source_name());
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		assert_eq!(output, Ok('x'));
-		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+		assert_eq!(
+			any()(&mut input),
+			Err(Error::EndOfInput(input.source_name(), None))
+		);
 	}
 
 	#[test]
 	fn success_shortcut() {
-		let mut input = Input::new_from_chars("(x)".chars(), None);
+		let mut input = Input::new_from_chars("(x)".chars(), test_utils::test_source_name());
 		let output = is('x').between(&is('('), &is(')'))(&mut input);
 		assert_eq!(output, Ok('x'));
-		assert_eq!(any()(&mut input), Err(Error::EndOfInput(None)));
+		assert_eq!(
+			any()(&mut input),
+			Err(Error::EndOfInput(input.source_name(), None))
+		);
 	}
 
 	#[test]
 	fn fail_repeated() {
-		let mut input = Input::new_from_chars("(xx)".chars(), None);
+		let mut input = Input::new_from_chars("(xx)".chars(), test_utils::test_source_name());
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		let mismatch = Mismatch::new(')', 'x');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 3),
 				Some(mismatch)
 			))
@@ -105,13 +117,13 @@ mod tests {
 
 	#[test]
 	fn fail_no_middle() {
-		let mut input = Input::new_from_chars("()".chars(), None);
+		let mut input = Input::new_from_chars("()".chars(), test_utils::test_source_name());
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		let mismatch = Mismatch::new('x', ')');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))
@@ -120,13 +132,13 @@ mod tests {
 
 	#[test]
 	fn fail_swap() {
-		let mut input = Input::new_from_chars(")xx(".chars(), None);
+		let mut input = Input::new_from_chars(")xx(".chars(), test_utils::test_source_name());
 		let output = between(&is('('), &is('x'), &is(')'))(&mut input);
 		let mismatch = Mismatch::new('(', ')');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))

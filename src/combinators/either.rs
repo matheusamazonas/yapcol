@@ -37,17 +37,17 @@ use crate::{InputToken, Parser};
 /// use yapcol::{Input, any, either, end_of_input, is};
 ///
 /// // parser1 succeeds: returns its result.
-/// let mut input = Input::new_from_chars("ab".chars(), None);
+/// let mut input = Input::new_from_chars("ab".chars(), String::from("doctest.txt"));
 /// let output = either(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'a');
 ///
 /// // parser1 fails without consuming input: parser2 is tried.
-/// let mut input = Input::new_from_chars("b".chars(), None);
+/// let mut input = Input::new_from_chars("b".chars(), String::from("doctest.txt"));
 /// let output = either(&is('a'), &is('b'))(&mut input).unwrap();
 /// assert_eq!(output, 'b');
 ///
 /// // Both parsers fail: an error is returned and input is not consumed.
-/// let mut input = Input::new_from_chars("c".chars(), None);
+/// let mut input = Input::new_from_chars("c".chars(), String::from("doctest.txt"));
 /// assert!(either(&is('a'), &is('b'))(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('c'));
 /// ```
@@ -76,7 +76,7 @@ mod tests {
 	fn success_first() {
 		let parser1 = is('h');
 		let parser2 = is('j');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let parse_either = either(&parser1, &parser2);
 		let output = parse_either(&mut input).unwrap();
 		assert_eq!(output, 'h');
@@ -87,7 +87,7 @@ mod tests {
 	fn success_second() {
 		let parser1 = is('h');
 		let parser2 = is('j');
-		let mut input = Input::new_from_chars("j".chars(), None);
+		let mut input = Input::new_from_chars("j".chars(), test_utils::test_source_name());
 		let parse_either = either(&parser1, &parser2);
 		let output = parse_either(&mut input).unwrap();
 		assert_eq!(output, 'j');
@@ -98,13 +98,13 @@ mod tests {
 	fn fail_not_consuming() {
 		let parser1 = is('h');
 		let parser2 = is('j');
-		let mut input = Input::new_from_chars("kello".chars(), None);
+		let mut input = Input::new_from_chars("kello".chars(), test_utils::test_source_name());
 		let parse_either = either(&parser1, &parser2);
 		let mismatch = Mismatch::new('j', 'k');
 		assert_eq!(
 			parse_either(&mut input),
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -116,7 +116,7 @@ mod tests {
 	fn fail_consuming() {
 		let parser1 = is('h');
 		let parser2 = is('j');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let consuming_parser = |input: &mut Input<_>| {
 			parser1(input)?;
 			parser2(input)
@@ -127,7 +127,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 2),
 				Some(mismatch)
 			))

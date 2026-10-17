@@ -43,19 +43,19 @@ use crate::{InputToken, Parser};
 ///
 /// // Succeeds if the parser matches exactly `min_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// let min_count = 2;
 /// assert_eq!(at_least(&parser, min_count)(&mut input), Ok(2));
 ///
 /// // Succeeds if the parser matches more than `min_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let mut input = Input::new_from_chars("1112".chars(), String::from("doctest.txt"));
 /// let min_count = 2;
 /// assert_eq!(at_least(&parser, min_count)(&mut input), Ok(3));
 ///
 /// // Fails if the parser matches fewer than `min_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1".chars(), None);
+/// let mut input = Input::new_from_chars("1".chars(), String::from("doctest.txt"));
 /// let min_count = 2;
 /// assert!(at_least(&parser, min_count)(&mut input).is_err());
 /// ```
@@ -80,28 +80,28 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_up_to = at_least(&parser, 1);
 		assert_eq!(
 			parser_up_to(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
 		);
 	}
 
 	#[test]
 	fn empty_shortcut() {
 		let parser = is('h').at_least(1);
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		assert_eq!(
 			parser(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
 		);
 	}
 
 	#[test]
 	fn no_match() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let parser_up_to = at_least(&parser, 1);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 1);
@@ -112,7 +112,7 @@ mod tests {
 	#[test]
 	fn no_match_shortcut() {
 		let parser = is('h').at_least(1);
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let output = parser(&mut input);
 		let position = Position::new(1, 1);
 		assert_unexpected_error(output, position, "h", "j");
@@ -122,7 +122,7 @@ mod tests {
 	#[test]
 	fn exact_count_succeeds() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_up_to = at_least(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, 1);
@@ -134,7 +134,7 @@ mod tests {
 	#[test]
 	fn more_than_count_succeeds() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhello".chars(), test_utils::test_source_name());
 		let parser_up_to = at_least(&parser, 2);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, 3);
@@ -146,7 +146,7 @@ mod tests {
 	#[test]
 	fn less_than_min_count_fails() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhello".chars(), None);
+		let mut input = Input::new_from_chars("hhello".chars(), test_utils::test_source_name());
 		let parser_up_to = at_least(&parser, 3);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 3);

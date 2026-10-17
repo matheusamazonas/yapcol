@@ -1,12 +1,13 @@
 use crate::input::core::InputToken;
 use crate::input::source::InputSource;
 use std::iter::Peekable;
+use std::rc::Rc;
 
 pub(crate) struct TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
-	source_name: Option<String>,
+	source_name: Rc<String>,
 	stream: Peekable<I>,
 }
 
@@ -16,8 +17,8 @@ where
 {
 	type Token = I::Item;
 
-	fn source_name(&self) -> Option<&String> {
-		self.source_name.as_ref()
+	fn source_name(&self) -> Rc<String> {
+		self.source_name.clone()
 	}
 
 	fn next_token(&mut self) -> Option<Self::Token> {
@@ -33,12 +34,12 @@ impl<I> TokenInputSource<I>
 where
 	I: Iterator<Item: InputToken>,
 {
-	pub fn new<S>(source: S, source_name: Option<String>) -> Self
+	pub fn new<S>(source: S, source_name: String) -> Self
 	where
 		S: IntoIterator<Item: InputToken, IntoIter = I>,
 	{
 		Self {
-			source_name,
+			source_name: Rc::new(source_name),
 			stream: source.into_iter().peekable(),
 		}
 	}

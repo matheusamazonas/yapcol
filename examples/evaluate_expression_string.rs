@@ -98,7 +98,7 @@ fn main() {
 		match stdin.read_line(input) {
 			Ok(_) if input.len() == 2 && input.starts_with('q') => break,
 			Ok(_) => {
-				let mut input = Input::new_from_chars(input.chars(), Some("stdin".to_string()));
+				let mut input = Input::new_from_chars(input.chars(), String::from("stdin"));
 				match parse_expression().exhaustive()(&mut input) {
 					Ok(expression) => println!("Success: {:?}", evaluate(expression)),
 					Err(error) => println!("Failed to parse expression: {error}"),
@@ -115,6 +115,10 @@ mod parsing_tests {
 	use yapcol::end_of_input;
 	use yapcol::input::Position;
 
+	fn test_source_name() -> String {
+		String::from("test.txt")
+	}
+
 	fn build_operation(x: i32, operator: Operator, y: i32) -> Expression {
 		let operand1 = Box::new(Expression::Number(x));
 		let operand2 = Box::new(Expression::Number(y));
@@ -123,7 +127,7 @@ mod parsing_tests {
 
 	#[test]
 	fn number() {
-		let mut input = Input::new_from_chars("123".chars(), None);
+		let mut input = Input::new_from_chars("123".chars(), test_source_name());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
@@ -133,7 +137,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}+{number2}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -148,7 +152,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}-{number2}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -163,7 +167,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}*{number2}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -178,7 +182,7 @@ mod parsing_tests {
 		let number1 = 123;
 		let number2 = 456;
 		let tokens = format!("{number1}/{number2}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -194,7 +198,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}+{number3}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		// Addition is left-associative.
@@ -214,7 +218,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}-{number3}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number1, Operator::Addition, number2);
@@ -233,7 +237,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("{number1}+{number2}*{number3}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number2, Operator::Multiplication, number3);
@@ -251,7 +255,7 @@ mod parsing_tests {
 		let number1 = 12;
 		let number2 = 3;
 		let tokens = format!("{number1}^{number2}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		assert_eq!(
@@ -267,7 +271,7 @@ mod parsing_tests {
 		let number2 = 3;
 		let number3 = 4;
 		let tokens = format!("{number1}^{number2}^{number3}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let output = parser(&mut input).unwrap();
 		let expression1 = build_operation(number2, Operator::Exponentiation, number3);
@@ -283,14 +287,14 @@ mod parsing_tests {
 
 	#[test]
 	fn parenthesis_number() {
-		let mut input = Input::new_from_chars("(123)".chars(), None);
+		let mut input = Input::new_from_chars("(123)".chars(), test_source_name());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
 
 	#[test]
 	fn double_parenthesis_number() {
-		let mut input = Input::new_from_chars("((123))".chars(), None);
+		let mut input = Input::new_from_chars("((123))".chars(), test_source_name());
 		let parser = parse_expression();
 		assert_eq!(parser(&mut input), Ok(Expression::Number(123)));
 	}
@@ -301,7 +305,7 @@ mod parsing_tests {
 		let number2 = 456;
 		let number3 = 789;
 		let tokens = format!("({number1}+{number2})*{number3}");
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), test_source_name());
 		let parser = parse_expression();
 		let expression1 = Expression::Operation(
 			Box::new(Expression::Number(number1)),
@@ -319,13 +323,13 @@ mod parsing_tests {
 
 	#[test]
 	fn exhaustive() {
-		let mut input = Input::new_from_chars("12345(".chars(), None);
+		let mut input = Input::new_from_chars("12345(".chars(), test_source_name());
 		let output = parse_expression().exhaustive()(&mut input);
 		let mismatch = Mismatch::new("end of input", "(");
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 6),
 				Some(mismatch)
 			))
@@ -339,7 +343,7 @@ mod evaluation_tests {
 	use yapcol::end_of_input;
 
 	fn parse_and_evaluate(tokens: &str) -> i32 {
-		let mut input = Input::new_from_chars(tokens.chars(), None);
+		let mut input = Input::new_from_chars(tokens.chars(), String::from("test.txt"));
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())

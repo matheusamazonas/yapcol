@@ -23,7 +23,7 @@ use crate::{Error, InputToken};
 /// use yapcol::input::Input;
 ///
 /// // An example input iterator
-/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let mut input = Input::new_from_chars("123".chars(), String::from("doctest.txt"));
 /// let output = any()(&mut input);
 /// assert_eq!(output, Ok('1'));
 /// ```
@@ -33,7 +33,7 @@ where
 {
 	|input| match input.next_token() {
 		Some(input_token) => Ok(input_token.token_owned()),
-		None => Err(Error::EndOfInput(None)),
+		None => Err(Error::EndOfInput(input.source_name(), None)),
 	}
 }
 
@@ -43,14 +43,14 @@ mod tests {
 
 	#[test]
 	fn empty() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = any()(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(None)));
+		assert_eq!(output, Err(Error::EndOfInput(input.source_name(), None)));
 	}
 
 	#[test]
 	fn success() {
-		let mut input = Input::new_from_chars("abc".chars(), None);
+		let mut input = Input::new_from_chars("abc".chars(), test_utils::test_source_name());
 		let output = any()(&mut input);
 		assert_eq!(output, Ok('a'));
 		// Using it twice returns the second token.

@@ -49,7 +49,7 @@ use crate::{InputToken, Parser};
 /// 	open(input)?;
 /// 	many_until(&any, &close)(input)
 /// };
-/// let mut input = Input::new_from_chars("#12345$".chars(), None);
+/// let mut input = Input::new_from_chars("#12345$".chars(), String::from("doctest.txt"));
 /// let output = comments_parser(&mut input);
 /// assert_eq!(output, Ok(5));
 /// ```
@@ -74,17 +74,17 @@ mod tests {
 	fn empty_fails() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input);
-		assert_eq!(output, Err(Error::EndOfInput(None)));
+		assert_eq!(output, Err(Error::EndOfInput(input.source_name(), None)));
 	}
 
 	#[test]
 	fn no_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("#".chars(), None);
+		let mut input = Input::new_from_chars("#".chars(), test_utils::test_source_name());
 		let not_followed_parser = many_until(&any_parser, &end_comment_parser);
 		let output = not_followed_parser(&mut input).unwrap();
 		assert_eq!(output, 0);
@@ -94,7 +94,7 @@ mod tests {
 	fn multiple_matches_succeeds() {
 		let any_parser = any();
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("123456#".chars(), None);
+		let mut input = Input::new_from_chars("123456#".chars(), test_utils::test_source_name());
 		let many_parser = many_until(&any_parser, &end_comment_parser);
 		let output = many_parser(&mut input).unwrap();
 		assert_eq!(output, 6);
@@ -104,14 +104,14 @@ mod tests {
 	fn no_end_fails() {
 		let any_parser = is('x');
 		let end_comment_parser = is('#');
-		let mut input = Input::new_from_chars("xxxxxy".chars(), None);
+		let mut input = Input::new_from_chars("xxxxxy".chars(), test_utils::test_source_name());
 		let many_parser = many_until(&any_parser, &end_comment_parser);
 		let output = many_parser(&mut input);
 		let mismatch = Mismatch::new('x', 'y');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 6),
 				Some(mismatch)
 			))
@@ -122,11 +122,14 @@ mod tests {
 	#[test]
 	fn non_consuming_parser_does_not_loop() {
 		let non_consuming = success(1); // Non-consuming parser.
-		let mut input = Input::new_from_chars("hello#".chars(), None);
+		let mut input = Input::new_from_chars("hello#".chars(), test_utils::test_source_name());
 		let end_parser = is('#');
 		let parser = many_until(&non_consuming, &end_parser);
 		let output = parser(&mut input);
 		let position = Position::new(1, 1);
-		assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
+		assert_eq!(
+			output,
+			Err(Error::NonConsumingLoop(input.source_name(), position))
+		);
 	}
 }

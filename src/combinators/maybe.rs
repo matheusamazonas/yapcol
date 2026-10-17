@@ -34,12 +34,12 @@ use crate::{InputToken, Parser};
 /// ```
 /// use yapcol::{Input, any, is, maybe};
 ///
-/// let mut input = Input::new_from_chars("hello".chars(), None);
+/// let mut input = Input::new_from_chars("hello".chars(), String::from("doctest.txt"));
 /// let ph = is('h');
 /// let parser = maybe(&ph);
 /// assert_eq!(parser(&mut input).unwrap(), Some('h'));
 ///
-/// let mut input = Input::new_from_chars("world".chars(), None);
+/// let mut input = Input::new_from_chars("world".chars(), String::from("doctest.txt"));
 /// assert_eq!(parser(&mut input).unwrap(), None);
 /// assert_eq!(any()(&mut input), Ok('w')); // Input was not consumed.
 /// ```
@@ -67,7 +67,7 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_maybe = maybe(&parser);
 		assert_eq!(parser_maybe(&mut input), Ok(None));
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -76,7 +76,7 @@ mod tests {
 	#[test]
 	fn empty_shortcut() {
 		let parser = is('h').maybe();
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		assert_eq!(parser(&mut input), Ok(None));
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
@@ -84,7 +84,7 @@ mod tests {
 	#[test]
 	fn success() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		let parser_maybe = maybe(&parser);
 		assert_eq!(parser_maybe(&mut input), Ok(Some('h')));
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
@@ -93,7 +93,7 @@ mod tests {
 	#[test]
 	fn success_shortcut() {
 		let parser = is('h').maybe();
-		let mut input = Input::new_from_chars("h".chars(), None);
+		let mut input = Input::new_from_chars("h".chars(), test_utils::test_source_name());
 		assert_eq!(parser(&mut input), Ok(Some('h')));
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}
@@ -101,7 +101,7 @@ mod tests {
 	#[test]
 	fn fail_non_consuming() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("j".chars(), None);
+		let mut input = Input::new_from_chars("j".chars(), test_utils::test_source_name());
 		let parser_maybe = maybe(&parser);
 		assert_eq!(parser_maybe(&mut input), Ok(None));
 		assert!(end_of_input()(&mut input).is_err()); // Ensure that the input was NOT consumed.
@@ -114,16 +114,25 @@ mod tests {
 				if token == 'h' {
 					Ok(1)
 				} else {
-					Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+					let source_name = input.source_name();
+					Err(Error::UnexpectedToken(
+						source_name,
+						Position::new(1, 1),
+						None,
+					))
 				}
 			}
 			Err(e) => Err(e),
 		};
-		let mut input = Input::new_from_chars("j".chars(), None);
+		let mut input = Input::new_from_chars("j".chars(), test_utils::test_source_name());
 		let parser_maybe = maybe(&parser);
 		assert_eq!(
 			parser_maybe(&mut input),
-			Err(Error::UnexpectedToken(None, Position::new(1, 1), None))
+			Err(Error::UnexpectedToken(
+				input.source_name(),
+				Position::new(1, 1),
+				None
+			))
 		);
 		assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 	}

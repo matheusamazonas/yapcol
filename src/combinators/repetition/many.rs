@@ -45,15 +45,15 @@ use crate::{InputToken, Parser};
 ///
 /// // Matches multiple elements
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// assert_eq!(many(&parser)(&mut input), Ok(2));
 ///
 /// // Returns 0 when no matches are found (never fails)
-/// let mut input = Input::new_from_chars("23".chars(), None);
+/// let mut input = Input::new_from_chars("23".chars(), String::from("doctest.txt"));
 /// assert_eq!(many(&parser)(&mut input), Ok(0));
 ///
 /// // Returns 0 on empty input (never fails)
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert_eq!(many(&parser)(&mut input), Ok(0));
 /// ```
 pub fn many<P, IT, O>(parser: &P) -> impl Parser<IT, usize>
@@ -75,7 +75,7 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_many0 = many(&parser);
 		let output = parser_many0(&mut input).unwrap();
 		assert_eq!(output, 0);
@@ -84,7 +84,7 @@ mod tests {
 	#[test]
 	fn empty_shortcut() {
 		let parser = is('h').many();
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output, 0);
 	}
@@ -94,7 +94,7 @@ mod tests {
 		let token_count = 100;
 		let parser = is('h');
 		let tokens = std::iter::repeat_n('j', token_count).collect::<Vec<_>>();
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let parser_many0 = many(&parser);
 		let output = parser_many0(&mut input).unwrap();
 		assert_eq!(output, 0);
@@ -107,7 +107,7 @@ mod tests {
 		let token_count = 100;
 		let parser = is('h').many();
 		let tokens = std::iter::repeat_n('j', token_count).collect::<Vec<_>>();
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output, 0);
 		assert_eq!(input.consumed_count(), 0);
@@ -119,7 +119,7 @@ mod tests {
 		let token_count = 100;
 		let parser = is('h');
 		let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let parser_many0 = many(&parser);
 		let output = parser_many0(&mut input).unwrap();
 		assert_eq!(output, token_count);
@@ -132,7 +132,7 @@ mod tests {
 		let token_count = 100;
 		let parser = is('h').many();
 		let tokens = std::iter::repeat_n('h', token_count).collect::<Vec<_>>();
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output, token_count);
 		assert_eq!(input.consumed_count(), token_count);
@@ -142,7 +142,7 @@ mod tests {
 	#[test]
 	fn partial_match_then_stop() {
 		let parser = is('#');
-		let mut input = Input::new_from_chars("#####Hello".chars(), None);
+		let mut input = Input::new_from_chars("#####Hello".chars(), test_utils::test_source_name());
 		let parser_many0 = many(&parser);
 		let output = parser_many0(&mut input).unwrap();
 		assert_eq!(output, 5);
@@ -154,11 +154,14 @@ mod tests {
 	#[test]
 	fn non_consuming_parser_does_not_loop() {
 		let parser = success(1); // Non-consuming parser.
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser = parser.many();
 		let output = parser(&mut input);
 		let position = Position::new(1, 1);
-		assert_eq!(output, Err(Error::NonConsumingLoop(None, position)));
+		assert_eq!(
+			output,
+			Err(Error::NonConsumingLoop(input.source_name(), position))
+		);
 	}
 
 	#[test]
@@ -169,7 +172,7 @@ mod tests {
 			let o2 = is('a')(input)?;
 			Ok((o1, o2))
 		};
-		let mut input = Input::new_from_chars("#a#e".chars(), None);
+		let mut input = Input::new_from_chars("#a#e".chars(), test_utils::test_source_name());
 		let many_parser = parser.many();
 		let output = many_parser(&mut input).unwrap();
 		assert_eq!(output, 1);

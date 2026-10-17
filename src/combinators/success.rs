@@ -24,11 +24,11 @@ use crate::{InputToken, Parser};
 /// use yapcol::{Input, any, success};
 ///
 /// // Always succeeds, even on empty input.
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert_eq!(success(1)(&mut input), Ok(1));
 ///
 /// // Does not consume any input.
-/// let mut input = Input::new_from_chars("hello".chars(), None);
+/// let mut input = Input::new_from_chars("hello".chars(), String::from("doctest.txt"));
 /// assert_eq!(success(1)(&mut input), Ok(1));
 /// assert_eq!(any()(&mut input), Ok('h'));
 /// ```

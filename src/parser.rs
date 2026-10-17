@@ -56,7 +56,7 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 /// 	is('A')(input)
 /// }
 ///
-/// let mut input = Input::new_from_chars("Abc".chars(), None);
+/// let mut input = Input::new_from_chars("Abc".chars(), String::from("doctest.txt"));
 /// assert_eq!(my_uppercase_parser(&mut input), Ok('A'));
 /// ```
 ///
@@ -65,7 +65,7 @@ use crate::input::{CharToken, Input, InputToken, StringInput};
 /// ```
 /// use yapcol::{Input, is};
 ///
-/// let mut input = Input::new_from_chars("Abc".chars(), None);
+/// let mut input = Input::new_from_chars("Abc".chars(), String::from("doctest.txt"));
 /// let mut parser = is('A');
 /// assert_eq!(parser(&mut input), Ok('A'));
 /// ```
@@ -95,7 +95,7 @@ where
 	///
 	/// let parser = is('A').with_expectation("uppercase A");
 	///
-	/// let mut input = Input::new_from_chars("B".chars(), None);
+	/// let mut input = Input::new_from_chars("B".chars(), String::from("doctest.txt"));
 	/// let error = parser(&mut input).unwrap_err();
 	/// assert!(error.to_string().contains("uppercase A"));
 	/// ```
@@ -110,13 +110,17 @@ where
 	{
 		move |input| match self(input) {
 			Ok(result) => Ok(result),
-			Err(Error::EndOfInput(Some(_))) => {
+			Err(Error::EndOfInput(source_name, Some(_))) => {
 				// Replace the expectation.
-				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
+				Err(Error::EndOfInput(
+					source_name,
+					Some(Box::new(expectation.clone())),
+				))
 			}
-			Err(Error::EndOfInput(None)) => {
-				Err(Error::EndOfInput(Some(Box::new(expectation.clone()))))
-			}
+			Err(Error::EndOfInput(source_name, None)) => Err(Error::EndOfInput(
+				source_name,
+				Some(Box::new(expectation.clone())),
+			)),
 			Err(Error::UnexpectedToken(s, p, Some(mut mismatch))) => {
 				mismatch.replace_expectation(expectation.clone());
 				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
@@ -146,7 +150,7 @@ where
 	/// let is_digit = |c: &char| if c.is_ascii_digit() { Some(*c) } else { None };
 	/// let parser = satisfy(is_digit).map(|c| c.to_digit(10));
 	///
-	/// let mut input = Input::new_from_chars("1".chars(), None);
+	/// let mut input = Input::new_from_chars("1".chars(), String::from("file.txt"));
 	/// let result = parser(&mut input);
 	/// assert_eq!(result, Ok(Some(1)));
 	/// ```
@@ -186,10 +190,10 @@ where
 	///
 	/// // Parse 'a' twice.
 	/// let twice_parser = is('a').and_then(is);
-	/// let mut input = Input::new_from_chars("aa".chars(), None);
+	/// let mut input = Input::new_from_chars("aa".chars(), String::from("file.txt"));
 	/// assert_eq!(twice_parser(&mut input), Ok('a'));
 	///
-	/// let mut input = Input::new_from_chars("ac".chars(), None);
+	/// let mut input = Input::new_from_chars("ac".chars(), String::from("file.txt"));
 	/// assert!(twice_parser(&mut input).is_err());
 	/// ```
 	///
@@ -228,12 +232,12 @@ where
 	///
 	/// // Skip 'a', then parse any character.
 	/// let parser = is('a').and(any());
-	/// let mut input = Input::new_from_chars("ab".chars(), None);
+	/// let mut input = Input::new_from_chars("ab".chars(), String::from("file.txt"));
 	/// assert_eq!(parser(&mut input), Ok('b'));
 	///
 	/// // Fails if the first parser fails.
 	/// let parser = is('a').and(any());
-	/// let mut input = Input::new_from_chars("xb".chars(), None);
+	/// let mut input = Input::new_from_chars("xb".chars(), String::from("file.txt"));
 	/// assert!(parser(&mut input).is_err());
 	/// ```
 	///
@@ -260,10 +264,10 @@ where
 	/// ```
 	/// use yapcol::{Error, Input, Parser, any};
 	///
-	/// let mut input = Input::new_from_chars("a".chars(), None);
+	/// let mut input = Input::new_from_chars("a".chars(), String::from("file.txt"));
 	/// assert!(any().exhaustive()(&mut input).is_ok());
 	///
-	/// let mut input = Input::new_from_chars("ab".chars(), None);
+	/// let mut input = Input::new_from_chars("ab".chars(), String::from("file.txt"));
 	/// assert!(any().exhaustive()(&mut input).is_err()); // 'b' was not consumed.
 	/// ```
 	fn exhaustive(self) -> impl Parser<IT, O>
@@ -292,7 +296,7 @@ where
 	/// ```rust
 	/// use yapcol::{Input, Parser, any};
 	///
-	/// let mut input = Input::new_from_chars("a".chars(), None);
+	/// let mut input = Input::new_from_chars("a".chars(), String::from("file.txt"));
 	/// let parser = any().discard();
 	/// assert_eq!(parser(&mut input), Ok(()));
 	/// ```
@@ -498,17 +502,17 @@ mod tests {
 		#[test]
 		fn empty() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::EndOfInput(Some(Box::new('2'))))
+				Err(Error::EndOfInput(input.source_name(), Some(Box::new('2'))))
 			);
 		}
 
 		#[test]
 		fn success_simple() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
-			let mut input = Input::new_from_chars("2".chars(), None);
+			let mut input = Input::new_from_chars("2".chars(), test_utils::test_source_name());
 			assert_eq!(parser(&mut input), Ok(Some(2)));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -519,7 +523,7 @@ mod tests {
 				.map(|c: char| c.to_digit(10))
 				.map(|o| o.unwrap())
 				.map(|x| x * 3);
-			let mut input = Input::new_from_chars("2".chars(), None);
+			let mut input = Input::new_from_chars("2".chars(), test_utils::test_source_name());
 			assert_eq!(parser(&mut input), Ok(6));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -527,12 +531,12 @@ mod tests {
 		#[test]
 		fn fail_simple() {
 			let parser = is('2').map(|c: char| c.to_digit(10));
-			let mut input = Input::new_from_chars("3".chars(), None);
+			let mut input = Input::new_from_chars("3".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 1),
 					Some(mismatch)
 				))
@@ -546,12 +550,12 @@ mod tests {
 				.map(|c: char| c.to_digit(10))
 				.map(|o| o.unwrap())
 				.map(|x| x * 7);
-			let mut input = Input::new_from_chars("3".chars(), None);
+			let mut input = Input::new_from_chars("3".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('5', '3');
 			assert_eq!(
 				parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 1),
 					Some(mismatch)
 				))
@@ -567,17 +571,17 @@ mod tests {
 		#[test]
 		fn empty() {
 			let double_parser = is('2').and_then(is);
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::EndOfInput(Some(Box::new('2'))))
+				Err(Error::EndOfInput(input.source_name(), Some(Box::new('2'))))
 			);
 		}
 
 		#[test]
 		fn success_simple() {
 			let double_parser = is('2').and_then(is);
-			let mut input = Input::new_from_chars("22".chars(), None);
+			let mut input = Input::new_from_chars("22".chars(), test_utils::test_source_name());
 			assert_eq!(double_parser(&mut input), Ok('2'));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -585,7 +589,7 @@ mod tests {
 		#[test]
 		fn success_chained() {
 			let triple_parser = is('2').and_then(is).and_then(is);
-			let mut input = Input::new_from_chars("222".chars(), None);
+			let mut input = Input::new_from_chars("222".chars(), test_utils::test_source_name());
 			assert_eq!(triple_parser(&mut input), Ok('2'));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -593,12 +597,12 @@ mod tests {
 		#[test]
 		fn fail_simple() {
 			let double_parser = is('2').and_then(is);
-			let mut input = Input::new_from_chars("23".chars(), None);
+			let mut input = Input::new_from_chars("23".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				double_parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 2),
 					Some(mismatch)
 				))
@@ -609,12 +613,12 @@ mod tests {
 		#[test]
 		fn fail_chained() {
 			let triple_parser = is('2').and_then(is).and_then(is);
-			let mut input = Input::new_from_chars("223".chars(), None);
+			let mut input = Input::new_from_chars("223".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('2', '3');
 			assert_eq!(
 				triple_parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 3),
 					Some(mismatch)
 				))
@@ -630,17 +634,17 @@ mod tests {
 		#[test]
 		fn empty() {
 			let double_parser = is('2').and(is('3'));
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			assert_eq!(
 				double_parser(&mut input),
-				Err(Error::EndOfInput(Some(Box::new('2'))))
+				Err(Error::EndOfInput(input.source_name(), Some(Box::new('2'))))
 			);
 		}
 
 		#[test]
 		fn success_simple() {
 			let double_parser = is('2').and(is('3'));
-			let mut input = Input::new_from_chars("23".chars(), None);
+			let mut input = Input::new_from_chars("23".chars(), test_utils::test_source_name());
 			assert_eq!(double_parser(&mut input), Ok('3'));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -648,7 +652,7 @@ mod tests {
 		#[test]
 		fn success_chained() {
 			let triple_parser = is('2').and(is('3')).and(is('4'));
-			let mut input = Input::new_from_chars("234".chars(), None);
+			let mut input = Input::new_from_chars("234".chars(), test_utils::test_source_name());
 			assert_eq!(triple_parser(&mut input), Ok('4'));
 			assert!(end_of_input()(&mut input).is_ok()); // Ensure that the input was consumed.
 		}
@@ -656,12 +660,12 @@ mod tests {
 		#[test]
 		fn fail_simple() {
 			let double_parser = is('2').and(is('3'));
-			let mut input = Input::new_from_chars("22".chars(), None);
+			let mut input = Input::new_from_chars("22".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('3', '2');
 			assert_eq!(
 				double_parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 2),
 					Some(mismatch)
 				))
@@ -672,12 +676,12 @@ mod tests {
 		#[test]
 		fn fail_chained() {
 			let triple_parser = is('2').and(is('3')).and(is('4'));
-			let mut input = Input::new_from_chars("233".chars(), None);
+			let mut input = Input::new_from_chars("233".chars(), test_utils::test_source_name());
 			let mismatch = Mismatch::new('4', '3');
 			assert_eq!(
 				triple_parser(&mut input),
 				Err(Error::UnexpectedToken(
-					None,
+					input.source_name(),
 					Position::new(1, 3),
 					Some(mismatch)
 				))
@@ -693,27 +697,34 @@ mod tests {
 		#[test]
 		fn empty() {
 			let parser = is('a').exhaustive();
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			let expected = Box::new("a");
-			assert_eq!(parser(&mut input), Err(Error::EndOfInput(Some(expected))));
+			assert_eq!(
+				parser(&mut input),
+				Err(Error::EndOfInput(input.source_name(), Some(expected)))
+			);
 		}
 
 		#[test]
 		fn leftover() {
 			let parser = is('a').exhaustive();
-			let mut input = Input::new_from_chars("aa".chars(), None);
+			let mut input = Input::new_from_chars("aa".chars(), test_utils::test_source_name());
 			let position = Position::new(1, 2);
 			let mismatch = Mismatch::new("end of input", "a");
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, position, Some(mismatch)))
+				Err(Error::UnexpectedToken(
+					input.source_name(),
+					position,
+					Some(mismatch)
+				))
 			);
 		}
 
 		#[test]
 		fn success_simple() {
 			let parser = is('a').exhaustive();
-			let mut input = Input::new_from_chars("a".chars(), None);
+			let mut input = Input::new_from_chars("a".chars(), test_utils::test_source_name());
 			assert_eq!(parser(&mut input), Ok('a'));
 		}
 
@@ -724,7 +735,8 @@ mod tests {
 			let parse_comma = is(',');
 			let parser = separated_by1(&parse_number, &parse_comma);
 			let parser = parser.exhaustive();
-			let mut input = Input::new_from_chars("1,1,1,1,1".chars(), None);
+			let mut input =
+				Input::new_from_chars("1,1,1,1,1".chars(), test_utils::test_source_name());
 			assert_eq!(parser(&mut input), Ok(vec![1, 1, 1, 1, 1]));
 		}
 
@@ -735,12 +747,17 @@ mod tests {
 			let parse_comma = is(',');
 			let parser = separated_by1(&parse_number, &parse_comma);
 			let parser = parser.exhaustive();
-			let mut input = Input::new_from_chars("1,1,1,1,1#".chars(), None);
+			let mut input =
+				Input::new_from_chars("1,1,1,1,1#".chars(), test_utils::test_source_name());
 			let position = Position::new(1, 10);
 			let mismatch = Mismatch::new("end of input", '#');
 			assert_eq!(
 				parser(&mut input),
-				Err(Error::UnexpectedToken(None, position, Some(mismatch)))
+				Err(Error::UnexpectedToken(
+					input.source_name(),
+					position,
+					Some(mismatch)
+				))
 			);
 		}
 	}
@@ -751,14 +768,14 @@ mod tests {
 		#[test]
 		fn success() {
 			let parser = is('a').discard();
-			let mut input = Input::new_from_chars("a".chars(), None);
+			let mut input = Input::new_from_chars("a".chars(), test_utils::test_source_name());
 			assert_eq!(parser(&mut input).unwrap(), ());
 		}
 
 		#[test]
 		fn fail() {
 			let parser = is('a').discard();
-			let mut input = Input::new_from_chars("b".chars(), None);
+			let mut input = Input::new_from_chars("b".chars(), test_utils::test_source_name());
 			let output = parser(&mut input);
 			assert!(output.is_err());
 		}

@@ -39,7 +39,7 @@ use crate::{InputToken, Parser};
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// let parser = chain_left(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(1)); // (3 - 1) - 1 = 1, not 3 - (1 - 1) = 3
@@ -100,7 +100,7 @@ where
 /// });
 ///
 /// let tokens: Vec<_> = "3-1-1".chars().collect();
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// let parser = chain_right(&operand, &operator);
 /// let output = parser(&mut input);
 /// assert_eq!(output, Ok(3)); // 3 - (1 - 1) = 3, not (3 - 1) - 1 = 1
@@ -146,21 +146,21 @@ mod tests {
 
 		#[test]
 		fn empty() {
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_left_subtraction()(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput(None)));
+			assert_eq!(output, Err(Error::EndOfInput(input.source_name(), None)));
 		}
 
 		#[test]
 		fn one_operand() {
-			let mut input = Input::new_from_chars("1".chars(), None);
+			let mut input = Input::new_from_chars("1".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_left_subtraction()(&mut input);
 			assert_eq!(output, Ok(1));
 		}
 
 		#[test]
 		fn two_operands() {
-			let mut input = Input::new_from_chars("9-7".chars(), None);
+			let mut input = Input::new_from_chars("9-7".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_left_subtraction()(&mut input);
 			assert_eq!(output, Ok(2));
 		}
@@ -168,7 +168,7 @@ mod tests {
 		#[test]
 		fn tree_operands() {
 			// (3 - 1) - 2 = 0, not 3 - (1 - 2) = 4
-			let mut input = Input::new_from_chars("3-1-2".chars(), None);
+			let mut input = Input::new_from_chars("3-1-2".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_left_subtraction()(&mut input);
 			assert_eq!(output, Ok(0));
 		}
@@ -193,21 +193,21 @@ mod tests {
 
 		#[test]
 		fn empty() {
-			let mut input = Input::new_from_chars("".chars(), None);
+			let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_right_subtraction()(&mut input);
-			assert_eq!(output, Err(Error::EndOfInput(None)));
+			assert_eq!(output, Err(Error::EndOfInput(input.source_name(), None)));
 		}
 
 		#[test]
 		fn one_operand() {
-			let mut input = Input::new_from_chars("1".chars(), None);
+			let mut input = Input::new_from_chars("1".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_right_subtraction()(&mut input);
 			assert_eq!(output, Ok(1));
 		}
 
 		#[test]
 		fn two_operands() {
-			let mut input = Input::new_from_chars("9-7".chars(), None);
+			let mut input = Input::new_from_chars("9-7".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_right_subtraction()(&mut input);
 			assert_eq!(output, Ok(2));
 		}
@@ -215,7 +215,7 @@ mod tests {
 		#[test]
 		fn tree_operands() {
 			// 3 - (1 - 2) = 4, not (3 - 1) - 2 = 0
-			let mut input = Input::new_from_chars("3-1-2".chars(), None);
+			let mut input = Input::new_from_chars("3-1-2".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_right_subtraction()(&mut input);
 			assert_eq!(output, Ok(4));
 		}

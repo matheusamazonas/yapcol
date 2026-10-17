@@ -4,6 +4,7 @@ use crate::input::source::InputSource;
 use crate::input::token::TokenInputSource;
 use std::collections::VecDeque;
 use std::fmt::{Debug, Display};
+use std::rc::Rc;
 
 /// A single token in the input stream.
 ///
@@ -84,7 +85,7 @@ where
 	/// - `source`: any value that can be turned into an iterator of [`InputToken`] items.
 	/// - `source_name`: an optional name for the source (e.g. a file path), included in
 	///   error messages.
-	pub fn new_from_tokens<S, I>(source: S, source_name: Option<String>) -> Input<'a, IT>
+	pub fn new_from_tokens<S, I>(source: S, source_name: String) -> Input<'a, IT>
 	where
 		S: IntoIterator<Item = IT, IntoIter = I>,
 		I: Iterator<Item = IT> + 'a,
@@ -163,9 +164,9 @@ where
 		self.consumed_count
 	}
 
-	/// Returns the name of the underlying source, if one was provided at construction time.
-	pub fn source_name(&self) -> Option<String> {
-		self.source.source_name().map(|s| (*s).clone())
+	/// Returns the name of the underlying source.
+	pub fn source_name(&self) -> Rc<String> {
+		self.source.source_name()
 	}
 
 	/// Returns the current position in the source.
@@ -275,10 +276,11 @@ where
 mod tests {
 	use super::*;
 	use crate::input::core::Input;
+	use crate::test_utils;
 
 	#[test]
 	fn lookahead_no_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -296,7 +298,7 @@ mod tests {
 
 	#[test]
 	fn lookahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -311,14 +313,14 @@ mod tests {
 
 	#[test]
 	fn peek_twice() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
 	}
 
 	#[test]
 	fn peek_twice_while_looking_ahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		let handler = input.start_look_ahead();
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
@@ -328,7 +330,7 @@ mod tests {
 
 	#[test]
 	fn peek_twice_while_looking_ahead_not_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		let handler = input.start_look_ahead();
 		assert_eq!(input.peek().unwrap().token(), &'1');
 		assert_eq!(input.peek().unwrap().token(), &'1');
@@ -338,7 +340,7 @@ mod tests {
 
 	#[test]
 	fn repeat_peek_look_ahead_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		input.stop_look_ahead(handler, true);
@@ -352,7 +354,7 @@ mod tests {
 
 	#[test]
 	fn repeat_peek_look_ahead_not_backtracking() {
-		let mut input = Input::new_from_chars("12".chars(), None);
+		let mut input = Input::new_from_chars("12".chars(), test_utils::test_source_name());
 		let handler = input.start_look_ahead();
 		assert_eq!(input.next_token().unwrap().token_owned(), '1');
 		input.stop_look_ahead(handler, false);
@@ -367,7 +369,7 @@ mod tests {
 
 	#[test]
 	fn nested_lookahead_backtrack() {
-		let mut input = Input::new_from_chars("12345".chars(), None);
+		let mut input = Input::new_from_chars("12345".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -391,7 +393,7 @@ mod tests {
 
 	#[test]
 	fn nested_lookahead_no_backtrack() {
-		let mut input = Input::new_from_chars("12345".chars(), None);
+		let mut input = Input::new_from_chars("12345".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -411,7 +413,7 @@ mod tests {
 
 	#[test]
 	fn nested_look_ahead_backtrack_first() {
-		let mut input = Input::new_from_chars("12345".chars(), None);
+		let mut input = Input::new_from_chars("12345".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -441,7 +443,7 @@ mod tests {
 
 	#[test]
 	fn nested_look_ahead_backtrack_second() {
-		let mut input = Input::new_from_chars("12345".chars(), None);
+		let mut input = Input::new_from_chars("12345".chars(), test_utils::test_source_name());
 		assert_eq!(input.next_location, TokenLocation::Stream);
 		let handler1 = input.start_look_ahead();
 		assert_eq!(input.next_location, TokenLocation::StreamLookingAhead);
@@ -468,7 +470,7 @@ mod tests {
 	#[test]
 	#[should_panic]
 	fn wrong_handler() {
-		let mut input = Input::new_from_chars("12345".chars(), None);
+		let mut input = Input::new_from_chars("12345".chars(), test_utils::test_source_name());
 		let handler1 = input.start_look_ahead();
 		let _handler2 = input.start_look_ahead();
 		input.stop_look_ahead(handler1, false);

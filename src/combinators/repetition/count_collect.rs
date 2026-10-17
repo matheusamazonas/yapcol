@@ -46,7 +46,7 @@ use crate::{InputToken, Parser};
 ///
 /// // Succeeds when the parser matches exactly `count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let mut input = Input::new_from_chars("1112".chars(), String::from("doctest.txt"));
 /// assert_eq!(
 /// 	count_collect(&parser, 3)(&mut input),
 /// 	Ok("111".chars().collect())
@@ -54,11 +54,11 @@ use crate::{InputToken, Parser};
 /// assert_eq!(any()(&mut input), Ok('2')); // Remaining input after consuming 3 tokens.
 ///
 /// // Fails when there are not enough matching tokens
-/// let mut input = Input::new_from_chars("123".chars(), None);
+/// let mut input = Input::new_from_chars("123".chars(), String::from("doctest.txt"));
 /// assert!(count_collect(&parser, 3)(&mut input).is_err());
 ///
 /// // Fails on empty input when count > 0
-/// let mut input = Input::new_from_chars("".chars(), None);
+/// let mut input = Input::new_from_chars("".chars(), String::from("doctest.txt"));
 /// assert!(count_collect(&parser, 1)(&mut input).is_err());
 /// ```
 pub fn count_collect<P, IT, O>(parser: &P, count: usize) -> impl Parser<IT, Vec<O>>
@@ -80,7 +80,7 @@ mod tests {
 	#[test]
 	fn count_zero_empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser = count_collect(&parser, 0);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
@@ -89,7 +89,7 @@ mod tests {
 	#[test]
 	fn count_zero_empty_shortcut() {
 		let parser = is('h').count_collect(0);
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
 	}
@@ -97,7 +97,7 @@ mod tests {
 	#[test]
 	fn count_0_not_empty_no_match_succeeds() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jello".chars(), None);
+		let mut input = Input::new_from_chars("jello".chars(), test_utils::test_source_name());
 		let parser = count_collect(&parser, 0);
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
@@ -106,7 +106,7 @@ mod tests {
 	#[test]
 	fn count_0_not_empty_shortcut_no_match_succeeds() {
 		let parser = is('h').count_collect(0);
-		let mut input = Input::new_from_chars("jello".chars(), None);
+		let mut input = Input::new_from_chars("jello".chars(), test_utils::test_source_name());
 		let output = parser(&mut input);
 		assert_eq!(output, Ok(vec![]));
 	}
@@ -114,7 +114,7 @@ mod tests {
 	#[test]
 	fn count_0_too_many_fails() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser = count_collect(&parser, 0);
 		let output = parser(&mut input);
 		assert!(output.is_err());
@@ -122,7 +122,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))
@@ -132,7 +132,7 @@ mod tests {
 	#[test]
 	fn count_too_many_fails() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhhello".chars(), test_utils::test_source_name());
 		let parser = count_collect(&parser, 3);
 		let output = parser(&mut input);
 		assert!(output.is_err());
@@ -140,7 +140,7 @@ mod tests {
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 4),
 				Some(mismatch)
 			))
@@ -152,7 +152,7 @@ mod tests {
 		let parser = is('h');
 		let repeat_count: usize = 500;
 		let tokens: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let parser = count_collect(&parser, repeat_count);
 		let output = parser(&mut input).unwrap();
 		assert_eq!(output.len(), repeat_count); // The count matched the request.
@@ -168,7 +168,7 @@ mod tests {
 		tokens.push('x');
 		let mut tail: Vec<_> = std::iter::repeat_n('h', repeat_count).collect();
 		tokens.append(&mut tail);
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let parser = count_collect(&parser, repeat_count);
 		let output = parser(&mut input).unwrap();
 		assert!(output.iter().all(|x| *x == 'h')); // All values match the parser's.
@@ -182,14 +182,14 @@ mod tests {
 		let mut tokens: Vec<_> = std::iter::repeat_n('h', 3).collect();
 		tokens.push('x');
 		tokens.push('y');
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let parser = count_collect(&parser, 4); // The 4th element is "x", so this should fail.
 		let output = parser(&mut input);
 		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 4),
 				Some(mismatch)
 			))
@@ -202,13 +202,13 @@ mod tests {
 		let mut tokens: Vec<_> = std::iter::repeat_n('h', 3).collect();
 		tokens.push('x');
 		tokens.push('y');
-		let mut input = Input::new_from_chars(tokens, None);
+		let mut input = Input::new_from_chars(tokens, test_utils::test_source_name());
 		let output = parser(&mut input);
 		let mismatch = Mismatch::new('h', 'x');
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 4),
 				Some(mismatch)
 			))

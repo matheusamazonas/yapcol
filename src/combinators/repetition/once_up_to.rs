@@ -49,19 +49,19 @@ use crate::{InputToken, Parser};
 ///
 /// // Succeeds if the parser matches exactly `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// let max_count = 2;
 /// assert_eq!(once_up_to(&parser, max_count)(&mut input), Ok(2));
 ///
 /// // Succeeds if the parser matches less than `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("112".chars(), None);
+/// let mut input = Input::new_from_chars("112".chars(), String::from("doctest.txt"));
 /// let max_count = 5;
 /// assert_eq!(once_up_to(&parser, max_count)(&mut input), Ok(2));
 ///
 /// // Fails if the parser matches more than `max_count` times.
 /// let parser = is('1');
-/// let mut input = Input::new_from_chars("1112".chars(), None);
+/// let mut input = Input::new_from_chars("1112".chars(), String::from("doctest.txt"));
 /// let max_count = 2;
 /// assert!(once_up_to(&parser, max_count)(&mut input).is_err());
 /// ```
@@ -89,28 +89,28 @@ mod tests {
 	#[test]
 	fn empty() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 1);
 		assert_eq!(
 			parser_up_to(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
 		);
 	}
 
 	#[test]
 	fn empty_shortcut() {
 		let parser = is('h').once_up_to(1);
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		assert_eq!(
 			parser(&mut input),
-			Err(Error::EndOfInput(Some(Box::new('h'))))
+			Err(Error::EndOfInput(input.source_name(), Some(Box::new('h'))))
 		);
 	}
 
 	#[test]
 	fn no_match() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 1);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 1);
@@ -121,7 +121,7 @@ mod tests {
 	#[test]
 	fn no_match_shortcut() {
 		let parser = is('h').once_up_to(1);
-		let mut input = Input::new_from_chars("jklmno".chars(), None);
+		let mut input = Input::new_from_chars("jklmno".chars(), test_utils::test_source_name());
 		let output = parser(&mut input);
 		let position = Position::new(1, 1);
 		assert_unexpected_error(output, position, "h", "j");
@@ -131,7 +131,7 @@ mod tests {
 	#[test]
 	fn one_match() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 1);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, 1);
@@ -143,7 +143,7 @@ mod tests {
 	#[test]
 	fn less_than_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhello".chars(), None);
+		let mut input = Input::new_from_chars("hhello".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, 2);
@@ -155,7 +155,7 @@ mod tests {
 	#[test]
 	fn equal_to_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhello".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 3);
 		let output = parser_up_to(&mut input).unwrap();
 		assert_eq!(output, 3);
@@ -167,7 +167,7 @@ mod tests {
 	#[test]
 	fn more_than_max_count() {
 		let parser = is('h');
-		let mut input = Input::new_from_chars("hhhhello".chars(), None);
+		let mut input = Input::new_from_chars("hhhhello".chars(), test_utils::test_source_name());
 		let parser_up_to = once_up_to(&parser, 3);
 		let output = parser_up_to(&mut input);
 		let position = Position::new(1, 4);

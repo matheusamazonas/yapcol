@@ -21,11 +21,11 @@ use crate::{Error, InputToken, Mismatch, Parser};
 /// use yapcol::{Error, Input, any, end_of_input};
 ///
 /// let tokens: Vec<char> = vec![];
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// assert!(end_of_input()(&mut input).is_ok());
 ///
 /// let tokens: Vec<char> = vec!['a', 'b'];
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// assert!(end_of_input()(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
@@ -53,13 +53,13 @@ mod tests {
 
 	#[test]
 	fn success() {
-		let mut input = Input::new_from_chars("".chars(), None);
+		let mut input = Input::new_from_chars("".chars(), test_utils::test_source_name());
 		assert!(end_of_input()(&mut input).is_ok());
 	}
 
 	#[test]
 	fn fail() {
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		assert!(end_of_input()(&mut input).is_err());
 	}
 }

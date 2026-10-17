@@ -26,13 +26,13 @@ use crate::{Error, InputToken, Mismatch, Parser};
 /// use yapcol::{Error, Input, any, satisfy};
 ///
 /// let tokens: Vec<char> = vec!['3', 'a', 'b'];
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// let parser = satisfy(|c: &char| if c.is_ascii_digit() { Some(*c) } else { None });
 /// assert_eq!(parser(&mut input).unwrap(), '3');
 /// assert_eq!(any()(&mut input), Ok('a')); // Token was consumed.
 ///
 /// let tokens: Vec<char> = vec!['a', 'b', 'c'];
-/// let mut input = Input::new_from_chars(tokens, None);
+/// let mut input = Input::new_from_chars(tokens, String::from("doctest.txt"));
 /// assert!(parser(&mut input).is_err());
 /// assert_eq!(any()(&mut input), Ok('a')); // Input was not consumed.
 /// ```
@@ -61,7 +61,7 @@ where
 					}
 				}
 			}
-			None => Err(Error::EndOfInput(None)),
+			None => Err(Error::EndOfInput(input.source_name(), None)),
 		}
 	}
 }
@@ -81,16 +81,16 @@ mod tests {
 			}
 		});
 		// Digits.
-		let mut input = Input::new_from_chars("1".chars(), None);
+		let mut input = Input::new_from_chars("1".chars(), test_utils::test_source_name());
 		assert_eq!(parser(&mut input), Ok('1'));
 		assert!(end_of_input()(&mut input).is_ok());
 		// Words fails and does not consume.
-		let mut input = Input::new_from_chars("hello".chars(), None);
+		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
 		let mismatch = Mismatch::without_expectation('h');
 		assert_eq!(
 			parser(&mut input),
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 1),
 				Some(mismatch)
 			))

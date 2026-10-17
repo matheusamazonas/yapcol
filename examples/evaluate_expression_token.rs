@@ -49,7 +49,7 @@ impl InputToken for SourceToken {
 	}
 }
 
-fn tokenize(input: String) -> Result<Vec<SourceToken>, Error> {
+fn tokenize(input: String) -> Result<Vec<SourceToken>, String> {
 	let mut tokens = Vec::new();
 	let input = input.chars().collect::<Vec<char>>();
 	let mut i = 0;
@@ -75,7 +75,7 @@ fn tokenize(input: String) -> Result<Vec<SourceToken>, Error> {
 			unsupported => {
 				let position = Position::new(1, i + 1);
 				let mismatch = Mismatch::without_expectation(unsupported);
-				return Err(Error::UnexpectedToken(None, position, Some(mismatch)));
+				return Err(format!("Unexpected token at {position}. {mismatch}"));
 			}
 		};
 		let position = Position::new(1, i + 1);
@@ -170,7 +170,7 @@ fn main() {
 				input.retain(|c| c != '\n');
 				match tokenize(input.clone()) {
 					Ok(tokens) => {
-						let mut input = Input::new_from_tokens(tokens, Some("stdin".to_string()));
+						let mut input = Input::new_from_tokens(tokens, String::from("stdin"));
 						match parse_expression().exhaustive()(&mut input) {
 							Ok(expression) => println!("Success: {:?}", evaluate(expression)),
 							Err(error) => println!("Failed to parse expression: {error}"),
@@ -262,13 +262,13 @@ mod parsing_tests {
 	#[test]
 	fn exhaustive() {
 		let tokens = tokenize(String::from("12345(")).unwrap();
-		let mut input = Input::new_from_tokens(tokens, None);
+		let mut input = Input::new_from_tokens(tokens, String::from("test.txt"));
 		let output = parse_expression().exhaustive()(&mut input);
 		let mismatch = Mismatch::new("end of input", "(");
 		assert_eq!(
 			output,
 			Err(Error::UnexpectedToken(
-				None,
+				input.source_name(),
 				Position::new(1, 6),
 				Some(mismatch)
 			))
@@ -283,7 +283,7 @@ mod evaluation_tests {
 
 	fn parse_and_evaluate(input: &str) -> i32 {
 		let tokens = tokenize(String::from(input)).unwrap();
-		let mut input = Input::new_from_tokens(tokens, None);
+		let mut input = Input::new_from_tokens(tokens, String::from("test.txt"));
 		let output = parse_expression()(&mut input);
 		assert!(end_of_input()(&mut input).is_ok());
 		evaluate(output.unwrap())
