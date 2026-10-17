@@ -166,7 +166,7 @@ mod tests {
 		}
 
 		#[test]
-		fn tree_operands() {
+		fn three_operands() {
 			// (3 - 1) - 2 = 0, not 3 - (1 - 2) = 4
 			let mut input = Input::new_from_chars("3-1-2".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_left_subtraction()(&mut input);
@@ -213,7 +213,7 @@ mod tests {
 		}
 
 		#[test]
-		fn tree_operands() {
+		fn three_operands() {
 			// 3 - (1 - 2) = 4, not (3 - 1) - 2 = 0
 			let mut input = Input::new_from_chars("3-1-2".chars(), test_utils::test_source_name());
 			let output = parse_evaluate_right_subtraction()(&mut input);
