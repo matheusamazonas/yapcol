@@ -74,7 +74,7 @@ fn tokenize(input: String) -> Result<Vec<SourceToken>, String> {
 			}
 			unsupported => {
 				let position = Position::new(1, i + 1);
-				let mismatch = Mismatch::without_expectation(unsupported);
+				let mismatch = Mismatch::new_without_expected(unsupported);
 				return Err(format!("Unexpected token at {position}. {mismatch}"));
 			}
 		};

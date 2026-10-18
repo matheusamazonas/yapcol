@@ -121,12 +121,12 @@ where
 				source_name,
 				Some(Box::new(expectation.clone())),
 			)),
-			Err(Error::UnexpectedToken(s, p, Some(mut mismatch))) => {
-				mismatch.replace_expectation(expectation.clone());
+			Err(Error::UnexpectedToken(s, p, Some(mismatch))) => {
+				let mismatch = mismatch.replace_expectation(expectation.clone());
 				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
 			}
 			Err(Error::UnexpectedToken(s, p, None)) => {
-				let mismatch = Mismatch::without_found(expectation.clone());
+				let mismatch = Mismatch::new_without_expected(expectation.clone());
 				Err(Error::UnexpectedToken(s, p, Some(mismatch)))
 			}
 			Err(error) => Err(error),

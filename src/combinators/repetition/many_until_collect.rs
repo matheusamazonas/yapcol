@@ -55,7 +55,8 @@ use crate::{InputToken, Parser};
 /// 	open(input)?;
 /// 	many_until_collect(&any, &close)(input)
 /// };
-/// let mut input = Input::new_from_chars("#this is a comment$".chars(), String::from("doctest.txt"));
+/// let source_name = String::from("doctest.txt");
+/// let mut input = Input::new_from_chars("#this is a comment$".chars(), source_name);
 /// let (matches, end) = comments_parser(&mut input).unwrap();
 /// assert_eq!(matches, "this is a comment".chars().collect::<Vec<char>>());
 /// assert_eq!(end, '$');

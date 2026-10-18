@@ -71,7 +71,10 @@
 //!
 //! // Consume the only token, then try to read more.
 //! is('a')(&mut input).unwrap();
-//! assert_eq!(any()(&mut input), Err(Error::EndOfInput(input.source_name(), None)));
+//! assert_eq!(
+//! 	any()(&mut input),
+//! 	Err(Error::EndOfInput(input.source_name(), None))
+//! );
 //!
 //! // The `success` combinator always succeeds without consuming any input, so `many` detects the
 //! // loop.
@@ -79,7 +82,10 @@
 //! let mut input = Input::new_from_chars("abc".chars(), String::from("doctest.txt"));
 //! assert_eq!(
 //! 	many(&parser)(&mut input),
-//! 	Err(Error::NonConsumingLoop(input.source_name(), Position::new(1, 1)))
+//! 	Err(Error::NonConsumingLoop(
+//! 		input.source_name(),
+//! 		Position::new(1, 1)
+//! 	))
 //! );
 //! ```
 //!

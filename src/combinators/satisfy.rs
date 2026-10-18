@@ -52,7 +52,7 @@ where
 					}
 					None => {
 						let position = input_token.position();
-						let mismatch = Mismatch::without_expectation(token.to_string());
+						let mismatch = Mismatch::new_without_expected(token.to_string());
 						Err(Error::UnexpectedToken(
 							input.source_name(),
 							position,
@@ -86,7 +86,7 @@ mod tests {
 		assert!(end_of_input()(&mut input).is_ok());
 		// Words fails and does not consume.
 		let mut input = Input::new_from_chars("hello".chars(), test_utils::test_source_name());
-		let mismatch = Mismatch::without_expectation('h');
+		let mismatch = Mismatch::new_without_expected('h');
 		assert_eq!(
 			parser(&mut input),
 			Err(Error::UnexpectedToken(

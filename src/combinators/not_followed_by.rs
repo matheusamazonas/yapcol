@@ -38,7 +38,11 @@ use crate::{Error, InputToken, Parser};
 /// let output = not_followed_parser(&mut input);
 /// assert_eq!(
 /// 	output,
-/// 	Err(Error::UnexpectedToken(input.source_name(), Position::new(1, 1), None))
+/// 	Err(Error::UnexpectedToken(
+/// 		input.source_name(),
+/// 		Position::new(1, 1),
+/// 		None
+/// 	))
 /// );
 /// ```
 pub fn not_followed_by<P, IT, O>(parser: &P) -> impl Parser<IT, ()>

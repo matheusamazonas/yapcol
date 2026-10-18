@@ -24,13 +24,16 @@ impl PartialEq for dyn MismatchElement {
 /// Describes a mismatch between what was expected and what was found during parsing.
 ///
 /// A `Mismatch` is carried by [`Error::UnexpectedToken`] to provide human-readable context about
-/// why a parser failed. Both the `expected` and `found` fields are optional: use [`Mismatch::new`]
-/// when both are known, [`Mismatch::without_found`] when only the expectation is known, and
-/// [`Mismatch::without_expectation`] when only the found value is known.
+/// why a parser failed. There are two variations: one used whenever the expected and the found
+/// values are known [`Mismatch::ExpectedAndFound`], and one used whenever the expected value is not
+/// known [`Mismatch::Found`].
 #[derive(PartialEq, Debug)]
-pub struct Mismatch {
-	expected: Option<Box<dyn MismatchElement>>,
-	found: Option<Box<dyn MismatchElement>>,
+pub enum Mismatch {
+	ExpectedAndFound {
+		expected: Box<dyn MismatchElement>,
+		found: Box<dyn MismatchElement>,
+	},
+	Found(Box<dyn MismatchElement>),
 }
 
 impl Mismatch {
@@ -42,56 +45,43 @@ impl Mismatch {
 	{
 		let expected = Box::new(expected);
 		let found = Box::new(found);
-		Mismatch {
-			expected: Some(expected),
-			found: Some(found),
-		}
+		Mismatch::ExpectedAndFound { expected, found }
 	}
 
-	/// Creates a `Mismatch` with only an expected value, when no token was found (e.g., end of input).
-	pub fn without_found<E>(expected: E) -> Mismatch
-	where
-		E: MismatchElement + 'static,
-	{
-		let expected = Box::new(expected);
-		Mismatch {
-			expected: Some(expected),
-			found: None,
-		}
-	}
-
-	/// Creates a `Mismatch` with only a found value, when no expectation is available.
-	pub fn without_expectation<E>(found: E) -> Mismatch
+	/// Creates a `Mismatch` with only a found value when no expectation is available.
+	pub fn new_without_expected<E>(found: E) -> Mismatch
 	where
 		E: MismatchElement + 'static,
 	{
 		let found = Box::new(found);
-		Mismatch {
-			expected: None,
-			found: Some(found),
-		}
+		Mismatch::Found(found)
 	}
 
 	/// Replaces the expected value of this `Mismatch`, overwriting any previously set expectation.
-	pub fn replace_expectation<E>(&mut self, expected: E)
+	pub fn replace_expectation<E>(self, new_expected: E) -> Self
 	where
 		E: MismatchElement + 'static,
 	{
-		self.expected.replace(Box::new(expected));
+		match self {
+			Mismatch::ExpectedAndFound { found, .. } | Mismatch::Found(found) => {
+				Mismatch::ExpectedAndFound {
+					expected: Box::new(new_expected),
+					found,
+				}
+			}
+		}
 	}
 }
 
 impl Display for Mismatch {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self.expected {
-			Some(ref expected) => match self.found {
-				Some(ref found) => write!(f, "Expected: {expected}, found: {found}"),
-				None => write!(f, "Expected: {expected}"),
-			},
-			None => match self.found {
-				Some(ref found) => write!(f, "Found: {found}"),
-				None => panic!("Invalid error mismatch."),
-			},
+		match self {
+			Mismatch::ExpectedAndFound { expected, found } => {
+				write!(f, "Expected: {expected}, found: {found}")
+			}
+			Mismatch::Found(found) => {
+				write!(f, "Found: {found}")
+			}
 		}
 	}
 }
@@ -121,7 +111,10 @@ impl Display for Mismatch {
 ///
 /// // Fails with EndOfInput when the stream is exhausted.
 /// is('a')(&mut input).unwrap(); // Consume the only token
-/// assert_eq!(any()(&mut input), Err(Error::EndOfInput(input.source_name(), None)));
+/// assert_eq!(
+/// 	any()(&mut input),
+/// 	Err(Error::EndOfInput(input.source_name(), None))
+/// );
 /// ```
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -159,7 +152,10 @@ pub enum Error {
 	/// let mut input = Input::new_from_chars("abc".chars(), String::from("file.txt"));
 	/// assert_eq!(
 	/// 	many(&parser)(&mut input),
-	/// 	Err(Error::NonConsumingLoop(input.source_name(), Position::new(1, 1)))
+	/// 	Err(Error::NonConsumingLoop(
+	/// 		input.source_name(),
+	/// 		Position::new(1, 1)
+	/// 	))
 	/// );
 	/// ```
 	NonConsumingLoop(Rc<String>, Position),
@@ -205,15 +201,15 @@ mod tests {
 
 		#[test]
 		fn same_without_expectation_equal() {
-			let m1 = Mismatch::without_expectation("hello");
-			let m2 = Mismatch::without_expectation("hello");
+			let m1 = Mismatch::new_without_expected("hello");
+			let m2 = Mismatch::new_without_expected("hello");
 			assert_eq!(m1, m2);
 		}
 
 		#[test]
 		fn different_expectation_presence() {
 			let m1 = Mismatch::new("hello", "p");
-			let m2 = Mismatch::without_expectation("hello");
+			let m2 = Mismatch::new_without_expected("hello");
 			assert_ne!(m1, m2);
 		}
 
