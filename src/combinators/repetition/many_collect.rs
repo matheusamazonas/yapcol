@@ -6,12 +6,9 @@ use crate::{InputToken, Parser};
 /// # Outcome
 ///
 /// This parser succeeds if:
-/// - Its argument parser succeeds at least once.
-/// - Its argument parser fails with an error different from
-///   [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop).
-///
-/// This combinator returns a vector of matches of its argument parser, which might be empty in
-/// case no matches were found.
+/// - Its argument parser fails. In this case, it returns `Ok(vec![])`.
+/// - Its argument parser succeeds at least once. In this case, it returns `Ok(vec)`, where
+///   `vec` is a [`Vec<T>`] containing the matches.
 ///
 /// # Input consumption
 ///
@@ -27,8 +24,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Look-ahead and backtracking
 ///
-/// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
-/// fails.
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Performance
 ///

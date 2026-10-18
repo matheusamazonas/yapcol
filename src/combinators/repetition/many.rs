@@ -6,9 +6,9 @@ use crate::{InputToken, Parser};
 /// # Outcome
 ///
 /// This parser succeeds if:
-/// - Its argument parser succeeds at least once.
-/// - Its argument parser fails with an error different from
-///   [`Error::NonConsumingLoop`](crate::Error::NonConsumingLoop).
+/// - Its argument parser fails. In this case, it returns `Ok(0)`.
+/// - Its argument parser succeeds at least once. In this case, it returns `Ok(count)`, where
+///   `count` is the number of times the argument parser matched.
 ///
 /// Unlike [`many_collect`](crate::many_collect), this combinator doesn't return its matches, but
 /// just how many times it matched.
@@ -27,8 +27,7 @@ use crate::{InputToken, Parser};
 ///
 /// # Look-ahead and backtracking
 ///
-/// This combinator doesn't perform any lookahead. It also never backtracks, given that it never
-/// fails.
+/// This combinator doesn't perform any lookahead and won't backtrack upon failure.
 ///
 /// # Shortcut
 ///
